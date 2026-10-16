@@ -8,8 +8,6 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <!-- Google 로그인 SDK 로드 -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,6 +28,7 @@
         .score-table td { border: 1px solid #e2e8f0; padding: 10px 4px; text-align: center; white-space: nowrap; }
         .score-table tr:hover td { background-color: #f1f5f9; }
         
+        /* 졸업생 표 전용 */
         .grad-table { border-collapse: collapse; min-width: 1400px; }
         .grad-table th { background-color: #f0fdf4; font-weight: bold; border: 1px solid #bbf7d0; padding: 12px 8px; text-align: center; white-space: nowrap; cursor: pointer; transition: background 0.2s; user-select: none; }
         .grad-table th:hover { background-color: #dcfce7; }
@@ -40,121 +39,107 @@
 </head>
 <body class="min-h-screen flex flex-col items-center pt-10 pb-20 px-4 relative overflow-x-hidden">
 
-    <!-- 배경 워터마크 -->
+    <!-- 배경 로고 -->
     <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 pointer-events-none flex flex-col items-center justify-center" style="opacity: 0.03;">
         <div class="w-96 h-96 rounded-full border-gray-500 flex items-center justify-center" style="border-width: 20px;">
             <span class="text-8xl font-black text-gray-500">YEUNGNAM</span>
         </div>
     </div>
 
+    <!-- 전체 컨테이너 -->
     <div class="w-full z-10 relative" style="max-width: 1400px; margin: 0 auto;">
         
-        <!-- [Google 로그인 인증 화면] -->
-        <div id="authView" class="flex flex-col items-center justify-center mt-20">
-            <div class="bg-white p-10 rounded-2xl shadow-xl border-t-8 border-school w-full max-w-md text-center flex flex-col items-center">
-                <div class="w-20 h-20 mx-auto border-4 border-school rounded-full flex flex-col items-center justify-center font-bold text-school text-center leading-tight mb-6">
-                    <span style="font-size: 10px;">YEUNGNAM</span>
-                    <span style="font-size: 14px;">영남</span>
+        <!-- 상단 헤더 (항상 보임 & 구글 로그인 영역 추가) -->
+        <header class="bg-school rounded-2xl shadow-md p-6 mb-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-6">
+                <div class="bg-white rounded-full w-16 h-16 flex items-center justify-center shadow-inner shrink-0 relative overflow-hidden p-1">
+                    <div class="w-full h-full border-2 border-school rounded-full flex flex-col items-center justify-center font-bold text-school text-center leading-tight">
+                        <span style="font-size: 8px;">YEUNGNAM</span>
+                        <span style="font-size: 10px;">영남</span>
+                    </div>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">👨‍🏫 교사 구글 계정 인증</h2>
-                <p class="text-gray-500 mb-8 text-sm break-keep">현재 로그인되어 있는 학교/교사 구글 계정으로 로그인해주세요.</p>
-                
-                <!-- Google Sign-In 버튼 영역 -->
-                <div id="g_id_onload"
-                     data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-                     data-callback="handleCredentialResponse"
-                     data-auto_prompt="false">
+                <div>
+                    <h1 class="text-3xl font-bold text-white tracking-tight mb-1">영남고등학교 진로진학 상담 시스템</h1>
+                    <p class="text-blue-200 text-sm font-medium">교사용 통합 관리 센터</p>
                 </div>
-                <div class="g_id_signin mb-4"
-                     data-type="standard"
-                     data-size="large"
-                     data-theme="outline"
-                     data-text="sign_in_with"
-                     data-shape="rectangular"
-                     data-logo_alignment="left">
+            </div>
+
+            <!-- 파이어베이스 구글 로그인 / 로그아웃 상자 -->
+            <div class="bg-white/10 p-3 rounded-xl border border-white/20 backdrop-blur-sm text-right">
+                <button id="loginBtn" onclick="loginWithGoogle()" class="bg-white text-[#094b83] font-bold px-4 py-2 rounded-lg shadow hover:bg-gray-100 transition">
+                    🔑 교사 인증 (Google 로그인)
+                </button>
+                <div id="userInfo" class="hidden text-white text-sm">
+                    <span id="userEmail" class="font-bold mr-2"></span>
+                    <button onclick="logout()" class="text-xs bg-red-500 hover:bg-red-600 px-2 py-1 rounded">로그아웃</button>
                 </div>
-                
-                <!-- 오류 메시지 출력 -->
-                <div id="authError" class="text-red-500 text-sm mt-4 hidden font-bold break-keep bg-red-50 p-3 rounded-lg border border-red-200 w-full"></div>
+            </div>
+        </header>
+
+        <!-- [화면 1] 메인 메뉴 대시보드 -->
+        <div id="mainDashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 items-stretch">
+            <div class="bg-white rounded-2xl shadow-lg border-b-8 border-blue-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
+                <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🎓</span></div>
+                <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">학생 <span class="text-red-600">개별</span> 조회</h2>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg border-b-8 border-green-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
+                <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🤝‍🧑</span></div>
+                <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">반별 <span class="text-red-600">전체</span> 조회</h2>
+            </div>
+            
+            <div onclick="openMockView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-pink-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
+                <div id="mockLoadingSpinner" class="absolute top-4 right-4 flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
+                </div>
+                <div class="w-24 h-24 mb-5 flex items-center justify-center bg-pink-400 rounded-3xl shadow-inner bg-gradient-to-br from-pink-400 to-pink-500">
+                    <span class="text-6xl drop-shadow-md">📈</span>
+                </div>
+                <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep"><span class="text-red-600">개별</span> 모의고사 성적</h2>
+            </div>
+
+            <div onclick="openGradView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-red-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
+                <div id="gradLoadingSpinner" class="absolute top-4 right-4 flex h-3 w-3 hidden">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </div>
+                <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🎓</span></div>
+                <h2 class="text-xl font-bold mb-4 text-blue-600 break-keep">졸업생 수시 결과</h2>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg border-b-8 border-yellow-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
+                <div class="w-24 h-24 mb-5 flex items-center justify-center bg-yellow-500 rounded-3xl shadow-inner bg-gradient-to-br from-yellow-400 to-yellow-600">
+                    <span class="text-6xl drop-shadow-md">📝</span>
+                </div>
+                <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep"><span class="text-red-600">수시</span> 입결 조회</h2>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg border-b-8 border-purple-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
+                <div class="w-24 h-24 mb-5 flex items-center justify-center bg-purple-600 rounded-3xl shadow-inner bg-gradient-to-br from-purple-500 to-indigo-600">
+                    <span class="text-6xl drop-shadow-md">🎯</span>
+                </div>
+                <h2 class="text-xl font-bold mb-4 text-blue-600 break-keep"><span class="text-blue-600">정시</span> 입결 조회</h2>
             </div>
         </div>
 
-        <!-- [메인 시스템 - 인증 성공 후 표시] -->
-        <div id="mainApp" class="hidden w-full">
+        <!-- [화면 2] 개별 모의고사 성적 화면 -->
+        <div id="mockView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-pink-500">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
+                <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    <span class="text-3xl">📈</span> 개별 모의고사 성적 추이
+                </h3>
+                <button onclick="showMainDashboard()" class="mt-4 sm:mt-0 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
+                    <span>◀</span> 메인 화면으로
+                </button>
+            </div>
             
-            <!-- 상단 헤더 -->
-            <header class="bg-school rounded-2xl shadow-md p-6 mb-10 flex flex-col sm:flex-row items-center sm:justify-between gap-6">
-                <div class="flex items-center gap-6">
-                    <div class="bg-white rounded-full w-16 h-16 flex items-center justify-center shadow-inner shrink-0 relative overflow-hidden p-1">
-                        <div class="w-full h-full border-2 border-school rounded-full flex flex-col items-center justify-center font-bold text-school text-center leading-tight">
-                            <span style="font-size: 8px;">YEUNGNAM</span>
-                            <span style="font-size: 10px;">영남</span>
-                        </div>
-                    </div>
-                    <div>
-                        <h1 class="text-3xl font-bold text-white tracking-tight mb-1">영남고등학교 진로진학 상담 시스템</h1>
-                        <p class="text-blue-200 text-sm font-medium">교사용 통합 관리 센터 (<span id="userAccountText" class="underline"></span>)</p>
-                    </div>
-                </div>
-                <button onclick="logout()" class="text-white text-sm bg-blue-800 hover:bg-blue-900 px-4 py-2 rounded-lg transition-colors font-medium">로그아웃</button>
-            </header>
-
-            <!-- [화면 1] 메인 대시보드 -->
-            <div id="mainDashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 items-stretch">
-                <div class="bg-white rounded-2xl shadow-lg border-b-8 border-blue-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
-                    <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🎓</span></div>
-                    <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">학생 <span class="text-red-600">개별</span> 조회</h2>
-                </div>
-                <div class="bg-white rounded-2xl shadow-lg border-b-8 border-green-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
-                    <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🤝‍🧑</span></div>
-                    <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">반별 <span class="text-red-600">전체</span> 조회</h2>
-                </div>
-                
-                <div onclick="openMockView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-pink-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
-                    <div id="mockLoadingSpinner" class="absolute top-4 right-4 flex h-3 w-3">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
-                      <span class="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
-                    </div>
-                    <div class="w-24 h-24 mb-5 flex items-center justify-center bg-pink-400 rounded-3xl shadow-inner bg-gradient-to-br from-pink-400 to-pink-500">
-                        <span class="text-6xl drop-shadow-md">📈</span>
-                    </div>
-                    <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep"><span class="text-red-600">개별</span> 모의고사 성적</h2>
-                </div>
-
-                <div onclick="openGradView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-red-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
-                    <div id="gradLoadingSpinner" class="absolute top-4 right-4 flex h-3 w-3 hidden">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                    </div>
-                    <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🎓</span></div>
-                    <h2 class="text-xl font-bold mb-4 text-blue-600 break-keep">졸업생 수시 결과</h2>
-                </div>
-                
-                <div class="bg-white rounded-2xl shadow-lg border-b-8 border-yellow-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
-                    <div class="w-24 h-24 mb-5 flex items-center justify-center bg-yellow-500 rounded-3xl shadow-inner bg-gradient-to-br from-yellow-400 to-yellow-600">
-                        <span class="text-6xl drop-shadow-md">📝</span>
-                    </div>
-                    <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep"><span class="text-red-600">수시</span> 입결 조회</h2>
-                </div>
-                <div class="bg-white rounded-2xl shadow-lg border-b-8 border-purple-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
-                    <div class="w-24 h-24 mb-5 flex items-center justify-center bg-purple-600 rounded-3xl shadow-inner bg-gradient-to-br from-purple-500 to-indigo-600">
-                        <span class="text-6xl drop-shadow-md">🎯</span>
-                    </div>
-                    <h2 class="text-xl font-bold mb-4 text-blue-600 break-keep"><span class="text-blue-600">정시</span> 입결 조회</h2>
-                </div>
+            <!-- 로그인 안내 영역 -->
+            <div id="authRequiredMock" class="text-center py-10">
+                <p class="text-red-500 font-bold text-lg mb-2">🔒 교사 인증이 필요합니다.</p>
+                <p class="text-gray-600">우측 상단의 [교사 인증 (Google 로그인)] 버튼을 클릭해 주세요.</p>
             </div>
 
-            <!-- [화면 2] 개별 모의고사 성적 화면 -->
-            <div id="mockView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-pink-500">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
-                    <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                        <span class="text-3xl">📈</span> 개별 모의고사 성적 추이
-                    </h3>
-                    <button onclick="showMainDashboard()" class="mt-4 sm:mt-0 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
-                        <span>◀</span> 메인 화면으로
-                    </button>
-                </div>
-                
+            <!-- 로그인 완료 시 보이는 콘텐츠 영역 -->
+            <div id="mockContent" class="hidden">
                 <div id="mockErrorMessage" class="mb-4 hidden p-4 bg-red-100 text-red-700 rounded-lg font-bold text-sm"></div>
 
                 <div class="mb-6 flex flex-col sm:flex-row gap-4 items-center bg-gray-50 p-4 rounded-lg border border-gray-200 flex-wrap">
@@ -185,18 +170,28 @@
                     </table>
                 </div>
             </div>
+        </div>
 
-            <!-- [화면 3] 졸업생 수시 결과 화면 -->
-            <div id="gradView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-red-500">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
-                    <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                        <span class="text-3xl">🎓</span> 졸업생 수시 결과 조회
-                    </h3>
-                    <button onclick="showMainDashboard()" class="mt-4 sm:mt-0 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
-                        <span>◀</span> 메인 화면으로
-                    </button>
-                </div>
+        <!-- [화면 3] 졸업생 수시 결과 화면 -->
+        <div id="gradView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-red-500">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
+                <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    <span class="text-3xl">🎓</span> 졸업생 수시 결과 조회
+                </h3>
+                <button onclick="showMainDashboard()" class="mt-4 sm:mt-0 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
+                    <span>◀</span> 메인 화면으로
+                </button>
+            </div>
 
+            <!-- 로그인 안내 영역 -->
+            <div id="authRequiredGrad" class="text-center py-10">
+                <p class="text-red-500 font-bold text-lg mb-2">🔒 교사 인증이 필요합니다.</p>
+                <p class="text-gray-600">우측 상단의 [교사 인증 (Google 로그인)] 버튼을 클릭해 주세요.</p>
+            </div>
+
+            <!-- 로그인 완료 시 보이는 콘텐츠 영역 -->
+            <div id="gradContent" class="hidden">
+                <!-- 필터 영역 -->
                 <div class="mb-4 flex flex-wrap gap-4 items-center bg-green-50 p-4 rounded-lg border border-green-200">
                     <select id="filterYear" class="border border-gray-300 rounded p-2 bg-white font-medium" onchange="applyGradFilter()">
                         <option value="">연도 전체</option>
@@ -220,6 +215,7 @@
                 
                 <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
 
+                <!-- 표 영역 -->
                 <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 65vh;">
                     <table class="grad-table text-sm w-full">
                         <thead class="sticky top-0 z-10 shadow-sm">
@@ -249,101 +245,137 @@
                     </table>
                 </div>
             </div>
-            
         </div>
+
     </div>
 
-    <script>
-        // 허용된 교사 계정 3개
-        const ALLOWED_EMAILS = [
-            'jjoeun32@gmail.com',
-            'jjoeun32@yeungnam.hs.kr',
-            'beta@yeungnam.hs.kr'
-        ];
+    <!-- 파이어베이스 SDK 연동 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // Google JWT 토큰 해독 함수
-        function parseJwt(token) {
-            try {
-                var base64Url = token.split('.')[1];
-                var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                return JSON.parse(jsonPayload);
-            } catch (e) {
-                return null;
-            }
-        }
+        const firebaseConfig = {
+            apiKey: "AIzaSyDMamWSRHFS8nxksJNeVmzRE8dN3c4BU2I",
+            authDomain: "goodt66-15409.firebaseapp.com",
+            projectId: "goodt66-15409",
+            storageBucket: "goodt66-15409.firebasestorage.app",
+            messagingSenderId: "158516996669",
+            appId: "1:158516996669:web:b62405f15d4caeb74b5854",
+            measurementId: "G-TGFWLGPW8R"
+        };
 
-        // Google 로그인 인증 완료 콜백 함수
-        function handleCredentialResponse(response) {
-            const responsePayload = parseJwt(response.credential);
-            const userEmail = responsePayload ? responsePayload.email : '';
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
 
-            const errorMsg = document.getElementById('authError');
+        let currentUser = null;
 
-            if (userEmail && ALLOWED_EMAILS.includes(userEmail)) {
-                // 승인된 계정인 경우
-                sessionStorage.setItem('isAuthenticated', 'true');
-                sessionStorage.setItem('userEmail', userEmail);
-                
-                document.getElementById('userAccountText').textContent = userEmail;
-                errorMsg.classList.add('hidden');
-                document.getElementById('authView').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
+        // 로그인 상태 감지
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            const loginBtn = document.getElementById('loginBtn');
+            const userInfo = document.getElementById('userInfo');
+
+            if (user) {
+                loginBtn.classList.add('hidden');
+                userInfo.classList.remove('hidden');
+                document.getElementById('userEmail').innerText = user.email;
+
+                // 인증 완료 UI 전환
+                document.getElementById('authRequiredMock')?.classList.add('hidden');
+                document.getElementById('mockContent')?.classList.remove('hidden');
+                document.getElementById('authRequiredGrad')?.classList.add('hidden');
+                document.getElementById('gradContent')?.classList.remove('hidden');
+
+                if (window.mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) {
+                    window.populateGradeDropdown();
+                }
+                if (window.rawGradData.length > 0) {
+                    window.applyGradFilter();
+                }
             } else {
-                // 승인되지 않은 계정인 경우
-                errorMsg.innerHTML = `🚨 접속 권한이 없는 계정입니다.<br><span class="text-xs text-gray-600">로그인한 계정: ${userEmail || '알 수 없음'}</span>`;
-                errorMsg.classList.remove('hidden');
+                loginBtn.classList.remove('hidden');
+                userInfo.classList.add('hidden');
+
+                // 미인증 상태 UI 전환
+                document.getElementById('authRequiredMock')?.classList.remove('hidden');
+                document.getElementById('mockContent')?.classList.add('hidden');
+                document.getElementById('authRequiredGrad')?.classList.remove('hidden');
+                document.getElementById('gradContent')?.classList.add('hidden');
             }
-        }
+        });
 
-        function logout() {
-            sessionStorage.removeItem('isAuthenticated');
-            sessionStorage.removeItem('userEmail');
-            document.getElementById('mainApp').classList.add('hidden');
-            document.getElementById('authView').classList.remove('hidden');
-            showMainDashboard();
-        }
+        // 구글 로그인
+        window.loginWithGoogle = async () => {
+            try {
+                await signInWithPopup(auth, provider);
+                alert("교사 인증 성공!");
+            } catch (error) {
+                alert("로그인 실패: " + error.message);
+            }
+        };
 
-        // ---------------- 데이터 스크립트 ----------------
+        // 로그아웃
+        window.logout = async () => {
+            await signOut(auth);
+            alert("로그아웃 되었습니다.");
+        };
+
+        window.getCurrentUser = () => currentUser;
+    </script>
+
+    <!-- 기존 스크립트 기능 유지 -->
+    <script>
         const SHEET_ID = '1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM';
         const MOCK_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
         const GRAD_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=졸업생`;
 
+        // ---------------- 공통 화면 전환 로직 ----------------
         function showMainDashboard() {
             document.getElementById('mainDashboard').classList.remove('hidden');
             document.getElementById('mockView').classList.add('hidden');
             document.getElementById('gradView').classList.add('hidden');
         }
+
         function openMockView() {
             document.getElementById('mainDashboard').classList.add('hidden');
             document.getElementById('mockView').classList.remove('hidden');
-            if(mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) populateGradeDropdown();
+
+            const user = window.getCurrentUser ? window.getCurrentUser() : null;
+            if (user) {
+                document.getElementById('authRequiredMock').classList.add('hidden');
+                document.getElementById('mockContent').classList.remove('hidden');
+                if(mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) populateGradeDropdown();
+            } else {
+                document.getElementById('authRequiredMock').classList.remove('hidden');
+                document.getElementById('mockContent').classList.add('hidden');
+            }
         }
+
         function openGradView() {
             document.getElementById('mainDashboard').classList.add('hidden');
             document.getElementById('gradView').classList.remove('hidden');
-            if(rawGradData.length > 0) applyGradFilter();
-        }
 
-        document.addEventListener("DOMContentLoaded", () => {
-            // 이미 인증된 세션이 있는지 확인
-            const savedEmail = sessionStorage.getItem('userEmail');
-            if (sessionStorage.getItem('isAuthenticated') === 'true' && savedEmail && ALLOWED_EMAILS.includes(savedEmail)) {
-                document.getElementById('userAccountText').textContent = savedEmail;
-                document.getElementById('authView').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
+            const user = window.getCurrentUser ? window.getCurrentUser() : null;
+            if (user) {
+                document.getElementById('authRequiredGrad').classList.add('hidden');
+                document.getElementById('gradContent').classList.remove('hidden');
+                if(rawGradData.length > 0) applyGradFilter();
+            } else {
+                document.getElementById('authRequiredGrad').classList.remove('hidden');
+                document.getElementById('gradContent').classList.add('hidden');
             }
-            
-            fetchMockData();
-            fetchGradData();
-        });
+        }
 
         // ---------------- 모의고사 스크립트 ----------------
         let mockDataLoaded = false;
         let studentMap = new Map();
         let chartInstance = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchMockData();
+            fetchGradData();
+        });
 
         async function fetchMockData() {
             try {
@@ -389,6 +421,7 @@
                             }
                         }
                         mockDataLoaded = true;
+                        window.mockDataLoaded = true;
                         document.getElementById('mockLoadingSpinner').style.display = 'none';
                     }
                 });
@@ -402,6 +435,8 @@
             for (let id of studentMap.keys()) if (id && id.length >= 5) grades.add(id.charAt(0));
             Array.from(grades).sort().forEach(g => select.appendChild(new Option(`${g}학년`, g)));
         }
+        window.populateGradeDropdown = populateGradeDropdown;
+
         function onGradeChange() {
             const g = document.getElementById('gradeSelect').value;
             const cSel = document.getElementById('classSelect');
@@ -473,6 +508,7 @@
                         const data = results.data;
                         if(data.length > 1) {
                             rawGradData = data.slice(1);
+                            window.rawGradData = rawGradData;
                             populateGradDropdowns(); 
                         }
                         document.getElementById('gradLoadingSpinner').classList.add('hidden');
@@ -527,13 +563,14 @@
 
             renderGradTable();
         }
+        window.applyGradFilter = applyGradFilter;
 
         function setGradSort(colIndex) {
             if (currentSortCol === colIndex) {
-                isAscending = !isAscending; 
+                isAscending = !isAscending;
             } else {
                 currentSortCol = colIndex;
-                isAscending = true; 
+                isAscending = true;
             }
             
             colOrder.forEach(idx => {
@@ -599,6 +636,7 @@
                 
                 colOrder.forEach(idx => {
                     let cellData = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
+                    
                     if (idx === 5) cellData = blindName(cellData);
 
                     if(idx === 5 || idx === 8 || idx === 24) { 
