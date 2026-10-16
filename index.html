@@ -249,80 +249,101 @@
 
     </div>
 
-    <!-- 파이어베이스 SDK 연동 -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+   <!-- 파이어베이스 SDK 연동 -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDMamWSRHFS8nxksJNeVmzRE8dN3c4BU2I",
-            authDomain: "goodt66-15409.firebaseapp.com",
-            projectId: "goodt66-15409",
-            storageBucket: "goodt66-15409.firebasestorage.app",
-            messagingSenderId: "158516996669",
-            appId: "1:158516996669:web:b62405f15d4caeb74b5854",
-            measurementId: "G-TGFWLGPW8R"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyDMamWSRHFS8nxksJNeVmzRE8dN3c4BU2I",
+        authDomain: "goodt66-15409.firebaseapp.com",
+        projectId: "goodt66-15409",
+        storageBucket: "goodt66-15409.firebasestorage.app",
+        messagingSenderId: "158516996669",
+        appId: "1:158516996669:web:b62405f15d4caeb74b5854",
+        measurementId: "G-TGFWLGPW8R"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
-        let currentUser = null;
+    // 허용된 교사 이메일 목록
+    const ALLOWED_EMAILS = [
+        "jjoeun32@gmail.com",
+        "jjoeun32@yeungnam.hs.kr",
+        "beta@yeungnam.hs.kr"
+    ];
 
-        // 로그인 상태 감지
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            const loginBtn = document.getElementById('loginBtn');
-            const userInfo = document.getElementById('userInfo');
+    let currentUser = null;
 
-            if (user) {
-                loginBtn.classList.add('hidden');
-                userInfo.classList.remove('hidden');
-                document.getElementById('userEmail').innerText = user.email;
+    // 로그인 상태 감지
+    onAuthStateChanged(auth, async (user) => {
+        const loginBtn = document.getElementById('loginBtn');
+        const userInfo = document.getElementById('userInfo');
 
-                // 인증 완료 UI 전환
-                document.getElementById('authRequiredMock')?.classList.add('hidden');
-                document.getElementById('mockContent')?.classList.remove('hidden');
-                document.getElementById('authRequiredGrad')?.classList.add('hidden');
-                document.getElementById('gradContent')?.classList.remove('hidden');
-
-                if (window.mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) {
-                    window.populateGradeDropdown();
-                }
-                if (window.rawGradData.length > 0) {
-                    window.applyGradFilter();
-                }
-            } else {
-                loginBtn.classList.remove('hidden');
-                userInfo.classList.add('hidden');
-
-                // 미인증 상태 UI 전환
-                document.getElementById('authRequiredMock')?.classList.remove('hidden');
-                document.getElementById('mockContent')?.classList.add('hidden');
-                document.getElementById('authRequiredGrad')?.classList.remove('hidden');
-                document.getElementById('gradContent')?.classList.add('hidden');
+        if (user) {
+            // 권한 체크: 허용된 이메일인지 확인
+            if (!ALLOWED_EMAILS.includes(user.email)) {
+                alert(`[접근 제한] ${user.email} 계정은 교사 인증 권한이 없습니다.`);
+                await signOut(auth);
+                return;
             }
-        });
 
-        // 구글 로그인
-        window.loginWithGoogle = async () => {
-            try {
-                await signInWithPopup(auth, provider);
+            currentUser = user;
+            loginBtn.classList.add('hidden');
+            userInfo.classList.remove('hidden');
+            document.getElementById('userEmail').innerText = user.email;
+
+            // 인증 완료 UI 전환
+            document.getElementById('authRequiredMock')?.classList.add('hidden');
+            document.getElementById('mockContent')?.classList.remove('hidden');
+            document.getElementById('authRequiredGrad')?.classList.add('hidden');
+            document.getElementById('gradContent')?.classList.remove('hidden');
+
+            if (window.mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) {
+                window.populateGradeDropdown();
+            }
+            if (window.rawGradData.length > 0) {
+                window.applyGradFilter();
+            }
+        } else {
+            currentUser = null;
+            loginBtn.classList.remove('hidden');
+            userInfo.classList.add('hidden');
+
+            // 미인증 상태 UI 전환
+            document.getElementById('authRequiredMock')?.classList.remove('hidden');
+            document.getElementById('mockContent')?.classList.add('hidden');
+            document.getElementById('authRequiredGrad')?.classList.remove('hidden');
+            document.getElementById('gradContent')?.classList.add('hidden');
+        }
+    });
+
+    // 구글 로그인
+    window.loginWithGoogle = async () => {
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+            
+            if (ALLOWED_EMAILS.includes(user.email)) {
                 alert("교사 인증 성공!");
-            } catch (error) {
+            }
+        } catch (error) {
+            if (error.code !== 'auth/popup-closed-by-user') {
                 alert("로그인 실패: " + error.message);
             }
-        };
+        }
+    };
 
-        // 로그아웃
-        window.logout = async () => {
-            await signOut(auth);
-            alert("로그아웃 되었습니다.");
-        };
+    // 로그아웃
+    window.logout = async () => {
+        await signOut(auth);
+        alert("로그아웃 되었습니다.");
+    };
 
-        window.getCurrentUser = () => currentUser;
-    </script>
+    window.getCurrentUser = () => currentUser;
+</script>
 
     <!-- 기존 스크립트 기능 유지 -->
     <script>
