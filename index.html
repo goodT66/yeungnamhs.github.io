@@ -4,47 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>영남고등학교 진로진학 상담 시스템</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js (그래프 라이브러리) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Google Fonts for Korean (Noto Sans KR) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background-color: #f3f4f6;
-        }
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f3f4f6; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center pt-10 pb-20 px-4 relative overflow-x-hidden">
 
-    <!-- Background Watermark -->
     <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 opacity-[0.03] pointer-events-none flex flex-col items-center justify-center">
         <div class="w-96 h-96 rounded-full border-[20px] border-gray-500 flex items-center justify-center">
             <span class="text-8xl font-black text-gray-500">YEUNGNAM</span>
         </div>
     </div>
 
-    <!-- Main Container -->
     <div class="max-w-[1400px] w-full z-10 relative">
-        
-        <!-- Header Section -->
         <header class="bg-[#094b83] rounded-2xl shadow-md p-6 mb-16 flex items-center gap-6">
             <div class="bg-white rounded-full w-16 h-16 flex items-center justify-center shadow-inner shrink-0 relative overflow-hidden p-1">
                 <div class="w-full h-full border-2 border-[#094b83] rounded-full flex flex-col items-center justify-center text-[8px] font-bold text-[#094b83] text-center leading-tight">
@@ -58,28 +39,21 @@
             </div>
         </header>
 
-        <!-- Cards Grid Section -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 items-stretch">
             
-            <!-- Card 1 -->
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-blue-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
-                <div class="w-24 h-24 mb-5 flex items-end justify-center">
-                    <span class="text-7xl drop-shadow-md">🧑‍🎓</span>
-                </div>
+                <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🎓</span></div>
                 <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">학생 <span class="text-red-600">개별</span> 조회</h2>
                 <p class="text-sm text-gray-600 leading-relaxed break-keep">학생 한 명을 지정하여 학생이 지원하고자 하는 수시 정시 지원 카드 확인(6월 모의평가 성적, 내신 등급 확인 가능)</p>
             </div>
 
-            <!-- Card 2 -->
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-emerald-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
-                <div class="w-24 h-24 mb-5 flex items-end justify-center">
-                    <span class="text-7xl drop-shadow-md">🧑‍🤝‍🧑</span>
-                </div>
+                <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🤝‍🧑</span></div>
                 <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">반별 <span class="text-red-600">전체</span> 조회</h2>
                 <p class="text-sm text-gray-600 leading-relaxed break-keep">학급 전체 학생의 수시 정시 지원 카드를 표로 한눈에 확인 가능</p>
             </div>
 
-            <!-- Card 3: 모의고사 클릭 이벤트 연결 -->
+            <!-- 모의고사 버튼 -->
             <div onclick="openMockModal()" class="bg-white rounded-2xl shadow-lg border-b-8 border-pink-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
                 <div class="w-24 h-24 mb-5 flex items-center justify-center bg-pink-400 rounded-3xl shadow-inner bg-gradient-to-br from-pink-400 to-pink-500">
                     <span class="text-6xl drop-shadow-md">📈</span>
@@ -88,16 +62,12 @@
                 <p class="text-sm text-gray-600 leading-relaxed break-keep">개별 학생 3년 모의고사 성적 변화 추이 그래프 조회</p>
             </div>
 
-            <!-- Card 4 -->
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-red-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
-                <div class="w-24 h-24 mb-5 flex items-end justify-center">
-                    <span class="text-7xl drop-shadow-md">🎓</span>
-                </div>
+                <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🎓</span></div>
                 <h2 class="text-xl font-bold mb-4 text-blue-600 break-keep">졸업생 수시 결과 조회</h2>
                 <p class="text-sm text-gray-600 leading-relaxed break-keep">2025~2026 졸업생들의 수시 합격 결과 및 통계를 새 창에서 조회</p>
             </div>
 
-            <!-- Card 5 -->
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-yellow-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
                 <div class="w-24 h-24 mb-5 flex items-center justify-center bg-amber-500 rounded-3xl shadow-inner bg-gradient-to-br from-amber-400 to-amber-600">
                     <span class="text-6xl drop-shadow-md">📝</span>
@@ -106,7 +76,6 @@
                 <p class="text-sm text-gray-600 leading-relaxed break-keep">2024~2026 3년 대학교 및 전형별 과거 입결 및 지원 가능 내신 컷 검색</p>
             </div>
 
-            <!-- Card 6 -->
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-purple-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
                 <div class="w-24 h-24 mb-5 flex items-center justify-center bg-purple-600 rounded-3xl shadow-inner bg-gradient-to-br from-purple-500 to-indigo-600">
                     <span class="text-6xl drop-shadow-md">🎯</span>
@@ -118,7 +87,7 @@
         </div>
     </div>
 
-    <!-- 모의고사 성적 조회 모달 (팝업창) -->
+    <!-- 모의고사 모달 -->
     <div id="mockModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-5xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
@@ -126,21 +95,17 @@
                 <button onclick="closeMockModal()" class="text-gray-400 hover:text-gray-600 text-3xl font-bold">&times;</button>
             </div>
 
-            <!-- 학생 선택 영역 (드롭다운 방식) -->
-            <div class="mb-6 flex flex-col sm:flex-row gap-4 items-center bg-gray-50 p-4 rounded-lg">
+            <div class="mb-6 flex flex-col sm:flex-row gap-4 items-center bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <label for="studentSelect" class="font-bold text-gray-700 whitespace-nowrap">학생 선택 :</label>
-                <select id="studentSelect" onchange="renderChart()" class="border border-gray-300 rounded-lg p-2 w-full sm:w-80 focus:ring-2 focus:ring-blue-500 outline-none">
+                <select id="studentSelect" onchange="renderChart()" class="border border-gray-300 rounded-lg p-2 w-full sm:w-80 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                     <option value="">데이터를 불러오는 중...</option>
                 </select>
-                <span class="text-sm text-gray-500 break-keep">* 목록에서 학생을 선택하세요.</span>
             </div>
 
-            <!-- 로딩 표시 -->
-            <div id="loadingText" class="text-center py-10 text-gray-500 font-medium">
-                구글 시트 데이터를 불러오는 중입니다...
+            <div id="loadingText" class="text-center py-10 font-medium text-blue-600 bg-blue-50 rounded-lg">
+                구글 시트 데이터를 불러오는 중입니다... 잠시만 기다려주세요.
             </div>
 
-            <!-- 차트 영역 -->
             <div class="relative w-full h-[450px]">
                 <canvas id="scoreChart"></canvas>
             </div>
@@ -148,16 +113,14 @@
     </div>
 
     <script>
-        // 시트 설정
+        // 시트 설정 - 첫 번째 시트(gid=0)를 직접 CSV로 내보내는 안정적인 링크 사용
         const SHEET_ID = '1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM';
-        const SHEET_NAME = '모의고사';
-        const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+        const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
 
-        let parsedData = []; // 전체 시트 데이터
-        let studentMap = new Map(); // 학생별 성적 누적 맵
+        let parsedData = [];
+        let studentMap = new Map();
         let chartInstance = null;
 
-        // 모달 열기
         function openMockModal() {
             document.getElementById('mockModal').classList.remove('hidden');
             if (parsedData.length === 0) {
@@ -165,14 +128,13 @@
             }
         }
 
-        // 모달 닫기
         function closeMockModal() {
             document.getElementById('mockModal').classList.add('hidden');
         }
 
-        // CSV 데이터 파싱 함수 (쌍따옴표 안의 쉼표 처리)
+        // 엑셀 엔터(\r) 및 쉼표 처리 개선된 파서
         function parseCSV(text) {
-            const lines = text.split('\n');
+            const lines = text.split(/\r?\n/);
             return lines.map(line => {
                 const regex = /(?:^|,)(?:"([^"]*)"|([^,]*))/g;
                 const row = [];
@@ -185,22 +147,32 @@
             });
         }
 
-        // 구글 시트 데이터 로드 및 학생별 데이터 그룹화
         async function fetchSheetData() {
+            const loadingBox = document.getElementById('loadingText');
+            loadingBox.innerText = "구글 시트 데이터를 불러오는 중입니다...";
+            loadingBox.classList.remove('hidden');
+            loadingBox.classList.replace('text-red-600', 'text-blue-600');
+            loadingBox.classList.replace('bg-red-50', 'bg-blue-50');
+
             try {
                 const response = await fetch(CSV_URL);
+                if (!response.ok) throw new Error("네트워크 응답이 올바르지 않습니다.");
+                
                 const csvText = await response.text();
+                
+                // HTML(로그인 페이지 등)이 반환되었는지 체크 (공유 권한 문제)
+                if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) {
+                    throw new Error("HTML 문서가 반환되었습니다. 구글 시트의 [공유] 권한을 '링크가 있는 모든 사용자'로 설정해주세요.");
+                }
+
                 const data = parseCSV(csvText);
 
                 if (data.length < 2) {
-                    document.getElementById('loadingText').innerText = "데이터가 부족합니다.";
-                    return;
+                    throw new Error("데이터가 없거나 양식이 맞지 않습니다.");
                 }
 
-                // 1행 헤더 추출
                 const headers = data[0].map(h => h.trim());
                 
-                // 2행부터 객체 배열로 변환
                 parsedData = data.slice(1).map(row => {
                     let obj = {};
                     headers.forEach((header, index) => {
@@ -211,70 +183,71 @@
                     return obj;
                 });
 
-                // 학번 기준으로 학생별 데이터 묶기
                 studentMap.clear();
                 parsedData.forEach(row => {
-                    const studentId = row['학번'];
-                    const studentName = row['이름'];
+                    // 열 이름이 다를 경우를 대비하여 공백 제거
+                    const studentId = row['학번'] || row[' 학번 '];
+                    const studentName = row['이름'] || row[' 이름 '];
                     
-                    if(studentId) {
+                    if(studentId && studentName) {
                         if(!studentMap.has(studentId)) {
                             studentMap.set(studentId, {
                                 name: studentName,
-                                records: [] // 해당 학생의 모의고사 기록들
+                                records: []
                             });
                         }
                         studentMap.get(studentId).records.push(row);
                     }
                 });
 
+                if(studentMap.size === 0) {
+                    throw new Error("'학번', '이름' 열을 찾지 못했습니다. 1행의 제목을 확인해주세요.");
+                }
+
                 populateStudentDropdown();
-                document.getElementById('loadingText').classList.add('hidden');
+                loadingBox.classList.add('hidden');
             } catch (error) {
-                console.error("데이터 로드 실패:", error);
-                document.getElementById('loadingText').innerText = "데이터를 불러오는 데 실패했습니다. 시트 권한(링크가 있는 모든 사용자 읽기)을 확인해주세요.";
+                console.error("데이터 로드 에러:", error);
+                loadingBox.classList.replace('text-blue-600', 'text-red-600');
+                loadingBox.classList.replace('bg-blue-50', 'bg-red-50');
+                loadingBox.innerHTML = `<strong>데이터 로드 실패:</strong><br>${error.message}`;
             }
         }
 
-        // 드롭다운에 학생 목록 채우기 (학번 + 이름 결합)
         function populateStudentDropdown() {
             const select = document.getElementById('studentSelect');
-            select.innerHTML = '<option value="">학생을 선택하세요</option>';
+            select.innerHTML = '<option value="">▼ 학번과 이름을 선택하세요</option>';
 
-            // 학번 오름차순으로 정렬
             const sortedIds = Array.from(studentMap.keys()).sort();
 
             sortedIds.forEach(id => {
                 const student = studentMap.get(id);
                 const option = document.createElement('option');
-                option.value = id; // 선택 시 판별할 고유값은 학번으로 유지
-                option.textContent = `${id} ${student.name}`; // 화면에 표시될 텍스트: "학번 이름"
+                option.value = id;
+                option.textContent = `${id} ${student.name}`;
                 select.appendChild(option);
             });
         }
 
-        // Chart.js 그래프 렌더링
         function renderChart() {
             const select = document.getElementById('studentSelect');
             const studentId = select.value;
 
             if (!studentId || !studentMap.has(studentId)) {
-                // 매칭되는 학생이 없거나 선택 해제 시 차트 비우기
                 if (chartInstance) chartInstance.destroy();
                 return;
             }
 
-            // 선택된 학생의 시험 기록 가져오기
             const studentInfo = studentMap.get(studentId);
             const records = studentInfo.records;
 
-            // X축 라벨 (학력평가명)
-            const labels = records.map(r => r['학력평가명'] || '알 수 없음');
+            // 학력평가명 
+            const labels = records.map(r => r['학력평가명'] || r[' 학력평가명 '] || '알 수 없음');
             
-            // Y축 데이터 (백분위)
-            const korPercentiles = records.map(r => parseFloat(r['국어 백분위']) || null);
-            const mathPercentiles = records.map(r => parseFloat(r['수학 백분위']) || null);
-            const avgPercentiles = records.map(r => parseFloat(r['국수탐 백분위 평균']) || null);
+            // 데이터 추출 ('국어 백분위' 등의 컬럼명이 엑셀에 정확히 일치해야 함)
+            const korPercentiles = records.map(r => parseFloat(r['국어 백분위'] || r[' 국어 백분위 ']) || null);
+            const mathPercentiles = records.map(r => parseFloat(r['수학 백분위'] || r[' 수학 백분위 ']) || null);
+            const avgPercentiles = records.map(r => parseFloat(r['국수탐 백분위 평균'] || r[' 국수탐 백분위 평균 ']) || null);
 
             const ctx = document.getElementById('scoreChart').getContext('2d');
 
@@ -290,7 +263,7 @@
                         {
                             label: '국수탐 평균 백분위',
                             data: avgPercentiles,
-                            borderColor: '#10b981', // 짙은 녹색
+                            borderColor: '#10b981',
                             backgroundColor: '#10b981',
                             borderWidth: 4,
                             pointRadius: 6,
@@ -300,7 +273,7 @@
                         {
                             label: '국어 백분위',
                             data: korPercentiles,
-                            borderColor: '#ef4444', // 빨간색
+                            borderColor: '#ef4444',
                             backgroundColor: '#ef4444',
                             borderWidth: 2,
                             borderDash: [5, 5],
@@ -310,7 +283,7 @@
                         {
                             label: '수학 백분위',
                             data: mathPercentiles,
-                            borderColor: '#3b82f6', // 파란색
+                            borderColor: '#3b82f6',
                             backgroundColor: '#3b82f6',
                             borderWidth: 2,
                             borderDash: [5, 5],
@@ -331,36 +304,16 @@
                             display: true,
                             text: `${studentId} ${studentInfo.name} 학생 모의고사 백분위 추이`,
                             font: { size: 18 }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed.y !== null) {
-                                        label += context.parsed.y + ' %';
-                                    }
-                                    return label;
-                                }
-                            }
                         }
                     },
                     scales: {
                         y: {
                             min: 0,
-                            max: 100, // 백분위 0~100 고정
-                            title: {
-                                display: true,
-                                text: '백분위 (%)'
-                            }
+                            max: 100,
+                            title: { display: true, text: '백분위 (%)' }
                         },
                         x: {
-                            title: {
-                                display: true,
-                                text: '시행 월/평가명'
-                            }
+                            title: { display: true, text: '시행 월/평가명' }
                         }
                     }
                 }
