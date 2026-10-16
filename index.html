@@ -78,7 +78,7 @@
                 <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep"><span class="text-red-600">개별</span> 모의고사 성적</h2>
             </div>
 
-            <!-- 졸업생 수시 결과 버튼 연동 -->
+            <!-- 졸업생 수시 결과 버튼 -->
             <div onclick="openGradModal()" class="bg-white rounded-2xl shadow-lg border-b-8 border-red-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
                 <div id="gradLoadingSpinner" class="absolute top-4 right-4 flex h-3 w-3 hidden">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -86,7 +86,6 @@
                 </div>
                 <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🎓</span></div>
                 <h2 class="text-xl font-bold mb-4 text-blue-600 break-keep">졸업생 수시 결과</h2>
-                <p class="text-sm text-gray-600 leading-relaxed break-keep">역대 수시 전형 합불 내역</p>
             </div>
             
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-yellow-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
@@ -106,7 +105,6 @@
 
     <!-- 모의고사 모달 -->
     <div id="mockModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-        <!-- 기존 모의고사 모달 내용 생략 (동일하게 유지하되 길이상 축약, 실제 사용시 기존 내용 유지) -->
         <div class="bg-white rounded-2xl w-full p-6 shadow-2xl overflow-y-auto" style="max-width: 72rem; max-height: 90vh;">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
                 <h3 class="text-2xl font-bold text-gray-800">📈 개별 모의고사 성적표</h3>
@@ -152,21 +150,30 @@
                 <button onclick="closeGradModal()" class="text-gray-400 hover:text-gray-600 text-3xl font-bold">&times;</button>
             </div>
 
-            <div id="gradErrorMessage" class="mb-4 hidden p-4 bg-red-100 text-red-700 rounded-lg font-bold text-sm"></div>
-
             <!-- 필터 영역 -->
-            <div class="mb-6 flex flex-wrap gap-4 items-center bg-green-50 p-4 rounded-lg border border-green-200">
-                <input type="text" id="filterYear" placeholder="연도 (예: 2023)" class="border border-gray-300 rounded p-2 w-32" onkeyup="filterGradData()">
-                <input type="text" id="filterUniv" placeholder="대학명 검색" class="border border-gray-300 rounded p-2 w-40" onkeyup="filterGradData()">
+            <div class="mb-4 flex flex-wrap gap-4 items-center bg-green-50 p-4 rounded-lg border border-green-200">
+                <!-- 연도 드롭다운 -->
+                <select id="filterYear" class="border border-gray-300 rounded p-2 bg-white" onchange="filterGradData()">
+                    <option value="">연도 전체</option>
+                </select>
+                
+                <!-- 대학명 드롭다운 -->
+                <select id="filterUniv" class="border border-gray-300 rounded p-2 bg-white max-w-xs" onchange="filterGradData()">
+                    <option value="">대학명 전체</option>
+                </select>
+
                 <input type="text" id="filterMajor" placeholder="모집단위(학과) 검색" class="border border-gray-300 rounded p-2 w-48" onkeyup="filterGradData()">
-                <select id="filterResult" class="border border-gray-300 rounded p-2" onchange="filterGradData()">
+                
+                <select id="filterResult" class="border border-gray-300 rounded p-2 bg-white" onchange="filterGradData()">
                     <option value="">최종결과 전체</option>
                     <option value="합격">합격</option>
                     <option value="불합격">불합격</option>
                     <option value="충원합격">충원합격</option>
                 </select>
-                <div class="ml-auto text-sm text-gray-600 font-bold">
-                    검색 결과: <span id="gradCount" class="text-blue-600">0</span>건
+                
+                <div class="ml-auto text-sm text-gray-700 font-bold bg-white px-3 py-1 rounded border border-gray-200">
+                    검색 결과: <span id="gradCount" class="text-blue-600 text-lg">0</span>건
+                    <span id="gradWarning" class="text-red-500 font-normal text-xs ml-2 hidden">(최대 100건만 표시됩니다)</span>
                 </div>
             </div>
 
@@ -192,26 +199,22 @@
 
     <script>
         const SHEET_ID = '1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM';
-        // 모의고사 시트 (기본)
         const MOCK_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
-        // 졸업생 시트 (시트 이름으로 쿼리)
         const GRAD_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=졸업생`;
 
-        // ---------------- 모의고사 스크립트 (기존 내용 유지) ----------------
+        // ---------------- 모의고사 스크립트 ----------------
         let mockDataLoaded = false;
         let studentMap = new Map();
         let chartInstance = null;
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchMockData();
-            fetchGradData(); // 페이지 로드시 졸업생 데이터도 미리 백그라운드 호출
+            fetchGradData(); // 백그라운드 호출
         });
 
         function openMockModal() {
             document.getElementById('mockModal').classList.remove('hidden');
-            if(mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) {
-                populateGradeDropdown();
-            }
+            if(mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) populateGradeDropdown();
         }
         function closeMockModal() { document.getElementById('mockModal').classList.add('hidden'); }
 
@@ -326,9 +329,7 @@
 
         function openGradModal() {
             document.getElementById('gradModal').classList.remove('hidden');
-            if(rawGradData.length > 0) {
-                filterGradData();
-            }
+            if(rawGradData.length > 0) filterGradData();
         }
         function closeGradModal() { document.getElementById('gradModal').classList.add('hidden'); }
 
@@ -343,57 +344,110 @@
                     skipEmptyLines: true,
                     complete: function(results) {
                         const data = results.data;
-                        // 헤더(1행) 제외하고 저장
                         if(data.length > 1) {
                             rawGradData = data.slice(1);
+                            populateGradDropdowns(); // 드롭다운 데이터 채우기
                         }
                         document.getElementById('gradLoadingSpinner').classList.add('hidden');
                     }
                 });
             } catch (error) {
-                console.error(error);
-                document.getElementById('gradTableBody').innerHTML = '<tr><td colspan="27" class="text-red-500">졸업생 데이터를 불러오는데 실패했습니다. (시트명 확인)</td></tr>';
+                document.getElementById('gradTableBody').innerHTML = '<tr><td colspan="27" class="text-red-500">데이터 로드 실패</td></tr>';
             }
+        }
+
+        // 연도 및 대학명 드롭다운 셋팅
+        function populateGradDropdowns() {
+            const yearSet = new Set();
+            const univSet = new Set();
+
+            rawGradData.forEach(row => {
+                if(row[0]) yearSet.add(String(row[0]).trim()); // A열 연도
+                if(row[8]) univSet.add(String(row[8]).trim()); // I열 대학명
+            });
+
+            const yearSelect = document.getElementById('filterYear');
+            // 내림차순 정렬 (최신 연도가 위로)
+            Array.from(yearSet).sort((a, b) => b - a).forEach(y => {
+                if(y) yearSelect.appendChild(new Option(y + '년', y));
+            });
+
+            const univSelect = document.getElementById('filterUniv');
+            // 오름차순 가나다 정렬
+            Array.from(univSet).sort().forEach(u => {
+                if(u) univSelect.appendChild(new Option(u, u));
+            });
+        }
+
+        // 이름 블라인드 처리 함수 (홍길동 -> 홍OO)
+        function blindName(name) {
+            if (!name) return '-';
+            name = String(name).trim();
+            if (name.length <= 1) return name;
+            return name.charAt(0) + 'O'.repeat(name.length - 1);
         }
 
         function filterGradData() {
             const tbody = document.getElementById('gradTableBody');
-            const fYear = document.getElementById('filterYear').value.trim();
-            const fUniv = document.getElementById('filterUniv').value.trim();
+            const fYear = document.getElementById('filterYear').value;
+            const fUniv = document.getElementById('filterUniv').value;
             const fMajor = document.getElementById('filterMajor').value.trim();
             const fResult = document.getElementById('filterResult').value;
 
-            if (rawGradData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="27">데이터가 없습니다.</td></tr>';
+            if (rawGradData.length === 0) return;
+
+            // 1. 조건에 맞는 데이터 필터링
+            const matchedData = rawGradData.filter(row => {
+                const y = String(row[0] || '').trim(); // A
+                const u = String(row[8] || '').trim(); // I
+                const m = String(row[15] || '').trim(); // P
+                const r = String(row[24] || '').trim(); // Y
+
+                if (fYear && y !== fYear) return false;
+                if (fUniv && u !== fUniv) return false;
+                if (fMajor && !m.includes(fMajor)) return false;
+                if (fResult && !r.includes(fResult)) return false;
+                return true;
+            });
+
+            const totalCount = matchedData.length;
+            document.getElementById('gradCount').textContent = totalCount;
+
+            // 2. 렌더링 최적화 (최대 100개까지만 DOM에 그리기)
+            const MAX_RENDER = 100;
+            const dataToRender = matchedData.slice(0, MAX_RENDER);
+            
+            const warningEl = document.getElementById('gradWarning');
+            if (totalCount > MAX_RENDER) {
+                warningEl.classList.remove('hidden');
+            } else {
+                warningEl.classList.add('hidden');
+            }
+
+            tbody.innerHTML = ''; // 초기화
+
+            if (totalCount === 0) {
+                tbody.innerHTML = '<tr><td colspan="27" class="text-gray-500 py-10">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = '';
-            let count = 0;
-
-            rawGradData.forEach(row => {
-                // A~AA까지 총 27개 인덱스 (0~26)
-                const y = String(row[0] || ''); // 연도 A
-                const u = String(row[8] || ''); // 대학명 I
-                const m = String(row[15] || ''); // 모집단위 P
-                const r = String(row[24] || ''); // 최종단계 Y
-
-                if (fYear && !y.includes(fYear)) return;
-                if (fUniv && !u.includes(fUniv)) return;
-                if (fMajor && !m.includes(fMajor)) return;
-                if (fResult && !r.includes(fResult)) return;
-
-                count++;
+            // 3. 표 생성
+            dataToRender.forEach(row => {
                 const tr = document.createElement('tr');
+                const r = String(row[24] || '').trim(); // 최종결과
                 
-                // 최종합격 여부에 따라 행 색상 살짝 변경
                 if(r.includes('합격') && !r.includes('불')) tr.classList.add('bg-blue-50');
                 if(r.includes('불합격')) tr.classList.add('bg-red-50');
 
                 let rowHtml = '';
                 for(let i = 0; i < 27; i++) {
                     let cellData = row[i] !== undefined && row[i] !== null ? row[i] : '-';
-                    // 중요 데이터 볼드 처리
+                    
+                    // 이름 블라인드 적용 (인덱스 5 = F열)
+                    if (i === 5) {
+                        cellData = blindName(cellData);
+                    }
+
                     if(i === 5 || i === 8 || i === 24) { 
                         rowHtml += `<td class="font-bold text-gray-800">${cellData}</td>`;
                     } else {
@@ -403,12 +457,6 @@
                 tr.innerHTML = rowHtml;
                 tbody.appendChild(tr);
             });
-
-            document.getElementById('gradCount').textContent = count;
-
-            if(count === 0) {
-                tbody.innerHTML = '<tr><td colspan="27" class="text-gray-500 py-10">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
-            }
         }
     </script>
 </body>
