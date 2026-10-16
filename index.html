@@ -147,9 +147,9 @@
     </div>
 
     <script>
-        // 시트 ID 및 '모의고사' 시트 타겟 설정
-        const SHEET_ID = '1pCMMy9cHpdxPXOi5BSWv4Hk9-DHlD97sGpt6xXwqCoM';
-        const SHEET_NAME = '모의고사';
+        // 시트 ID 변경됨 (요청하신 새 링크의 ID 적용)
+        const SHEET_ID = '1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM';
+        const SHEET_NAME = '모의고사'; // ★주의: 새 구글 시트의 탭 이름과 정확히 일치해야 합니다. (다를 경우 수정 필요)
         const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
         let parsedData = [];
@@ -206,7 +206,7 @@
                 document.getElementById('loadingText').classList.add('hidden');
             } catch (error) {
                 console.error("데이터 로드 실패:", error);
-                document.getElementById('loadingText').innerText = "데이터를 불러오는 데 실패했습니다. 시트 공유 권한(링크가 있는 모든 사용자 읽기)을 확인해주세요.";
+                document.getElementById('loadingText').innerText = "데이터를 불러오는 데 실패했습니다. 시트 '웹에 게시' 권한 설정 등을 확인해주세요.";
             }
         }
 
