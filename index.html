@@ -29,7 +29,7 @@
         .score-table tr:hover td { background-color: #f1f5f9; }
         
         /* 졸업생 표 전용 */
-        .grad-table { border-collapse: collapse; min-width: 2500px; }
+        .grad-table { border-collapse: collapse; min-width: 1600px; } /* 항목이 줄어들어 최소 너비 조정 */
         .grad-table th { background-color: #f0fdf4; font-weight: bold; border: 1px solid #bbf7d0; padding: 10px 8px; text-align: center; white-space: nowrap; }
         .grad-table td { border: 1px solid #e2e8f0; padding: 10px 8px; text-align: center; white-space: nowrap; }
         .grad-table tr:hover td { background-color: #f8fafc; }
@@ -181,14 +181,14 @@
             <div class="w-full overflow-x-auto pb-4" style="max-height: 60vh;">
                 <table class="grad-table text-sm">
                     <thead class="sticky top-0 z-10 shadow-sm">
-                        <!-- 열 순서 재배치 적용 -->
+                        <!-- 불필요한 열 제거 및 순서 재배치 적용 -->
                         <tr>
-                            <th>연도</th><th>학번</th><th>학년</th><th>반</th><th>번호</th><th>이름</th>
-                            <th>학교유형</th><th>지역</th><th>대학명</th><th>모집시기</th><th>전형유형</th>
-                            <th>전형명</th><th>세부유형</th><th>대학명 및 세부유형</th><th>계열</th><th>모집단위</th>
+                            <th>연도</th><th>학번</th><th>이름</th>
+                            <th>대학명</th>
+                            <th>전형명</th><th>세부유형</th><th>계열</th><th>모집단위</th>
                             <th>모집인원</th><th>선발유형</th>
                             
-                            <!-- 여기서부터 이동된 항목 -->
+                            <!-- 점수 및 합불 관련 항목 -->
                             <th>일반점수</th><th>일반등급</th><th>내점수(환산)</th><th>내등급(환산)</th>
                             <th>1단계</th><th>최종단계</th><th>불합격사유</th><th>최초후보순위</th>
                             
@@ -197,7 +197,7 @@
                         </tr>
                     </thead>
                     <tbody id="gradTableBody">
-                        <tr><td colspan="27" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
+                        <tr><td colspan="19" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -359,7 +359,7 @@
                     }
                 });
             } catch (error) {
-                document.getElementById('gradTableBody').innerHTML = '<tr><td colspan="27" class="text-red-500">데이터 로드 실패</td></tr>';
+                document.getElementById('gradTableBody').innerHTML = '<tr><td colspan="19" class="text-red-500">데이터 로드 실패</td></tr>';
             }
         }
 
@@ -432,16 +432,19 @@
             tbody.innerHTML = ''; // 초기화
 
             if (totalCount === 0) {
-                tbody.innerHTML = '<tr><td colspan="27" class="text-gray-500 py-10">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="19" class="text-gray-500 py-10">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
                 return;
             }
 
-            // 3. 표 생성 (원하는 순서대로 인덱스 재배열)
-            // 0~17: 연도~선발유형
-            // 19~26: 일반점수~최초후보순위
-            // 18: 최저학력
+            // 3. 표 생성 (필요한 열만 19개 지정)
+            // 0:연도, 1:학번, 5:이름, 8:대학명
+            // 11:전형명, 12:세부유형, 14:계열, 15:모집단위, 16:모집인원, 17:선발유형
+            // 19:일반점수, 20:일반등급, 21:내점수, 22:내등급
+            // 23:1단계, 24:최종단계, 25:불합격사유, 26:후보순위
+            // 18:최저학력
             const colOrder = [
-                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 
+                0, 1, 5, 8, 
+                11, 12, 14, 15, 16, 17, 
                 19, 20, 21, 22, 23, 24, 25, 26, 
                 18
             ];
