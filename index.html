@@ -7,6 +7,7 @@
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <!-- Chart.js 최신 버전 로드 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,6 +23,11 @@
         .bg-school { background-color: #094b83; }
         .text-school { color: #094b83; }
         .border-school { border-color: #094b83; }
+        
+        /* 테이블 스타일 추가 */
+        .score-table th { background-color: #f8fafc; font-weight: bold; border-bottom: 2px solid #cbd5e1; }
+        .score-table td { border-bottom: 1px solid #e2e8f0; padding: 12px 8px; text-align: center; }
+        .score-table tr:hover { background-color: #f1f5f9; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center pt-10 pb-20 px-4 relative overflow-x-hidden">
@@ -91,22 +97,42 @@
     <div id="mockModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full p-6 shadow-2xl overflow-y-auto" style="max-width: 64rem; max-height: 90vh;">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
-                <h3 class="text-2xl font-bold text-gray-800">📈 개별 모의고사 백분위 추이</h3>
+                <h3 class="text-2xl font-bold text-gray-800">📈 개별 모의고사 성적표</h3>
                 <button onclick="closeMockModal()" class="text-gray-400 hover:text-gray-600 text-3xl font-bold">&times;</button>
             </div>
 
             <div id="errorMessage" class="mb-4 hidden p-4 bg-red-100 text-red-700 rounded-lg font-bold text-sm"></div>
 
             <div class="mb-6 flex flex-col sm:flex-row gap-4 items-center bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <label for="studentSelect" class="font-bold text-gray-700 whitespace-nowrap">학생 선택 :</label>
-                <select id="studentSelect" onchange="renderChart()" class="border border-gray-300 rounded-lg p-2 w-full sm:w-80 outline-none bg-white">
+                <label for="studentSelect" class="font-bold text-gray-700 whitespace-nowrap text-lg">학생 선택 :</label>
+                <select id="studentSelect" onchange="renderData()" class="border border-gray-300 rounded-lg p-2 w-full sm:w-80 outline-none bg-white text-lg">
                     <option value="">데이터 로딩 중입니다...</option>
                 </select>
             </div>
 
-            <div class="relative w-full" style="height: 450px;">
+            <!-- 그래프 영역 -->
+            <div class="relative w-full mb-10" style="height: 450px;">
                 <canvas id="scoreChart"></canvas>
             </div>
+            
+            <!-- 표 영역 (자바스크립트로 데이터 채움) -->
+            <div id="tableContainer" class="hidden w-full overflow-x-auto">
+                <h4 class="text-xl font-bold text-gray-800 mb-4 pl-2 border-l-4 border-blue-500">📋 월별 모의고사 상세 내역</h4>
+                <table class="score-table w-full text-sm sm:text-base">
+                    <thead>
+                        <tr>
+                            <th>시행 월(평가명)</th>
+                            <th class="text-red-600">국어 백분위</th>
+                            <th class="text-blue-600">수학 백분위</th>
+                            <th class="text-green-600">국수탐 평균 백분위</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scoreTableBody">
+                        <!-- 데이터가 여기에 들어갑니다 -->
+                    </tbody>
+                </table>
+            </div>
+
         </div>
     </div>
 
@@ -156,7 +182,6 @@
                     complete: function(results) {
                         const data = results.data;
                         
-                        // 구글 시트 내보내기 시 첫 줄에 시트 이름이나 의미 없는 텍스트가 있을 수 있으므로 찾기
                         let headerIndex = -1;
                         for (let i = 0; i < Math.min(5, data.length); i++) {
                             const rowText = data[i].join('').replace(/\s+/g, '');
@@ -246,7 +271,8 @@
             select.appendChild(fragment);
         }
 
-        function renderChart() {
+        // 그래프와 표를 동시에 렌더링하는 통합 함수
+        function renderData() {
             if (typeof Chart === 'undefined') {
                 alert("그래프 로딩 중입니다. 잠시 후 시도해주세요.");
                 return;
@@ -254,23 +280,30 @@
 
             const select = document.getElementById('studentSelect');
             const studentId = select.value;
+            const tableContainer = document.getElementById('tableContainer');
+            const tbody = document.getElementById('scoreTableBody');
 
             if (!studentId || !studentMap.has(studentId)) {
                 if (chartInstance) chartInstance.destroy();
+                tableContainer.classList.add('hidden');
                 return;
             }
 
             const studentInfo = studentMap.get(studentId);
             const records = studentInfo.records;
 
+            // --- 1. 그래프 그리기 (오름차순 원본 유지) ---
             const labels = records.map(r => r.title || '알 수 없음');
             const korPercentiles = records.map(r => r.kor);
             const mathPercentiles = records.map(r => r.math);
             const avgPercentiles = records.map(r => r.avg);
 
             const ctx = document.getElementById('scoreChart').getContext('2d');
-
             if (chartInstance) chartInstance.destroy();
+
+            // 그래프 폰트 사이즈 조정
+            Chart.defaults.font.size = 14; 
+            Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
 
             chartInstance = new Chart(ctx, {
                 type: 'line',
@@ -288,12 +321,40 @@
                     animation: false,
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
-                        title: { display: true, text: `${studentId} ${studentInfo.name} 학생 성적 추이`, font: { size: 16 } }
+                        title: { display: true, text: `${studentId} ${studentInfo.name} 학생 성적 추이`, font: { size: 20, weight: 'bold' } },
+                        legend: { labels: { font: { size: 14 } } },
+                        tooltip: { titleFont: { size: 16 }, bodyFont: { size: 14 } } // 툴팁 글씨 키우기
                     },
                     scales: {
-                        y: { min: 0, max: 100, title: { display: true, text: '백분위 (%)' } }
+                        y: { 
+                            min: 0, 
+                            max: 100, 
+                            title: { display: true, text: '백분위 (%)', font: { size: 16, weight: 'bold' } },
+                            ticks: { font: { size: 14, weight: 'bold' } } // Y축 숫자 크기
+                        },
+                        x: {
+                            ticks: { font: { size: 14, weight: 'bold' } } // X축 글씨 크기
+                        }
                     }
                 }
+            });
+
+            // --- 2. 표 그리기 (최신순 내림차순 정렬) ---
+            tableContainer.classList.remove('hidden');
+            tbody.innerHTML = '';
+            
+            // 배열을 복사한 뒤 내림차순(최근 월이 위로 오게) 정렬 (문자열 비교이므로 reverse 사용)
+            const sortedRecords = [...records].reverse();
+
+            sortedRecords.forEach(record => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="font-medium text-gray-700">${record.title || '-'}</td>
+                    <td>${record.kor !== null ? record.kor : '-'}</td>
+                    <td>${record.math !== null ? record.math : '-'}</td>
+                    <td class="font-bold">${record.avg !== null ? record.avg : '-'}</td>
+                `;
+                tbody.appendChild(tr);
             });
         }
     </script>
