@@ -655,13 +655,37 @@
 
                 let rowHtml = '';
                 
-                colOrder.forEach(idx => {
+               colOrder.forEach(idx => {
                     let cellData = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
                     
                     if (idx === 5) cellData = blindName(cellData);
 
-                    if(idx === 5 || idx === 8 || idx === 24) { 
-                        rowHtml += `<td class="font-bold text-gray-800">${cellData}</td>`;
+                    let tdClass = "";
+
+                    // 1) 최종단계 (24번 열) - 결과에 따라 색상과 폰트 크기/굵기 변경
+                    if (idx === 24) {
+                        if (cellData.includes('불합격')) {
+                            // 진한 빨간색, 아주 굵게, 폰트 키움
+                            tdClass = "font-black text-red-700 text-base"; 
+                        } else if (cellData.includes('합격')) {
+                            // 진한 파란색, 아주 굵게, 폰트 키움
+                            tdClass = "font-black text-blue-700 text-base"; 
+                        } else {
+                            tdClass = "font-bold text-gray-800 text-base";
+                        }
+                    }
+                    // 2) 등급 관련 (20: 일반등급, 22: 내등급) - 볼드체 및 폰트 키움
+                    else if (idx === 20 || idx === 22) {
+                        tdClass = "font-bold text-gray-900 text-base bg-yellow-50/50"; // (선택) 등급 칸 배경색 살짝 추가
+                    }
+                    // 3) 이름(5), 대학명(8) - 기존 볼드체 유지
+                    else if (idx === 5 || idx === 8) {
+                        tdClass = "font-bold text-gray-800";
+                    }
+
+                    // 클래스 적용하여 HTML 생성
+                    if (tdClass) {
+                        rowHtml += `<td class="${tdClass}">${cellData}</td>`;
                     } else {
                         rowHtml += `<td>${cellData}</td>`;
                     }
