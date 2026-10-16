@@ -5,16 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>영남고등학교 진로진학 상담 시스템</title>
     
-    <!-- 가벼운 사전 빌드된 CSS 사용 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    
-    <!-- 빠르고 안전한 글로벌 CSV 파싱 라이브러리 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    
-    <!-- 그래프 라이브러리 지연 로딩 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -24,7 +18,6 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .break-keep { word-break: keep-all; }
         .bg-school { background-color: #094b83; }
         .text-school { color: #094b83; }
@@ -57,15 +50,12 @@
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-blue-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
                 <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🎓</span></div>
                 <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">학생 <span class="text-red-600">개별</span> 조회</h2>
-                <p class="text-sm text-gray-600 leading-relaxed break-keep">학생 한 명을 지정하여 학생이 지원하고자 하는 수시 정시 지원 카드 확인</p>
             </div>
-
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-green-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
                 <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🤝‍🧑</span></div>
                 <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">반별 <span class="text-red-600">전체</span> 조회</h2>
-                <p class="text-sm text-gray-600 leading-relaxed break-keep">학급 전체 학생의 수시 정시 지원 카드를 표로 한눈에 확인 가능</p>
             </div>
-
+            
             <div onclick="openMockModal()" class="bg-white rounded-2xl shadow-lg border-b-8 border-pink-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
                 <div id="cardLoadingSpinner" class="absolute top-4 right-4 flex h-3 w-3">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
@@ -75,29 +65,24 @@
                     <span class="text-6xl drop-shadow-md">📈</span>
                 </div>
                 <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep"><span class="text-red-600">개별</span> 모의고사 성적</h2>
-                <p class="text-sm text-gray-600 leading-relaxed break-keep">개별 학생 3년 모의고사 성적 변화 추이 그래프 조회</p>
+                <p class="text-sm text-gray-600 leading-relaxed break-keep">개별 학생 3년 모의고사 성적 변화 추이</p>
             </div>
 
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-red-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
                 <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🎓</span></div>
                 <h2 class="text-xl font-bold mb-4 text-blue-600 break-keep">졸업생 수시 결과</h2>
-                <p class="text-sm text-gray-600 leading-relaxed break-keep">2025~2026 졸업생들의 수시 합격 결과 및 통계를 새 창에서 조회</p>
             </div>
-
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-yellow-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
                 <div class="w-24 h-24 mb-5 flex items-center justify-center bg-yellow-500 rounded-3xl shadow-inner bg-gradient-to-br from-yellow-400 to-yellow-600">
                     <span class="text-6xl drop-shadow-md">📝</span>
                 </div>
                 <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep"><span class="text-red-600">수시</span> 입결 조회</h2>
-                <p class="text-sm text-gray-600 leading-relaxed break-keep">2024~2026 과거 입결 및 지원 가능 내신 컷 검색</p>
             </div>
-
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-purple-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
                 <div class="w-24 h-24 mb-5 flex items-center justify-center bg-purple-600 rounded-3xl shadow-inner bg-gradient-to-br from-purple-500 to-indigo-600">
                     <span class="text-6xl drop-shadow-md">🎯</span>
                 </div>
                 <h2 class="text-xl font-bold mb-4 text-blue-600 break-keep"><span class="text-blue-600">정시</span> 입결 조회</h2>
-                <p class="text-sm text-gray-600 leading-relaxed break-keep">수능 점수 기반 지원 가능 대학 및 정시 지원 희망 확인</p>
             </div>
         </div>
     </div>
@@ -109,6 +94,8 @@
                 <h3 class="text-2xl font-bold text-gray-800">📈 개별 모의고사 백분위 추이</h3>
                 <button onclick="closeMockModal()" class="text-gray-400 hover:text-gray-600 text-3xl font-bold">&times;</button>
             </div>
+
+            <div id="errorMessage" class="mb-4 hidden p-4 bg-red-100 text-red-700 rounded-lg font-bold text-sm"></div>
 
             <div class="mb-6 flex flex-col sm:flex-row gap-4 items-center bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <label for="studentSelect" class="font-bold text-gray-700 whitespace-nowrap">학생 선택 :</label>
@@ -144,64 +131,96 @@
             document.getElementById('mockModal').classList.add('hidden');
         }
 
-        function fetchSheetData() {
-            Papa.parse(CSV_URL, {
-                download: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    const data = results.data;
-                    if (!data || data.length < 2) return;
+        function showError(msg) {
+            const errDiv = document.getElementById('errorMessage');
+            errDiv.innerHTML = msg;
+            errDiv.classList.remove('hidden');
+            document.getElementById('studentSelect').innerHTML = '<option value="">오류 발생 (위 메시지 확인)</option>';
+            document.getElementById('cardLoadingSpinner').style.display = 'none';
+        }
 
-                    // 헤더의 공백을 모두 제거하여 정확하게 매칭 (안전성 100%)
-                    const headers = data[0].map(h => String(h).replace(/\s+/g, ''));
-                    studentMap.clear();
+        async function fetchSheetData() {
+            try {
+                const response = await fetch(CSV_URL);
+                if (!response.ok) throw new Error("네트워크 오류");
+                
+                const text = await response.text();
+                
+                if (text.trim().toLowerCase().startsWith("<!doctype html>") || text.includes("<html")) {
+                    showError("🚨 구글 시트 공유 권한이 <b>'제한됨'</b>으로 되어있습니다.<br>시트 우측 상단 <b>[공유]</b> 버튼을 눌러 <b>'링크가 있는 모든 사용자'</b>로 변경해주세요.");
+                    return;
+                }
 
-                    const idIndex = headers.findIndex(h => h.includes('학번'));
-                    const nameIndex = headers.findIndex(h => h.includes('이름'));
-                    const titleIndex = headers.findIndex(h => h.includes('학력평가명'));
-                    const korIndex = headers.findIndex(h => h.includes('국어백분위'));
-                    const mathIndex = headers.findIndex(h => h.includes('수학백분위'));
-                    const avgIndex = headers.findIndex(h => h.includes('국수탐백분위평균'));
-
-                    if(idIndex === -1 || nameIndex === -1) {
-                        document.getElementById('studentSelect').innerHTML = '<option value="">데이터 항목(학번/이름)을 찾을 수 없습니다.</option>';
-                        document.getElementById('cardLoadingSpinner').style.display = 'none';
-                        return;
-                    }
-
-                    for (let i = 1; i < data.length; i++) {
-                        const row = data[i];
-                        if (!row || row.length <= idIndex) continue;
+                Papa.parse(text, {
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        const data = results.data;
                         
-                        const studentId = row[idIndex];
-                        const studentName = row[nameIndex];
-                        
-                        if(studentId && studentName) {
-                            if(!studentMap.has(studentId)) {
-                                studentMap.set(studentId, { name: studentName, records: [] });
+                        // 구글 시트 내보내기 시 첫 줄에 시트 이름이나 의미 없는 텍스트가 있을 수 있으므로 찾기
+                        let headerIndex = -1;
+                        for (let i = 0; i < Math.min(5, data.length); i++) {
+                            const rowText = data[i].join('').replace(/\s+/g, '');
+                            if (rowText.includes('이름') && rowText.includes('국어') && rowText.includes('수학')) {
+                                headerIndex = i;
+                                break;
                             }
-                            studentMap.get(studentId).records.push({
-                                title: row[titleIndex] || '',
-                                kor: parseFloat(row[korIndex]) || null,
-                                math: parseFloat(row[mathIndex]) || null,
-                                avg: parseFloat(row[avgIndex]) || null
-                            });
+                        }
+
+                        if (headerIndex === -1) {
+                            showError("🚨 <b>데이터 항목(이름, 국어, 수학 등)이 포함된 헤더를 찾을 수 없습니다.</b>");
+                            return;
+                        }
+
+                        const rawHeaders = data[headerIndex];
+                        const headers = rawHeaders.map(h => String(h).replace(/\s+/g, ''));
+                        
+                        studentMap.clear();
+
+                        const idIndex = headers.findIndex(h => h.includes('Number') || h.includes('학번'));
+                        const nameIndex = headers.findIndex(h => h.includes('이름') || h.includes('성명'));
+                        const titleIndex = headers.findIndex(h => h.includes('학력평가') || h.includes('학력평가명') || h.includes('고사명'));
+                        const korIndex = headers.findIndex(h => h.includes('국어백분위'));
+                        const mathIndex = headers.findIndex(h => h.includes('수학백분위'));
+                        const avgIndex = headers.findIndex(h => h.includes('국수탐백분위평균') || h.includes('국수탐백분위'));
+
+                        if(idIndex === -1 || nameIndex === -1) {
+                            showError(`🚨 <b>필수 항목을 찾을 수 없습니다.</b><br>필수: 'Number' 또는 '학번', '이름' <br><br>현재 구글 시트 실제 항목들:<br>[ ${rawHeaders.join(' / ')} ]`);
+                            return;
+                        }
+
+                        for (let i = headerIndex + 1; i < data.length; i++) {
+                            const row = data[i];
+                            if (!row || row.length <= idIndex) continue;
+                            
+                            const studentId = row[idIndex];
+                            const studentName = row[nameIndex];
+                            
+                            if(studentId && studentName) {
+                                if(!studentMap.has(studentId)) {
+                                    studentMap.set(studentId, { name: studentName, records: [] });
+                                }
+                                studentMap.get(studentId).records.push({
+                                    title: titleIndex !== -1 ? (row[titleIndex] || '') : '',
+                                    kor: korIndex !== -1 ? parseFloat(row[korIndex]) || null : null,
+                                    math: mathIndex !== -1 ? parseFloat(row[mathIndex]) || null : null,
+                                    avg: avgIndex !== -1 ? parseFloat(row[avgIndex]) || null : null
+                                });
+                            }
+                        }
+
+                        isDataLoaded = true;
+                        document.getElementById('cardLoadingSpinner').style.display = 'none';
+                        document.getElementById('errorMessage').classList.add('hidden');
+                        
+                        if(!document.getElementById('mockModal').classList.contains('hidden')) {
+                            populateStudentDropdown();
                         }
                     }
-
-                    isDataLoaded = true;
-                    document.getElementById('cardLoadingSpinner').style.display = 'none';
-                    
-                    if(!document.getElementById('mockModal').classList.contains('hidden')) {
-                        populateStudentDropdown();
-                    }
-                },
-                error: function(error) {
-                    console.error("데이터 파싱 에러:", error);
-                    document.getElementById('studentSelect').innerHTML = '<option value="">네트워크 또는 데이터를 불러오는 중 오류가 발생했습니다.</option>';
-                    document.getElementById('cardLoadingSpinner').style.display = 'none';
-                }
-            });
+                });
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                showError("데이터를 불러오는 중 네트워크 에러가 발생했습니다.");
+            }
         }
 
         function populateStudentDropdown() {
@@ -229,7 +248,7 @@
 
         function renderChart() {
             if (typeof Chart === 'undefined') {
-                alert("그래프 로딩 중입니다. 1~2초 후 다시 시도해주세요.");
+                alert("그래프 로딩 중입니다. 잠시 후 시도해주세요.");
                 return;
             }
 
