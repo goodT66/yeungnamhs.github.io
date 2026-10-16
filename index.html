@@ -120,18 +120,19 @@
 
     <!-- 모의고사 성적 조회 모달 (팝업창) -->
     <div id="mockModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-5xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
-                <h3 class="text-2xl font-bold text-gray-800">📈 개별 모의고사 성적 변화 추이</h3>
-                <button onclick="closeMockModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+                <h3 class="text-2xl font-bold text-gray-800">📈 개별 모의고사 백분위 추이</h3>
+                <button onclick="closeMockModal()" class="text-gray-400 hover:text-gray-600 text-3xl font-bold">&times;</button>
             </div>
 
-            <!-- 학생 선택 영역 -->
-            <div class="mb-6 flex gap-4 items-center">
-                <label for="studentSelect" class="font-bold text-gray-700">학생 선택:</label>
-                <select id="studentSelect" onchange="renderChart()" class="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none">
-                    <option value="">불러오는 중...</option>
+            <!-- 학생 선택 영역 (드롭다운 방식) -->
+            <div class="mb-6 flex flex-col sm:flex-row gap-4 items-center bg-gray-50 p-4 rounded-lg">
+                <label for="studentSelect" class="font-bold text-gray-700 whitespace-nowrap">학생 선택 :</label>
+                <select id="studentSelect" onchange="renderChart()" class="border border-gray-300 rounded-lg p-2 w-full sm:w-80 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">데이터를 불러오는 중...</option>
                 </select>
+                <span class="text-sm text-gray-500 break-keep">* 목록에서 학생을 선택하세요.</span>
             </div>
 
             <!-- 로딩 표시 -->
@@ -140,19 +141,20 @@
             </div>
 
             <!-- 차트 영역 -->
-            <div class="relative w-full h-[400px]">
+            <div class="relative w-full h-[450px]">
                 <canvas id="scoreChart"></canvas>
             </div>
         </div>
     </div>
 
     <script>
-        // 시트 ID 변경됨 (요청하신 새 링크의 ID 적용)
+        // 시트 설정
         const SHEET_ID = '1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM';
-        const SHEET_NAME = '모의고사'; // ★주의: 새 구글 시트의 탭 이름과 정확히 일치해야 합니다. (다를 경우 수정 필요)
+        const SHEET_NAME = '모의고사';
         const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
-        let parsedData = [];
+        let parsedData = []; // 전체 시트 데이터
+        let studentMap = new Map(); // 학생별 성적 누적 맵
         let chartInstance = null;
 
         // 모달 열기
@@ -168,7 +170,7 @@
             document.getElementById('mockModal').classList.add('hidden');
         }
 
-        // CSV 데이터 파싱 함수
+        // CSV 데이터 파싱 함수 (쌍따옴표 안의 쉼표 처리)
         function parseCSV(text) {
             const lines = text.split('\n');
             return lines.map(line => {
@@ -183,63 +185,96 @@
             });
         }
 
-        // 구글 시트 데이터 로드
+        // 구글 시트 데이터 로드 및 학생별 데이터 그룹화
         async function fetchSheetData() {
             try {
                 const response = await fetch(CSV_URL);
                 const csvText = await response.text();
                 const data = parseCSV(csvText);
 
-                if (data.length < 2) return;
+                if (data.length < 2) {
+                    document.getElementById('loadingText').innerText = "데이터가 부족합니다.";
+                    return;
+                }
 
-                // 데이터 구조화 (첫 줄: 헤더)
+                // 1행 헤더 추출
                 const headers = data[0].map(h => h.trim());
+                
+                // 2행부터 객체 배열로 변환
                 parsedData = data.slice(1).map(row => {
                     let obj = {};
                     headers.forEach((header, index) => {
-                        obj[header] = row[index] ? row[index].trim() : '';
+                        if(header) {
+                            obj[header] = row[index] ? row[index].trim() : '';
+                        }
                     });
                     return obj;
+                });
+
+                // 학번 기준으로 학생별 데이터 묶기
+                studentMap.clear();
+                parsedData.forEach(row => {
+                    const studentId = row['학번'];
+                    const studentName = row['이름'];
+                    
+                    if(studentId) {
+                        if(!studentMap.has(studentId)) {
+                            studentMap.set(studentId, {
+                                name: studentName,
+                                records: [] // 해당 학생의 모의고사 기록들
+                            });
+                        }
+                        studentMap.get(studentId).records.push(row);
+                    }
                 });
 
                 populateStudentDropdown();
                 document.getElementById('loadingText').classList.add('hidden');
             } catch (error) {
                 console.error("데이터 로드 실패:", error);
-                document.getElementById('loadingText').innerText = "데이터를 불러오는 데 실패했습니다. 시트 '웹에 게시' 권한 설정 등을 확인해주세요.";
+                document.getElementById('loadingText').innerText = "데이터를 불러오는 데 실패했습니다. 시트 권한(링크가 있는 모든 사용자 읽기)을 확인해주세요.";
             }
         }
 
-        // 학생 드롭다운 생성
+        // 드롭다운에 학생 목록 채우기 (학번 + 이름 결합)
         function populateStudentDropdown() {
             const select = document.getElementById('studentSelect');
-            select.innerHTML = '';
+            select.innerHTML = '<option value="">학생을 선택하세요</option>';
 
-            // '이름' 또는 '학생명' 컬럼 자동 탐색 (없으면 첫 번째 열 사용)
-            const nameKey = Object.keys(parsedData[0])[0]; 
+            // 학번 오름차순으로 정렬
+            const sortedIds = Array.from(studentMap.keys()).sort();
 
-            parsedData.forEach((student, index) => {
+            sortedIds.forEach(id => {
+                const student = studentMap.get(id);
                 const option = document.createElement('option');
-                option.value = index;
-                option.textContent = student[nameKey] || `학생 ${index + 1}`;
+                option.value = id; // 선택 시 판별할 고유값은 학번으로 유지
+                option.textContent = `${id} ${student.name}`; // 화면에 표시될 텍스트: "학번 이름"
                 select.appendChild(option);
             });
-
-            renderChart();
         }
 
-        // Chart.js 그래프 그리기
+        // Chart.js 그래프 렌더링
         function renderChart() {
             const select = document.getElementById('studentSelect');
-            const studentIndex = select.value;
-            if (studentIndex === "" || !parsedData[studentIndex]) return;
+            const studentId = select.value;
 
-            const student = parsedData[studentIndex];
-            const keys = Object.keys(student);
+            if (!studentId || !studentMap.has(studentId)) {
+                // 매칭되는 학생이 없거나 선택 해제 시 차트 비우기
+                if (chartInstance) chartInstance.destroy();
+                return;
+            }
+
+            // 선택된 학생의 시험 기록 가져오기
+            const studentInfo = studentMap.get(studentId);
+            const records = studentInfo.records;
+
+            // X축 라벨 (학력평가명)
+            const labels = records.map(r => r['학력평가명'] || '알 수 없음');
             
-            // 학생 이름 키를 제외한 모의고사 성적 항목들을 X축 라벨로 설정
-            const labels = keys.slice(1);
-            const scores = labels.map(key => parseFloat(student[key]) || null);
+            // Y축 데이터 (백분위)
+            const korPercentiles = records.map(r => parseFloat(r['국어 백분위']) || null);
+            const mathPercentiles = records.map(r => parseFloat(r['수학 백분위']) || null);
+            const avgPercentiles = records.map(r => parseFloat(r['국수탐 백분위 평균']) || null);
 
             const ctx = document.getElementById('scoreChart').getContext('2d');
 
@@ -251,27 +286,80 @@
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: `${student[keys[0]]} 학생 성적 추이`,
-                        data: scores,
-                        borderColor: '#ec4899',
-                        backgroundColor: 'rgba(236, 72, 153, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.3,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
-                    }]
+                    datasets: [
+                        {
+                            label: '국수탐 평균 백분위',
+                            data: avgPercentiles,
+                            borderColor: '#10b981', // 짙은 녹색
+                            backgroundColor: '#10b981',
+                            borderWidth: 4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            tension: 0.2
+                        },
+                        {
+                            label: '국어 백분위',
+                            data: korPercentiles,
+                            borderColor: '#ef4444', // 빨간색
+                            backgroundColor: '#ef4444',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 5,
+                            tension: 0.2
+                        },
+                        {
+                            label: '수학 백분위',
+                            data: mathPercentiles,
+                            borderColor: '#3b82f6', // 파란색
+                            backgroundColor: '#3b82f6',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 5,
+                            tension: 0.2
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `${studentId} ${studentInfo.name} 학생 모의고사 백분위 추이`,
+                            font: { size: 18 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + ' %';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
                     scales: {
                         y: {
-                            beginAtZero: false,
+                            min: 0,
+                            max: 100, // 백분위 0~100 고정
                             title: {
                                 display: true,
-                                text: '성적/등급'
+                                text: '백분위 (%)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '시행 월/평가명'
                             }
                         }
                     }
