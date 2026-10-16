@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+  
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+  
+<style>
+    body { 
+      background-color: #f4f7f9; 
+      font-family: 'Pretendard', sans-serif; 
+      padding: 20px; 
+      position: relative; 
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100vw;
+      height: 100vh;
+      background-image: url('https://lh3.googleusercontent.com/d/1kQiYl51Fk_VGwrvXGCAZsG4wbJQUCWBM'); 
+      background-size: 600px; 
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0.2; 
+      z-index: -1; 
+      pointer-events: none; 
+    }
+
+    .card { 
+      border: none; 
+      border-radius: 15px; 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+      margin-bottom: 20px; 
+      background-color: rgba(255, 255, 255, 0.95); 
+    }
+    .card-header { background: #005088; color: white; border-radius: 15px 15px 0 0 !important; font-weight: bold; }
+    .btn-submit { background: #005088; color: white; width: 100%; padding: 15px; font-weight: bold; font-size: 1.2rem; border-radius: 10px; }
+    .section-title { color: #005088; border-bottom: 2px solid #11caa0; padding-bottom: 5px; margin-bottom: 15px; }
+    
+    /* 💡 로딩 화면 및 스피너 스타일 */
+    .loading { 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+      background: rgba(255,255,255,0.95); 
+      display: flex; 
+      flex-direction: column;
+      align-items: center; 
+      justify-content: center; 
+      z-index: 9999; 
+    }
+    .loading-spinner {
+      width: 3rem;
+      height: 3rem;
+      border: 0.35em solid #f3f3f3;
+      border-top: 0.35em solid #005088;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .notice-box { border-left: 5px solid #11caa0; background-color: rgba(255, 255, 255, 0.95); }
+    .btn-adiga { background-color: #005088; color: white; font-weight: bold; border-radius: 8px; padding: 10px 20px; transition: background 0.2s; }
+    .btn-adiga:hover { background-color: #003a63; color: white; }
+    
+    .btn-cutoff { background-color: #11caa0; color: white; font-weight: bold; border-radius: 8px; padding: 10px 20px; transition: background 0.2s; border: none; }
+    .btn-cutoff:hover { background-color: #0ea885; color: white; }
+    
+    .highlight-blue { color: #005088; font-weight: 800; }
+    .highlight-red { color: #dc3545; font-weight: 800; }
+    .highlight-bold { font-weight: 800; }
+    
+    .notice-check-wrapper {
+      display: inline-block;
+      background-color: #fff2f2;
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid #ffc1c1;
+      font-size: 0.9rem;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .notice-check-wrapper .form-check-input {
+      cursor: pointer;
+      border-color: #dc3545;
+    }
+    .notice-check-wrapper .form-check-label {
+      cursor: pointer;
+      color: #dc3545;
+      font-weight: 700;
+    }
+
+  /* =========================================
+       ✨ 드롭다운 & 폼 화려한 디자인 (Glow & Glass & Animation)
+       ========================================= */
+
+    /* 1. 입력창 & 드롭다운 기본 트랜지션 (부드러운 움직임) */
+    .form-control, .form-select, .ts-wrapper .ts-control { 
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      border-radius: 0.5rem;
+      border: 1px solid #ced4da;
+    }
+
+    /* 2. 포커스 시 네온 글로우(Glow) 효과 및 살짝 떠오르는 애니메이션 */
+    .form-control:focus, .form-select:focus, .ts-wrapper.focus .ts-control {
+      border-color: #11caa0;
+      background-color: #ffffff;
+      /* 화려한 민트색 발광(Glow) 그림자 */
+      box-shadow: 0 0 15px rgba(17, 202, 160, 0.4), inset 0 0 5px rgba(17, 202, 160, 0.1) !important;
+      transform: translateY(-2px); /* 클릭 시 창이 살짝 위로 떠오름 */
+    }
+
+    /* TomSelect 기본 높이 및 패딩 */
+    .ts-wrapper .ts-control { 
+      min-height: 42px; 
+      padding: 0.45rem 2.25rem 0.45rem 0.75rem; 
+      font-size: 0.95rem;
+    }
+
+    /* 3. 드롭다운 메뉴 (유리 질감 + 팝다운 애니메이션) */
+    .ts-dropdown {
+      border-radius: 0.75rem;
+      box-shadow: 0 15px 35px rgba(0, 80, 136, 0.2); /* 깊고 진한 그림자 */
+      border: 1px solid rgba(255, 255, 255, 0.8); /* 반투명 테두리 */
+      background-color: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px); /* 뒤쪽 배경을 살짝 흐리게 (유리 효과) */
+      padding: 8px 5px;
+      animation: popDown 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 탄력있게 튀어나옴 */
+    }
+
+    /* 4. 드롭다운 항목 호버 (그라데이션 & 스케일 업) */
+    .ts-dropdown .option {
+      transition: all 0.2s ease;
+      border-radius: 0.5rem;
+      margin: 2px 5px; /* 항목 간 간격 띄우기 */
+      padding: 8px 12px;
+    }
+
+    .ts-dropdown .option:hover, 
+    .ts-dropdown .option.active {
+      /* 민트색에서 진한 파란색으로 이어지는 그라데이션 배경 */
+      background: linear-gradient(135deg, #11caa0 0%, #005088 100%) !important; 
+      color: white !important; /* 글씨색은 화사한 흰색으로 반전 */
+      font-weight: 800; 
+      transform: scale(1.02); /* 마우스를 올리면 글자가 살짝 튀어나옴 */
+      box-shadow: 0 4px 10px rgba(17, 202, 160, 0.3);
+    }
+
+    /* 통통 튀며 나타나는 팝업 애니메이션 키프레임 */
+    @keyframes popDown {
+      0% { opacity: 0; transform: translateY(-15px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+  </style>
+  
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+</head>
+<body>
+  <div id="loading" class="loading">
+    <div class="loading-spinner"></div>
+    <h4 class="fw-bold text-dark text-center px-3">잠시만 기다리시면 곧 연결됩니다.</h4>
+    <p class="text-muted text-center px-3" style="font-size: 1.05rem; font-weight: 500;">영남고등학교 데이터를 정리중입니다.</p>
+  </div>
+  
+  <div class="container" style="max-width: 1300px;">
+    
+    <div class="text-end text-muted mb-2" style="font-size: 0.85rem;">
+      👤 현재 접속 계정: <span class="fw-bold"><?= Session.getActiveUser().getEmail() || "이메일을 불러올 수 없음" ?></span>
+    </div>
+    
+    <h2 class="text-center mb-4 fw-bolder" style="color: #111111;">2027학년도 대학 입시 지원 설문(영남고등학교 진로진학부)</h2>
+    
+    <form id="admissionForm">
+      
+      <div class="card mb-4 notice-box">
+        <div class="card-body">
+          
+          <p class="mb-3 fw-bold text-dark" style="line-height: 1.6; font-size: 1.05rem;">
+            💡 제출하신 내용은 수시 및 정시 상담을 위한 참고 자료로만 활용되며, 그 외의 목적으로는 사용되지 않습니다.
+            <span class="notice-check-wrapper ms-2 align-middle">
+              <input class="form-check-input notice-chk me-1" type="checkbox" id="chk_notice1" required>
+              <label class="form-check-label" for="chk_notice1">확인함</label>
+            </span>
+          </p>
+          
+          <p class="mb-3 fw-bold text-dark" style="line-height: 1.6; font-size: 1.05rem;">
+            💡 지원하고자 하는 대학을 결정할 때는 <span class="highlight-red">면접, 논술 일시가 겹치는지 대학별 고사 일정을 반드시 확인</span>해야 합니다. <span class="highlight-bold">(각 대학교 입학처-수시 모집 요강 or 정시 모집 요강의 세부 일정 참고)</span>
+            <span class="notice-check-wrapper ms-2 align-middle">
+              <input class="form-check-input notice-chk me-1" type="checkbox" id="chk_notice2" required>
+              <label class="form-check-label" for="chk_notice2">확인함</label>
+            </span>
+          </p>
+          
+          <p class="mb-3 fw-bold text-dark" style="line-height: 1.6; font-size: 1.05rem;">
+            💡 대학별로 전형을 다르게 하여 <span class="highlight-red">중복 지원 가능 여부를 확인</span>해야 합니다. <span class="highlight-bold">(예: 경북대학교 종합 전형의 경우 1개 전형만 지원할 수 있습니다.)</span>
+            <span class="notice-check-wrapper ms-2 align-middle">
+              <input class="form-check-input notice-chk me-1" type="checkbox" id="chk_notice3" required>
+              <label class="form-check-label" for="chk_notice3">확인함</label>
+            </span>
+          </p>
+          
+          <p class="mb-3 fw-bold text-dark" style="line-height: 1.6; font-size: 1.05rem;">
+            💡 <span class="highlight-blue">'대학 어디가-대학별 입시 정보-전형 평가기준 및 전년도 결과공개'</span>에서 수시 전형별, 정시 합격 컷을 확인할 수 있습니다.<br>
+            본인의 내신 성적과 모의고사 성적을 비교하며 설문지를 신중하게 작성해주세요.
+            <span class="notice-check-wrapper ms-2 align-middle">
+              <input class="form-check-input notice-chk me-1" type="checkbox" id="chk_notice4" required>
+              <label class="form-check-label" for="chk_notice4">확인함</label>
+            </span>
+          </p>
+          
+          <div class="mb-4">
+            <a href="https://www.adiga.kr/uct/acd/ade/criteriaAndResultView.do?menuId=PCUCTACD2000" target="_blank" class="btn btn-adiga">
+              🌐 대학 어디가 바로가기
+            </a>
+          </div>
+          
+          <p class="mb-3 fw-bold text-dark" style="line-height: 1.6; font-size: 1.05rem;">
+            💡 <span class="highlight-blue">'대학 입결 검색기'</span>에서 대학별 합격가능 학과, 수시 입결을 확인할 수 있습니다.
+          </p>
+          <a href="https://cutoff.co.kr/index.php" target="_blank" class="btn btn-cutoff">
+            🔍 대학 입결 검색기 바로가기
+          </a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">학생 기본 정보</div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-bold">반</label>
+              <select class="form-select" name="ban" id="ban" required><option value="">선택</option></select>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-bold">번호</label>
+              <select class="form-select" name="bun" id="bun" required disabled><option value="">반 먼저 선택</option></select>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-bold">이름</label>
+              <input type="text" class="form-control" name="name" id="name" readonly placeholder="번호 선택 시 자동 입력">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h4 class="section-title">📍 수시 지원 (1~6지망)</h4>
+      <div id="susi-container"></div>
+
+      <h4 class="section-title">📍 정시 지원 (가/나/다군)</h4>
+      <div id="jungsi-container"></div>
+
+      <button type="submit" class="btn btn-submit mb-5" id="submitBtn">제출하기</button>
+    </form>
+  </div>
+
+  <script>
+    let masterData = {};
+    let isProgrammatic = false; 
+    const prefixes = []; 
+
+    window.onload = function() {
+      google.script.run.withSuccessHandler(data => {
+        masterData = data;
+        initStudentDropdowns();
+        initAdmissionDropdowns();
+        setupAutoSave(); 
+        document.getElementById('loading').style.display = 'none';
+      }).getInitialData();
+    };
+
+    function initStudentDropdowns() {
+      const banSelect = document.getElementById('ban');
+      const bunSelect = document.getElementById('bun');
+      const nameInput = document.getElementById('name');
+      
+      Object.keys(masterData.studentTree).sort((a,b)=>a-b).forEach(ban => {
+        banSelect.add(new Option(ban + "반", ban));
+      });
+
+      banSelect.onchange = () => {
+        bunSelect.innerHTML = '<option value="">선택</option>';
+        nameInput.value = '';
+        clearAllAdmissionFields(); 
+        if(banSelect.value) {
+          bunSelect.disabled = false;
+          Object.keys(masterData.studentTree[banSelect.value]).sort((a,b)=>a-b).forEach(bun => {
+            bunSelect.add(new Option(bun + "번", bun));
+          });
+        } else { bunSelect.disabled = true; }
+      };
+
+      bunSelect.onchange = () => {
+        if (bunSelect.value) {
+          nameInput.value = masterData.studentTree[banSelect.value][bunSelect.value] || '';
+          loadExistingDraft(banSelect.value, bunSelect.value, nameInput.value);
+        } else {
+          nameInput.value = '';
+          clearAllAdmissionFields();
+        }
+      };
+    }
+
+    function initAdmissionDropdowns() {
+      const susiCont = document.getElementById('susi-container');
+      const jungsiCont = document.getElementById('jungsi-container');
+      
+      for(let i=1; i<=6; i++) {
+        susiCont.innerHTML += createAdmissionCard(`susi${i}`, `수시 ${i}지망`);
+      }
+      [['ga','가'], ['na','나'], ['da','다']].forEach(g => {
+        jungsiCont.innerHTML += createAdmissionCard(`jungsi_${g[0]}`, `정시 (${g[1]})군`);
+      });
+
+      for(let i=1; i<=6; i++) prefixes.push(`susi${i}`);
+      ['ga', 'na', 'da'].forEach(g => prefixes.push(`jungsi_${g}`));
+
+      prefixes.forEach(prefix => {
+        const univSel = document.getElementById(`${prefix}_univ`);
+        const typeSel = document.getElementById(`${prefix}_type`);
+        const detailSel = document.getElementById(`${prefix}_detail`);
+        const deptSel = document.getElementById(`${prefix}_dept`);
+
+        // 💡 수정된 부분: create: true, createOnBlur: true 추가
+        new TomSelect(univSel, { create: true, createOnBlur: true, placeholder: '대학 선택 또는 직접 입력', allowEmptyOption: true, maxOptions: null });
+        new TomSelect(typeSel, { create: true, createOnBlur: true, placeholder: '전형 또는 직접 입력', allowEmptyOption: true, maxOptions: null });
+        new TomSelect(detailSel, { create: true, createOnBlur: true, placeholder: '세부전형 또는 직접 입력', allowEmptyOption: true, maxOptions: null });
+        new TomSelect(deptSel, { create: true, createOnBlur: true, placeholder: '모집단위 또는 직접 입력', allowEmptyOption: true, maxOptions: null });
+
+        univSel.tomselect.on('change', () => { if(!isProgrammatic) updateDependent(prefix, 'type'); });
+        typeSel.tomselect.on('change', () => { if(!isProgrammatic) updateDependent(prefix, 'detail'); });
+        detailSel.tomselect.on('change', () => { if(!isProgrammatic) updateDependent(prefix, 'dept'); });
+      });
+
+      isProgrammatic = true;
+      prefixes.forEach(prefix => {
+        const ts = document.getElementById(`${prefix}_univ`).tomselect;
+        const isSusi = prefix.startsWith('susi');
+        let currentTree;
+
+        if (isSusi) {
+          currentTree = masterData.susiTree;
+        } else {
+          const gKey = prefix.split('_')[1]; 
+          currentTree = masterData.jungsiTree[gKey];
+        }
+        
+        if (currentTree) {
+          Object.keys(currentTree).sort().forEach(univ => {
+            ts.addOption({ value: univ, text: univ });
+          });
+          ts.sync(); 
+        }
+      });
+      isProgrammatic = false;
+    }
+
+    function createAdmissionCard(prefix, title) {
+      return `
+        <div class="card mb-3">
+          <div class="card-body">
+            <h6 class="fw-bold mb-3" style="color: #005088;">${title}</h6>
+            <div class="row">
+              <div class="col-md-2 mb-2">
+                <label class="form-label small fw-bold">지원 전략</label>
+                <select class="form-select" name="${prefix}_strategy" id="${prefix}_strategy">
+                  <option value="">선택</option>
+                  <option value="도전">도전</option>
+                  <option value="소신">소신</option>
+                  <option value="상향">상향</option>
+                  <option value="적정">적정</option>
+                  <option value="안정">안정</option>
+                </select>
+              </div>
+              <div class="col-md-2 mb-2"><label class="form-label small fw-bold">대학교</label><select class="form-select univ-select" name="${prefix}_univ" id="${prefix}_univ"><option value="">대학 선택 또는 직접 입력</option></select></div>
+              <div class="col-md-2 mb-2"><label class="form-label small fw-bold">전형 유형</label><select class="form-select" name="${prefix}_type" id="${prefix}_type" disabled><option value="">-</option></select></div>
+              <div class="col-md-3 mb-2"><label class="form-label small fw-bold">세부 전형</label><select class="form-select" name="${prefix}_detail" id="${prefix}_detail" disabled><option value="">-</option></select></div>
+              <div class="col-md-3 mb-2"><label class="form-label small fw-bold">모집 단위</label><select class="form-select" name="${prefix}_dept" id="${prefix}_dept" disabled><option value="">-</option></select></div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function updateDependent(prefix, step) {
+      const univ = document.getElementById(`${prefix}_univ`).value;
+      const typeSel = document.getElementById(`${prefix}_type`);
+      const detailSel = document.getElementById(`${prefix}_detail`);
+      const deptSel = document.getElementById(`${prefix}_dept`);
+
+      const typeTs = typeSel.tomselect;
+      const detailTs = detailSel.tomselect;
+      const deptTs = deptSel.tomselect;
+
+      const isSusi = prefix.startsWith('susi');
+      let currentTree;
+      if (isSusi) {
+        currentTree = masterData.susiTree;
+      } else {
+        const gKey = prefix.split('_')[1]; 
+        currentTree = masterData.jungsiTree[gKey];
+      }
+
+      const wasProgrammatic = isProgrammatic;
+      isProgrammatic = true; 
+
+      // 💡 수정된 부분: 하위 메뉴 활성화 조건을 입력값 존재 여부로 변경
+      if (step === 'type') {
+        typeTs.clear();
+        typeTs.clearOptions();
+        detailTs.clear();
+        detailTs.clearOptions();
+        deptTs.clear();
+        deptTs.clearOptions();
+        
+        detailTs.disable();
+        deptTs.disable();
+        
+        if (univ) {
+          typeTs.enable();
+          if (currentTree && currentTree[univ]) {
+            Object.keys(currentTree[univ]).sort().forEach(t => {
+              typeTs.addOption({ value: t, text: t });
+            });
+            typeTs.sync();
+          }
+        } else {
+          typeTs.disable();
+        }
+        
+      } else if (step === 'detail') {
+        const type = typeSel.value;
+        detailTs.clear();
+        detailTs.clearOptions();
+        deptTs.clear();
+        deptTs.clearOptions();
+        
+        deptTs.disable();
+        
+        if (type) {
+          detailTs.enable();
+          if (currentTree && currentTree[univ] && currentTree[univ][type]) {
+            Object.keys(currentTree[univ][type]).sort().forEach(d => {
+              detailTs.addOption({ value: d, text: d });
+            });
+            detailTs.sync();
+          }
+        } else {
+          detailTs.disable();
+        }
+        
+      } else if (step === 'dept') {
+        const type = typeSel.value;
+        const detail = detailSel.value;
+        deptTs.clear();
+        deptTs.clearOptions();
+        
+        if (detail) {
+          deptTs.enable();
+          if (currentTree && currentTree[univ] && currentTree[univ][type] && currentTree[univ][type][detail]) {
+            currentTree[univ][type][detail].sort().forEach(dp => {
+              deptTs.addOption({ value: dp, text: dp });
+            });
+            deptTs.sync();
+          }
+        } else {
+          deptTs.disable();
+        }
+      }
+
+      if (!wasProgrammatic) {
+        isProgrammatic = false; 
+      }
+    }
+
+    function loadExistingDraft(ban, bun, name) {
+      document.getElementById('loading').style.display = 'flex';
+      google.script.run.withSuccessHandler(rowData => {
+        clearAllAdmissionFields();
+        
+        if (rowData) {
+          isProgrammatic = true; 
+          
+          let strategyStartIdx = 42; 
+          prefixes.forEach((prefix, idx) => {
+            const strategyVal = rowData[strategyStartIdx + idx] || "";
+            const strategyEl = document.getElementById(`${prefix}_strategy`);
+            if(strategyEl) strategyEl.value = strategyVal;
+          });
+
+          let colIndex = 6;
+          prefixes.forEach(prefix => {
+            const uVal = rowData[colIndex] || "";
+            const tVal = rowData[colIndex+1] || "";
+            const dtVal = rowData[colIndex+2] || "";
+            const dpVal = rowData[colIndex+3] || "";
+            colIndex += 4;
+
+            const univTs = document.getElementById(`${prefix}_univ`).tomselect;
+            const typeTs = document.getElementById(`${prefix}_type`).tomselect;
+            const detailTs = document.getElementById(`${prefix}_detail`).tomselect;
+            const deptTs = document.getElementById(`${prefix}_dept`).tomselect;
+
+            if (uVal) {
+              // 💡 수정된 부분: 드래프트 로딩 시에도 옵션 추가 (목록에 없는 값이 저장되어 있을 수 있으므로)
+              univTs.addOption({value: uVal, text: uVal});
+              univTs.setValue(uVal);
+              updateDependent(prefix, 'type'); 
+              if (tVal) {
+                typeTs.addOption({value: tVal, text: tVal});
+                typeTs.setValue(tVal);
+                updateDependent(prefix, 'detail'); 
+                if (dtVal) {
+                  detailTs.addOption({value: dtVal, text: dtVal});
+                  detailTs.setValue(dtVal);
+                  updateDependent(prefix, 'dept'); 
+                  if (dpVal) {
+                    deptTs.addOption({value: dpVal, text: dpVal});
+                    deptTs.setValue(dpVal);
+                  }
+                }
+              }
+            }
+          });
+          isProgrammatic = false; 
+        }
+        document.getElementById('loading').style.display = 'none';
+      }).loadDraft(ban, bun, name);
+    }
+
+    function setupAutoSave() {
+      const form = document.getElementById('admissionForm');
+      form.addEventListener('change', (e) => {
+        const ban = document.getElementById('ban').value;
+        const bun = document.getElementById('bun').value;
+        const name = document.getElementById('name').value;
+        
+        if (!ban || !bun || !name || isProgrammatic) return;
+
+        if (e.target.id !== 'submitBtn' && !e.target.classList.contains('notice-chk')) {
+          const formData = {};
+          new FormData(form).forEach((v, k) => formData[k] = v);
+          google.script.run.saveDraft(formData);
+        }
+      });
+    }
+
+    function clearAllAdmissionFields() {
+      const wasProgrammatic = isProgrammatic;
+      isProgrammatic = true;
+      prefixes.forEach(prefix => {
+        const univTs = document.getElementById(`${prefix}_univ`).tomselect;
+        const typeTs = document.getElementById(`${prefix}_type`).tomselect;
+        const detailTs = document.getElementById(`${prefix}_detail`).tomselect;
+        const deptTs = document.getElementById(`${prefix}_dept`).tomselect;
+
+        if(univTs) univTs.clear(true);
+        if(typeTs) { typeTs.clear(true); typeTs.clearOptions(); typeTs.disable(); }
+        if(detailTs) { detailTs.clear(true); detailTs.clearOptions(); detailTs.disable(); }
+        if(deptTs) { deptTs.clear(true); deptTs.clearOptions(); deptTs.disable(); }
+      });
+      if (!wasProgrammatic) {
+        isProgrammatic = false;
+      }
+    }
+
+    document.getElementById('admissionForm').onsubmit = function(e) {
+      e.preventDefault();
+      
+      const uncheckedNotices = document.querySelectorAll('.notice-chk:not(:checked)');
+      if (uncheckedNotices.length > 0) {
+        alert('⚠️ 상단의 입시 관련 필수 안내사항을 모두 읽고 각각 [확인함]에 체크하셔야 제출이 가능합니다.');
+        uncheckedNotices[0].focus();
+        return;
+      }
+
+      const susiHistory = {};
+      const knuComprehensiveIndices = []; 
+      const kuSchoolRecIndices = [];   
+      const kuAcademicIndices = [];    
+
+      for (let i = 1; i <= 6; i++) {
+        const univ = document.getElementById(`susi${i}_univ`).value;
+        const type = document.getElementById(`susi${i}_type`).value;
+        const detail = document.getElementById(`susi${i}_detail`).value;
+
+        if (univ && type && detail) {
+          const comboKey = `${univ}|${type}|${detail}`;
+          if (susiHistory[comboKey]) {
+            alert(`⚠️ 중복 지원 제한 안내\n\n[수시 ${susiHistory[comboKey]}지망]과 [수시 ${i}지망]의 대학교, 전형 유형, 세부 전형이 완전히 일치합니다.\n\n동일한 대학 및 전형 조합으로는 중복 지원이 불가능하니 확인 후 수정해 주세요.`);
+            return;
+          }
+          susiHistory[comboKey] = i;
+
+          if (univ.includes("경북대학교(대구)") && type.includes("학생부위주(종합)")) {
+            knuComprehensiveIndices.push(i);
+          }
+
+          if (univ.includes("고려대학교(서울)")) {
+            if (type.includes("학생부위주(교과)") && detail.includes("학교추천")) {
+              kuSchoolRecIndices.push(i);
+            } else if (type.includes("학생부위주(종합)") && detail.includes("학업우수")) {
+              kuAcademicIndices.push(i);
+            }
+          }
+        }
+      }
+
+      if (knuComprehensiveIndices.length > 1) {
+        alert(`⚠️ 경북대 종합전형 접수 제한\n\n경북대학교(대구)의 '학생부위주(종합)' 전형은 수시 지원 중 오직 한 가지만 선택할 수 있습니다.\n\n(현재 선택된 위치: 수시 ${knuComprehensiveIndices.join(', ')}지망)`);
+        return;
+      }
+
+      if (kuSchoolRecIndices.length > 0 && kuAcademicIndices.length > 0) {
+        alert(`⚠️ 고려대 복수 지원 불가능 전형 안내\n\n고려대학교(서울) 수시 모집 단위에서는 다음 두 전형에 동시에 지원할 수 없습니다.\n\n- 학생부교과 (학교추천)\n- 학생부종합 (학업우수전형 / 학업우수전형-계약학과)\n\n(현재 선택된 위치:\n 학교추천 ➔ 수시 ${kuSchoolRecIndices.join(', ')}지망\n 학업우수 ➔ 수시 ${kuAcademicIndices.join(', ')}지망)\n\n해당 조합을 조정하신 후 다시 제출해 주세요.`);
+        return;
+      }
+
+      document.getElementById('loading').style.display = 'flex';
+      const formData = {};
+      new FormData(this).forEach((v, k) => formData[k] = v);
+      
+      google.script.run.withSuccessHandler(res => {
+        alert(res.message);
+        if(res.success) {
+          document.getElementById('admissionForm').reset();
+          
+          document.getElementById('bun').innerHTML = '<option value="">반 먼저 선택</option>';
+          document.getElementById('bun').disabled = true;
+          document.getElementById('name').value = '';
+
+          clearAllAdmissionFields();
+
+          document.getElementById('loading').style.display = 'none';
+          window.scrollTo({ top: 0, behavior: 'smooth' }); 
+        } else {
+          document.getElementById('loading').style.display = 'none';
+        }
+      }).processForm(formData);
+    };
+  </script>
+</body>
+</html>
