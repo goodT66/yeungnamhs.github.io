@@ -219,26 +219,26 @@
                 <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 65vh;">
                     <table class="grad-table text-sm w-full">
                         <thead class="sticky top-0 z-10 shadow-sm">
-    <tr>
-        <th onclick="setGradSort(0)">연도 <span id="icon-0" class="sort-icon"></span></th>
-        <th onclick="setGradSort(1)">학번 <span id="icon-1" class="sort-icon"></span></th>
-        <th onclick="setGradSort(5)">이름 <span id="icon-5" class="sort-icon"></span></th>
-        <th onclick="setGradSort(8)">대학명 <span id="icon-8" class="sort-icon"></span></th>
-        <th onclick="setGradSort(11)">전형명 <span id="icon-11" class="sort-icon"></span></th>
-        <th onclick="setGradSort(12)">세부유형 <span id="icon-12" class="sort-icon"></span></th>
-        <th onclick="setGradSort(15)">모집단위 <span id="icon-15" class="sort-icon"></span></th>
-        <th onclick="setGradSort(20)">일반등급 <span id="icon-20" class="sort-icon"></span></th>
-        <th onclick="setGradSort(22)">내등급(환산) <span id="icon-22" class="sort-icon"></span></th>
-        <th onclick="setGradSort(23)">1단계 <span id="icon-23" class="sort-icon"></span></th>
-        <th onclick="setGradSort(24)">최종단계 <span id="icon-24" class="sort-icon"></span></th>
-        <th onclick="setGradSort(25)">불합격사유 <span id="icon-25" class="sort-icon"></span></th>
-        <th onclick="setGradSort(26)">최초후보순위 <span id="icon-26" class="sort-icon"></span></th>
-        <th onclick="setGradSort(14)">계열 <span id="icon-14" class="sort-icon"></span></th>
-        <th onclick="setGradSort(16)">모집인원 <span id="icon-16" class="sort-icon"></span></th>
-        <th onclick="setGradSort(17)">선발유형 <span id="icon-17" class="sort-icon"></span></th>
-        <th onclick="setGradSort(18)">최저학력 <span id="icon-18" class="sort-icon"></span></th>
-    </tr>
-</thead>
+                            <tr>
+                                <th onclick="setGradSort(0)">연도 <span id="icon-0" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(1)">학번 <span id="icon-1" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(5)">이름 <span id="icon-5" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(8)">대학명 <span id="icon-8" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(11)">전형명 <span id="icon-11" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(12)">세부유형 <span id="icon-12" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(14)">계열 <span id="icon-14" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(15)">모집단위 <span id="icon-15" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(16)">모집인원 <span id="icon-16" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(17)">선발유형 <span id="icon-17" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(20)">일반등급 <span id="icon-20" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(22)">내등급(환산) <span id="icon-22" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(23)">1단계 <span id="icon-23" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(24)">최종단계 <span id="icon-24" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(25)">불합격사유 <span id="icon-25" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(26)">최초후보순위 <span id="icon-26" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(18)">최저학력 <span id="icon-18" class="sort-icon"></span></th>
+                            </tr>
+                        </thead>
                         <tbody id="gradTableBody">
                             <tr><td colspan="17" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
                         </tbody>
@@ -605,84 +605,72 @@
             renderGradTable();
         }
 
-// 계열(14), 모집인원(16), 선발유형(17)을 최초후보순위(26) 오른쪽으로 이동한 새 컬럼 순서
-const colOrder = [0, 1, 5, 8, 11, 12, 15, 20, 22, 23, 24, 25, 26, 14, 16, 17, 18];
+        function renderGradTable() {
+            const tbody = document.getElementById('gradTableBody');
+            let dataToRender = [...filteredGradData];
 
-function renderGradTable() {
-    const tbody = document.getElementById('gradTableBody');
-    let dataToRender = [...filteredGradData];
+            if (currentSortCol !== null) {
+                dataToRender.sort((a, b) => {
+                    let valA = a[currentSortCol] !== undefined && a[currentSortCol] !== null ? String(a[currentSortCol]).trim() : '';
+                    let valB = b[currentSortCol] !== undefined && b[currentSortCol] !== null ? String(b[currentSortCol]).trim() : '';
 
-    if (currentSortCol !== null) {
-        dataToRender.sort((a, b) => {
-            let valA = a[currentSortCol] !== undefined && a[currentSortCol] !== null ? String(a[currentSortCol]).trim() : '';
-            let valB = b[currentSortCol] !== undefined && b[currentSortCol] !== null ? String(b[currentSortCol]).trim() : '';
+                    if (valA === '' || valA === '-') return 1;
+                    if (valB === '' || valB === '-') return -1;
 
-            if (valA === '' || valA === '-') return 1;
-            if (valB === '' || valB === '-') return -1;
+                    let numA = parseFloat(valA);
+                    let numB = parseFloat(valB);
+                    if (!isNaN(numA) && !isNaN(numB)) {
+                        return isAscending ? (numA - numB) : (numB - numA);
+                    }
 
-            let numA = parseFloat(valA);
-            let numB = parseFloat(valB);
-            if (!isNaN(numA) && !isNaN(numB)) {
-                return isAscending ? (numA - numB) : (numB - numA);
+                    if (valA < valB) return isAscending ? -1 : 1;
+                    if (valA > valB) return isAscending ? 1 : -1;
+                    return 0;
+                });
             }
 
-            if (valA < valB) return isAscending ? -1 : 1;
-            if (valA > valB) return isAscending ? 1 : -1;
-            return 0;
-        });
-    }
+            const totalCount = dataToRender.length;
+            document.getElementById('gradCount').textContent = totalCount;
 
-    const totalCount = dataToRender.length;
-    document.getElementById('gradCount').textContent = totalCount;
-
-    const MAX_RENDER = 100;
-    const finalData = dataToRender.slice(0, MAX_RENDER);
-    
-    const warningEl = document.getElementById('gradWarning');
-    if (totalCount > MAX_RENDER) warningEl.classList.remove('hidden');
-    else warningEl.classList.add('hidden');
-
-    tbody.innerHTML = ''; 
-
-    if (totalCount === 0) {
-        tbody.innerHTML = '<tr><td colspan="17" class="text-gray-500 py-10">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
-        return;
-    }
-
-    finalData.forEach(row => {
-        const tr = document.createElement('tr');
-        const r = String(row[24] || '').trim();
-        
-        if(r.includes('합격') && !r.includes('불')) tr.classList.add('bg-blue-50');
-        if(r.includes('불합격')) tr.classList.add('bg-red-50');
-
-        let rowHtml = '';
-        
-        colOrder.forEach(idx => {
-            let cellData = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
+            const MAX_RENDER = 100;
+            const finalData = dataToRender.slice(0, MAX_RENDER);
             
-            if (idx === 5) cellData = blindName(cellData);
+            const warningEl = document.getElementById('gradWarning');
+            if (totalCount > MAX_RENDER) warningEl.classList.remove('hidden');
+            else warningEl.classList.add('hidden');
 
-            // 최종단계(24) 결과 텍스트 스타일 강조 (큰 폰트 + 진한 파랑/빨강 + 볼드체)
-            if (idx === 24) {
-                if (r.includes('합격') && !r.includes('불')) {
-                    rowHtml += `<td class="font-black text-base text-blue-700">${cellData}</td>`;
-                } else if (r.includes('불합격')) {
-                    rowHtml += `<td class="font-black text-base text-red-700">${cellData}</td>`;
-                } else {
-                    rowHtml += `<td class="font-bold text-gray-800">${cellData}</td>`;
-                }
-            } else if (idx === 5 || idx === 8) { 
-                rowHtml += `<td class="font-bold text-gray-800">${cellData}</td>`;
-            } else {
-                rowHtml += `<td>${cellData}</td>`;
+            tbody.innerHTML = ''; 
+
+            if (totalCount === 0) {
+                tbody.innerHTML = '<tr><td colspan="17" class="text-gray-500 py-10">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
+                return;
             }
-        });
-        
-        tr.innerHTML = rowHtml;
-        tbody.appendChild(tr);
-    });
-}
+
+            finalData.forEach(row => {
+                const tr = document.createElement('tr');
+                const r = String(row[24] || '').trim();
+                
+                if(r.includes('합격') && !r.includes('불')) tr.classList.add('bg-blue-50');
+                if(r.includes('불합격')) tr.classList.add('bg-red-50');
+
+                let rowHtml = '';
+                
+                colOrder.forEach(idx => {
+                    let cellData = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
+                    
+                    if (idx === 5) cellData = blindName(cellData);
+
+                    if(idx === 5 || idx === 8 || idx === 24) { 
+                        rowHtml += `<td class="font-bold text-gray-800">${cellData}</td>`;
+                    } else {
+                        rowHtml += `<td>${cellData}</td>`;
+                    }
+                });
+                
+                tr.innerHTML = rowHtml;
+                tbody.appendChild(tr);
+            });
+        }
     </script>
 </body>
 </html>
