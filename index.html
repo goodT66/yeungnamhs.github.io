@@ -8,6 +8,9 @@
     <!-- 가벼운 사전 빌드된 CSS 사용 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     
+    <!-- 빠르고 안전한 글로벌 CSV 파싱 라이브러리 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
     <!-- 그래프 라이브러리 지연 로딩 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     
@@ -141,59 +144,16 @@
             document.getElementById('mockModal').classList.add('hidden');
         }
 
-        // 브라우저 멈춤 현상(무한 루프)을 원천 차단한 안전하고 빠른 CSV 파서
-        function safeParseCSV(str) {
-            if (!str) return [];
-            let result = [];
-            let row = [];
-            let value = '';
-            let inQuotes = false;
-            
-            for (let i = 0; i < str.length; i++) {
-                let char = str[i];
-                
-                if (char === '"') {
-                    if (inQuotes && str[i+1] === '"') {
-                        value += '"'; // 큰따옴표 이스케이프 처리
-                        i++;
-                    } else {
-                        inQuotes = !inQuotes;
-                    }
-                } else if (char === ',' && !inQuotes) {
-                    row.push(value.trim());
-                    value = '';
-                } else if ((char === '\n' || char === '\r') && !inQuotes) {
-                    if (char === '\r' && str[i+1] === '\n') i++; // 윈도우 줄바꿈(\r\n) 처리
-                    row.push(value.trim());
-                    result.push(row);
-                    row = [];
-                    value = '';
-                } else {
-                    value += char;
-                }
-            }
-            if (value !== '' || row.length > 0) {
-                row.push(value.trim());
-                result.push(row);
-            }
-            return result;
-        }
+        function fetchSheetData() {
+            Papa.parse(CSV_URL, {
+                download: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    const data = results.data;
+                    if (!data || data.length < 2) return;
 
-        async function fetchSheetData() {
-            try {
-                const response = await fetch(CSV_URL);
-                if (!response.ok) throw new Error("네트워크 응답 에러");
-                const csvText = await response.text();
-
-                setTimeout(() => {
-                    // 구글 시트 내보내기 시 발생할 수 있는 특수문자(BOM) 제거
-                    let textToParse = csvText;
-                    if(textToParse.charCodeAt(0) === 0xFEFF) textToParse = textToParse.slice(1);
-                    
-                    const data = safeParseCSV(textToParse);
-                    if (data.length < 2) return;
-
-                    const headers = data[0].map(h => h.replace(/\s+/g, ''));
+                    // 헤더의 공백을 모두 제거하여 정확하게 매칭 (안전성 100%)
+                    const headers = data[0].map(h => String(h).replace(/\s+/g, ''));
                     studentMap.clear();
 
                     const idIndex = headers.findIndex(h => h.includes('학번'));
@@ -235,12 +195,13 @@
                     if(!document.getElementById('mockModal').classList.contains('hidden')) {
                         populateStudentDropdown();
                     }
-                }, 10);
-            } catch (error) {
-                console.error("데이터 로드 실패:", error);
-                document.getElementById('studentSelect').innerHTML = '<option value="">데이터를 불러오는데 실패했습니다.</option>';
-                document.getElementById('cardLoadingSpinner').style.display = 'none';
-            }
+                },
+                error: function(error) {
+                    console.error("데이터 파싱 에러:", error);
+                    document.getElementById('studentSelect').innerHTML = '<option value="">네트워크 또는 데이터를 불러오는 중 오류가 발생했습니다.</option>';
+                    document.getElementById('cardLoadingSpinner').style.display = 'none';
+                }
+            });
         }
 
         function populateStudentDropdown() {
