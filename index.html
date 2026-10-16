@@ -8,6 +8,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <!-- Google 로그인 SDK 로드 -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,7 +30,6 @@
         .score-table td { border: 1px solid #e2e8f0; padding: 10px 4px; text-align: center; white-space: nowrap; }
         .score-table tr:hover td { background-color: #f1f5f9; }
         
-        /* 졸업생 표 전용 */
         .grad-table { border-collapse: collapse; min-width: 1400px; }
         .grad-table th { background-color: #f0fdf4; font-weight: bold; border: 1px solid #bbf7d0; padding: 12px 8px; text-align: center; white-space: nowrap; cursor: pointer; transition: background 0.2s; user-select: none; }
         .grad-table th:hover { background-color: #dcfce7; }
@@ -39,35 +40,46 @@
 </head>
 <body class="min-h-screen flex flex-col items-center pt-10 pb-20 px-4 relative overflow-x-hidden">
 
-    <!-- 배경 로고 -->
+    <!-- 배경 워터마크 -->
     <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 pointer-events-none flex flex-col items-center justify-center" style="opacity: 0.03;">
         <div class="w-96 h-96 rounded-full border-gray-500 flex items-center justify-center" style="border-width: 20px;">
             <span class="text-8xl font-black text-gray-500">YEUNGNAM</span>
         </div>
     </div>
 
-    <!-- 전체 컨테이너 -->
     <div class="w-full z-10 relative" style="max-width: 1400px; margin: 0 auto;">
         
-        <!-- [인증 화면] -->
+        <!-- [Google 로그인 인증 화면] -->
         <div id="authView" class="flex flex-col items-center justify-center mt-20">
-            <div class="bg-white p-10 rounded-2xl shadow-xl border-t-8 border-school w-full max-w-md text-center">
+            <div class="bg-white p-10 rounded-2xl shadow-xl border-t-8 border-school w-full max-w-md text-center flex flex-col items-center">
                 <div class="w-20 h-20 mx-auto border-4 border-school rounded-full flex flex-col items-center justify-center font-bold text-school text-center leading-tight mb-6">
                     <span style="font-size: 10px;">YEUNGNAM</span>
                     <span style="font-size: 14px;">영남</span>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">👨‍🏫 교사 인증</h2>
-                <p class="text-gray-500 mb-8 text-sm break-keep">시스템에 접근하려면 등록된 교사 이메일 계정을 입력해주세요.</p>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">👨‍🏫 교사 구글 계정 인증</h2>
+                <p class="text-gray-500 mb-8 text-sm break-keep">현재 로그인되어 있는 학교/교사 구글 계정으로 로그인해주세요.</p>
                 
-                <input type="email" id="authEmail" placeholder="이메일 입력 (예: teacher@school.kr)" class="w-full border border-gray-300 rounded-lg p-3 mb-4 outline-none focus:ring-2 focus:ring-blue-500 font-medium transition-shadow" onkeypress="if(event.key === 'Enter') checkAuth()">
+                <!-- Google Sign-In 버튼 영역 -->
+                <div id="g_id_onload"
+                     data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+                     data-callback="handleCredentialResponse"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin mb-4"
+                     data-type="standard"
+                     data-size="large"
+                     data-theme="outline"
+                     data-text="sign_in_with"
+                     data-shape="rectangular"
+                     data-logo_alignment="left">
+                </div>
                 
-                <button onclick="checkAuth()" class="w-full bg-school hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-lg transition-colors">시스템 접속하기</button>
-                
-                <p id="authError" class="text-red-500 text-sm mt-4 hidden font-bold">🚨 권한이 없는 계정입니다. 다시 확인해주세요.</p>
+                <!-- 오류 메시지 출력 -->
+                <div id="authError" class="text-red-500 text-sm mt-4 hidden font-bold break-keep bg-red-50 p-3 rounded-lg border border-red-200 w-full"></div>
             </div>
         </div>
 
-        <!-- [메인 시스템 컨테이너 - 초기 숨김] -->
+        <!-- [메인 시스템 - 인증 성공 후 표시] -->
         <div id="mainApp" class="hidden w-full">
             
             <!-- 상단 헤더 -->
@@ -81,13 +93,13 @@
                     </div>
                     <div>
                         <h1 class="text-3xl font-bold text-white tracking-tight mb-1">영남고등학교 진로진학 상담 시스템</h1>
-                        <p class="text-blue-200 text-sm font-medium">교사용 통합 관리 센터</p>
+                        <p class="text-blue-200 text-sm font-medium">교사용 통합 관리 센터 (<span id="userAccountText" class="underline"></span>)</p>
                     </div>
                 </div>
                 <button onclick="logout()" class="text-white text-sm bg-blue-800 hover:bg-blue-900 px-4 py-2 rounded-lg transition-colors font-medium">로그아웃</button>
             </header>
 
-            <!-- [화면 1] 메인 메뉴 대시보드 -->
+            <!-- [화면 1] 메인 대시보드 -->
             <div id="mainDashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 items-stretch">
                 <div class="bg-white rounded-2xl shadow-lg border-b-8 border-blue-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
                     <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🎓</span></div>
@@ -185,7 +197,6 @@
                     </button>
                 </div>
 
-                <!-- 필터 영역 -->
                 <div class="mb-4 flex flex-wrap gap-4 items-center bg-green-50 p-4 rounded-lg border border-green-200">
                     <select id="filterYear" class="border border-gray-300 rounded p-2 bg-white font-medium" onchange="applyGradFilter()">
                         <option value="">연도 전체</option>
@@ -209,7 +220,6 @@
                 
                 <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
 
-                <!-- 표 영역 -->
                 <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 65vh;">
                     <table class="grad-table text-sm w-full">
                         <thead class="sticky top-0 z-10 shadow-sm">
@@ -244,44 +254,63 @@
     </div>
 
     <script>
-        // ---------------- 인증(로그인) 스크립트 ----------------
+        // 허용된 교사 계정 3개
         const ALLOWED_EMAILS = [
             'jjoeun32@gmail.com',
             'jjoeun32@yeungnam.hs.kr',
             'beta@yeungnam.hs.kr'
         ];
 
-        function checkAuth() {
-            const inputEmail = document.getElementById('authEmail').value.trim();
+        // Google JWT 토큰 해독 함수
+        function parseJwt(token) {
+            try {
+                var base64Url = token.split('.')[1];
+                var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Google 로그인 인증 완료 콜백 함수
+        function handleCredentialResponse(response) {
+            const responsePayload = parseJwt(response.credential);
+            const userEmail = responsePayload ? responsePayload.email : '';
+
             const errorMsg = document.getElementById('authError');
-            
-            if (ALLOWED_EMAILS.includes(inputEmail)) {
-                // 인증 성공: 세션에 저장 후 화면 전환
+
+            if (userEmail && ALLOWED_EMAILS.includes(userEmail)) {
+                // 승인된 계정인 경우
                 sessionStorage.setItem('isAuthenticated', 'true');
+                sessionStorage.setItem('userEmail', userEmail);
+                
+                document.getElementById('userAccountText').textContent = userEmail;
                 errorMsg.classList.add('hidden');
                 document.getElementById('authView').classList.add('hidden');
                 document.getElementById('mainApp').classList.remove('hidden');
             } else {
-                // 인증 실패
+                // 승인되지 않은 계정인 경우
+                errorMsg.innerHTML = `🚨 접속 권한이 없는 계정입니다.<br><span class="text-xs text-gray-600">로그인한 계정: ${userEmail || '알 수 없음'}</span>`;
                 errorMsg.classList.remove('hidden');
             }
         }
 
         function logout() {
             sessionStorage.removeItem('isAuthenticated');
-            document.getElementById('authEmail').value = '';
+            sessionStorage.removeItem('userEmail');
             document.getElementById('mainApp').classList.add('hidden');
             document.getElementById('authView').classList.remove('hidden');
-            showMainDashboard(); // 로그아웃 시 메인 대시보드로 뷰 초기화
+            showMainDashboard();
         }
 
-
-        // ---------------- 구글 시트 데이터 스크립트 ----------------
+        // ---------------- 데이터 스크립트 ----------------
         const SHEET_ID = '1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM';
         const MOCK_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
         const GRAD_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=졸업생`;
 
-        // ---------------- 공통 화면 전환 로직 ----------------
         function showMainDashboard() {
             document.getElementById('mainDashboard').classList.remove('hidden');
             document.getElementById('mockView').classList.add('hidden');
@@ -298,14 +327,15 @@
             if(rawGradData.length > 0) applyGradFilter();
         }
 
-        // ---------------- 초기화 ----------------
         document.addEventListener("DOMContentLoaded", () => {
-            // 로그인 상태 체크 (세션)
-            if (sessionStorage.getItem('isAuthenticated') === 'true') {
+            // 이미 인증된 세션이 있는지 확인
+            const savedEmail = sessionStorage.getItem('userEmail');
+            if (sessionStorage.getItem('isAuthenticated') === 'true' && savedEmail && ALLOWED_EMAILS.includes(savedEmail)) {
+                document.getElementById('userAccountText').textContent = savedEmail;
                 document.getElementById('authView').classList.add('hidden');
                 document.getElementById('mainApp').classList.remove('hidden');
             }
-            // 백그라운드 데이터 로딩
+            
             fetchMockData();
             fetchGradData();
         });
@@ -425,7 +455,6 @@
         // ---------------- 졸업생 수시 스크립트 ----------------
         let rawGradData = [];
         let filteredGradData = [];
-        
         let currentSortCol = null;
         let isAscending = true;
 
@@ -457,8 +486,8 @@
         function populateGradDropdowns() {
             const yearSet = new Set(), univSet = new Set();
             rawGradData.forEach(row => {
-                if(row[0]) yearSet.add(String(row[0]).trim()); // A열 연도
-                if(row[8]) univSet.add(String(row[8]).trim()); // I열 대학명
+                if(row[0]) yearSet.add(String(row[0]).trim());
+                if(row[8]) univSet.add(String(row[8]).trim());
             });
 
             const yearSelect = document.getElementById('filterYear');
@@ -484,10 +513,10 @@
             if (rawGradData.length === 0) return;
 
             filteredGradData = rawGradData.filter(row => {
-                const y = String(row[0] || '').trim(); // A
-                const u = String(row[8] || '').trim(); // I
-                const m = String(row[15] || '').trim(); // P
-                const r = String(row[24] || '').trim(); // Y
+                const y = String(row[0] || '').trim();
+                const u = String(row[8] || '').trim();
+                const m = String(row[15] || '').trim();
+                const r = String(row[24] || '').trim();
 
                 if (fYear && y !== fYear) return false;
                 if (fUniv && u !== fUniv) return false;
@@ -520,7 +549,6 @@
 
         function renderGradTable() {
             const tbody = document.getElementById('gradTableBody');
-            
             let dataToRender = [...filteredGradData];
 
             if (currentSortCol !== null) {
@@ -562,7 +590,7 @@
 
             finalData.forEach(row => {
                 const tr = document.createElement('tr');
-                const r = String(row[24] || '').trim(); // 최종결과
+                const r = String(row[24] || '').trim();
                 
                 if(r.includes('합격') && !r.includes('불')) tr.classList.add('bg-blue-50');
                 if(r.includes('불합격')) tr.classList.add('bg-red-50');
@@ -571,7 +599,6 @@
                 
                 colOrder.forEach(idx => {
                     let cellData = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
-                    
                     if (idx === 5) cellData = blindName(cellData);
 
                     if(idx === 5 || idx === 8 || idx === 24) { 
