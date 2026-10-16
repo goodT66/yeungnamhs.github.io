@@ -560,7 +560,7 @@
             return name.charAt(0) + 'O'.repeat(name.length - 1);
         }
 
-        function applyGradFilter() {
+       function applyGradFilter() {
             const fYear = document.getElementById('filterYear').value;
             const fUniv = document.getElementById('filterUniv').value;
             const fMajor = document.getElementById('filterMajor').value.trim();
@@ -577,7 +577,13 @@
                 if (fYear && y !== fYear) return false;
                 if (fUniv && u !== fUniv) return false;
                 if (fMajor && !m.includes(fMajor)) return false;
-                if (fResult && !r.includes(fResult)) return false;
+                
+                // 🚀 수정된 부분: '합격'을 선택했을 때 '불합격'이라는 글자가 있으면 제외
+                if (fResult) {
+                    if (fResult === '합격' && r.includes('불합격')) return false;
+                    if (!r.includes(fResult)) return false;
+                }
+
                 return true;
             });
 
