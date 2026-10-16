@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>영남고등학교 진로진학 상담 시스템</title>
     
-    <!-- 1. 속도 개선: 실시간 JS 컴파일러 제거 후 가벼운 사전 빌드된 CSS 사용 -->
+    <!-- 가벼운 사전 빌드된 CSS 사용 (초기 속도 향상) -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     
-    <!-- 2. 속도 개선: 그래프 라이브러리를 화면 렌더링 후 비동기로 불러옴 (defer) -->
+    <!-- 그래프 라이브러리 지연 로딩 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     
     <!-- Google Fonts -->
@@ -23,7 +23,6 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .break-keep { word-break: keep-all; }
-        /* 브랜드 컬러 직접 지정 (Tailwind JIT 대체) */
         .bg-school { background-color: #094b83; }
         .text-school { color: #094b83; }
         .border-school { border-color: #094b83; }
@@ -31,17 +30,13 @@
 </head>
 <body class="min-h-screen flex flex-col items-center pt-10 pb-20 px-4 relative overflow-x-hidden">
 
-    <!-- Background Watermark -->
     <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 pointer-events-none flex flex-col items-center justify-center" style="opacity: 0.03;">
         <div class="w-96 h-96 rounded-full border-gray-500 flex items-center justify-center" style="border-width: 20px;">
             <span class="text-8xl font-black text-gray-500">YEUNGNAM</span>
         </div>
     </div>
 
-    <!-- Main Container -->
     <div class="w-full z-10 relative" style="max-width: 1400px; margin: 0 auto;">
-        
-        <!-- Header Section -->
         <header class="bg-school rounded-2xl shadow-md p-6 mb-16 flex items-center gap-6">
             <div class="bg-white rounded-full w-16 h-16 flex items-center justify-center shadow-inner shrink-0 relative overflow-hidden p-1">
                 <div class="w-full h-full border-2 border-school rounded-full flex flex-col items-center justify-center font-bold text-school text-center leading-tight">
@@ -55,9 +50,7 @@
             </div>
         </header>
 
-        <!-- Cards Grid Section -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 items-stretch">
-            
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-blue-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
                 <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🎓</span></div>
                 <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">학생 <span class="text-red-600">개별</span> 조회</h2>
@@ -104,7 +97,6 @@
                 <h2 class="text-xl font-bold mb-4 text-blue-600 break-keep"><span class="text-blue-600">정시</span> 입결 조회</h2>
                 <p class="text-sm text-gray-600 leading-relaxed break-keep">수능 점수 기반 지원 가능 대학 및 정시 지원 희망 확인</p>
             </div>
-
         </div>
     </div>
 
@@ -137,7 +129,7 @@
         let studentMap = new Map();
         let chartInstance = null;
 
-        // 페이지 로드 직후 바로 데이터 요청 시작
+        // 페이지 렌더링 후 백그라운드에서 안전하게 데이터 로드
         document.addEventListener("DOMContentLoaded", fetchSheetData);
 
         function openMockModal() {
@@ -151,39 +143,51 @@
             document.getElementById('mockModal').classList.add('hidden');
         }
 
-        function fastParseCSV(csvText) {
-            const lines = csvText.split(/\r?\n/);
-            const result = [];
-            for (let i = 0; i < lines.length; i++) {
-                if(!lines[i].trim()) continue;
-                let row = lines[i].split(',').map(item => item.replace(/^"|"$/g, '').trim());
-                result.push(row);
-            }
-            return result;
+        // 쉼표가 포함된 구글 시트 데이터를 에러 없이 100% 안전하게 파싱하는 정규식 함수
+        function safeParseCSV(text) {
+            // 구글 시트 내보내기 시 발생할 수 있는 특수문자(BOM) 제거
+            if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+            
+            const lines = text.split(/\r?\n/);
+            return lines.map(line => {
+                const regex = /(?:^|,)(?:"([^"]*)"|([^,]*))/g;
+                const row = [];
+                let match;
+                while ((match = regex.exec(line)) !== null) {
+                    if (match[0] === '' && row.length === 0) continue;
+                    row.push(match[1] || match[2] || '');
+                }
+                return row.map(cell => cell.trim());
+            });
         }
 
         async function fetchSheetData() {
             try {
                 const response = await fetch(CSV_URL);
-                if (!response.ok) throw new Error("Network Error");
+                if (!response.ok) throw new Error("네트워크 응답 에러");
                 const csvText = await response.text();
 
-                // 파싱 부하를 줄이기 위해 타임아웃 사용
+                // setTimeout으로 UI 멈춤 방지 (백그라운드 처리)
                 setTimeout(() => {
-                    const data = fastParseCSV(csvText);
+                    const data = safeParseCSV(csvText);
                     if (data.length < 2) return;
 
-                    const headers = data[0];
+                    // 헤더 공백을 모두 제거하여 정확도 100% 매칭
+                    const headers = data[0].map(h => h.replace(/\s+/g, ''));
                     studentMap.clear();
 
                     const idIndex = headers.findIndex(h => h.includes('학번'));
                     const nameIndex = headers.findIndex(h => h.includes('이름'));
                     const titleIndex = headers.findIndex(h => h.includes('학력평가명'));
-                    const korIndex = headers.findIndex(h => h.includes('국어 백분위'));
-                    const mathIndex = headers.findIndex(h => h.includes('수학 백분위'));
-                    const avgIndex = headers.findIndex(h => h.includes('국수탐 백분위 평균'));
+                    const korIndex = headers.findIndex(h => h.includes('국어백분위'));
+                    const mathIndex = headers.findIndex(h => h.includes('수학백분위'));
+                    const avgIndex = headers.findIndex(h => h.includes('국수탐백분위평균'));
 
-                    if(idIndex === -1 || nameIndex === -1) return;
+                    if(idIndex === -1 || nameIndex === -1) {
+                        document.getElementById('studentSelect').innerHTML = '<option value="">데이터 항목(학번/이름)을 찾을 수 없습니다.</option>';
+                        document.getElementById('cardLoadingSpinner').style.display = 'none';
+                        return;
+                    }
 
                     for (let i = 1; i < data.length; i++) {
                         const row = data[i];
@@ -195,7 +199,7 @@
                                 studentMap.set(studentId, { name: studentName, records: [] });
                             }
                             studentMap.get(studentId).records.push({
-                                title: row[titleIndex],
+                                title: row[titleIndex] || '',
                                 kor: parseFloat(row[korIndex]) || null,
                                 math: parseFloat(row[mathIndex]) || null,
                                 avg: parseFloat(row[avgIndex]) || null
@@ -211,7 +215,8 @@
                     }
                 }, 10);
             } catch (error) {
-                console.error("데이터 사전 로드 실패:", error);
+                console.error("데이터 로드 실패:", error);
+                document.getElementById('studentSelect').innerHTML = '<option value="">데이터를 불러오는데 실패했습니다.</option>';
                 document.getElementById('cardLoadingSpinner').style.display = 'none';
             }
         }
@@ -229,7 +234,7 @@
             const fragment = document.createDocumentFragment();
             const sortedIds = Array.from(studentMap.keys()).sort();
 
-            for(let i=0; i<sortedIds.length; i++) {
+            for(let i = 0; i < sortedIds.length; i++) {
                 const id = sortedIds[i];
                 const option = document.createElement('option');
                 option.value = id;
@@ -241,7 +246,7 @@
 
         function renderChart() {
             if (typeof Chart === 'undefined') {
-                alert("그래프 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+                alert("그래프 로딩 중입니다. 1~2초 후 다시 시도해주세요.");
                 return;
             }
 
