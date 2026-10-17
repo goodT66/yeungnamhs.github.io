@@ -8,7 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     
-    <!-- ✨ [수정됨] 차트 스크립트와 데이터 라벨 플러그인을 안전하게 <head>에서 먼저 불러옵니다. -->
+    <!-- 차트 스크립트와 데이터 라벨 플러그인 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     
@@ -31,8 +31,8 @@
         .score-table td { border: 1px solid #e2e8f0; padding: 10px 4px; text-align: center; white-space: nowrap; }
         .score-table tr:hover td { background-color: #f1f5f9; }
         
-        /* 졸업생 표 전용 */
-        .grad-table { border-collapse: collapse; min-width: 1400px; }
+        /* 다목적 표 전용 (졸업생/반별조회 공통) */
+        .grad-table { border-collapse: collapse; min-width: 1600px; }
         .grad-table th { background-color: #f0fdf4; font-weight: bold; border: 1px solid #bbf7d0; padding: 12px 8px; text-align: center; white-space: nowrap; cursor: pointer; transition: background 0.2s; user-select: none; }
         .grad-table th:hover { background-color: #dcfce7; }
         .grad-table td { border: 1px solid #e2e8f0; padding: 10px 8px; text-align: center; white-space: nowrap; }
@@ -79,13 +79,15 @@
             </div>
         </header>
 
-        <!-- [화면 1] 메인 메뉴 대시보드 grid 속성 변경 -->
+        <!-- [화면 1] 메인 메뉴 대시보드 -->
         <div id="mainDashboard" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 items-stretch">
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-blue-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
                 <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🎓</span></div>
                 <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">학생 <span class="text-red-600">개별</span> 조회</h2>
             </div>
-            <div class="bg-white rounded-2xl shadow-lg border-b-8 border-green-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
+            
+            <!-- ✨ 클릭 시 반별 전체 조회 뷰(classView) 열기 추가 -->
+            <div onclick="openClassView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-green-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
                 <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🤝‍🧑</span></div>
                 <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">반별 <span class="text-red-600">전체</span> 조회</h2>
             </div>
@@ -135,28 +137,22 @@
                 </button>
             </div>
             
-            <!-- 로그인 안내 영역 -->
             <div id="authRequiredMock" class="text-center py-10">
                 <p class="text-red-500 font-bold text-lg mb-2">🔒 교사 인증이 필요합니다.</p>
                 <p class="text-gray-600">우측 상단의 [교사 인증 (Google 로그인)] 버튼을 클릭해 주세요.</p>
             </div>
 
-            <!-- 로그인 완료 시 보이는 콘텐츠 영역 -->
             <div id="mockContent" class="hidden">
-                <div id="mockErrorMessage" class="mb-4 hidden p-4 bg-red-100 text-red-700 rounded-lg font-bold text-sm"></div>
-
                 <div class="mb-6 flex flex-col sm:flex-row gap-4 items-center bg-gray-50 p-4 rounded-lg border border-gray-200 flex-wrap">
                     <select id="gradeSelect" onchange="onGradeChange()" class="border border-gray-300 rounded-lg p-2 w-32 bg-white"><option value="">로딩 중...</option></select>
                     <select id="classSelect" onchange="onClassChange()" class="border border-gray-300 rounded-lg p-2 w-32 bg-white"><option value="">반 선택</option></select>
                     <select id="studentSelect" onchange="renderMockData()" class="border border-gray-300 rounded-lg p-2 w-64 bg-white"><option value="">학생 선택</option></select>
                 </div>
                 
-                <!-- ✨ [수정됨] 스크롤 시 상단에 고정되도록 sticky 등 클래스 적용된 그래프 영역 -->
                 <div class="sticky top-0 z-50 bg-white pt-4 pb-4 border-b border-gray-200 w-full mb-10 shadow-sm" style="height: 500px;">
                     <canvas id="scoreChart"></canvas>
                 </div>
 
-                <!-- 성적 표 영역 -->
                 <div id="tableContainer" class="hidden w-full overflow-x-auto pb-4">
                     <table class="score-table w-full text-sm">
                         <thead>
@@ -190,15 +186,12 @@
                 </button>
             </div>
 
-            <!-- 로그인 안내 영역 -->
             <div id="authRequiredGrad" class="text-center py-10">
                 <p class="text-red-500 font-bold text-lg mb-2">🔒 교사 인증이 필요합니다.</p>
                 <p class="text-gray-600">우측 상단의 [교사 인증 (Google 로그인)] 버튼을 클릭해 주세요.</p>
             </div>
 
-            <!-- 로그인 완료 시 보이는 콘텐츠 영역 -->
             <div id="gradContent" class="hidden">
-                <!-- 필터 영역 -->
                 <div class="mb-4 flex flex-wrap gap-4 items-center bg-green-50 p-4 rounded-lg border border-green-200">
                     <select id="filterYear" class="border border-gray-300 rounded p-2 bg-white font-medium" onchange="applyGradFilter()">
                         <option value="">연도 전체</option>
@@ -222,7 +215,6 @@
                 
                 <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
 
-                <!-- 표 영역 -->
                 <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 65vh;">
                     <table class="grad-table text-sm w-full">
                         <thead class="sticky top-0 z-10 shadow-sm">
@@ -247,6 +239,64 @@
                         </thead>
                         <tbody id="gradTableBody">
                             <tr><td colspan="16" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✨ [화면 4] 반별 전체 조회 (2026 수시) 화면 신규 추가 -->
+        <div id="classView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-green-500">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
+                <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    <span class="text-3xl">🧑‍🤝‍🧑</span> 반별 전체 조회 (2026 수시)
+                </h3>
+                <button onclick="showMainDashboard()" class="mt-4 sm:mt-0 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
+                    <span>◀</span> 메인 화면으로
+                </button>
+            </div>
+
+            <div id="authRequiredClass" class="text-center py-10">
+                <p class="text-red-500 font-bold text-lg mb-2">🔒 교사 인증이 필요합니다.</p>
+                <p class="text-gray-600">우측 상단의 [교사 인증 (Google 로그인)] 버튼을 클릭해 주세요.</p>
+            </div>
+
+            <div id="classContent" class="hidden">
+                <div class="mb-4 flex flex-wrap gap-4 items-center bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <select id="classGradeSelect" onchange="onClassGradeChange()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
+                        <option value="">학년 선택</option>
+                    </select>
+                    <select id="classNumSelect" onchange="renderClassTable()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
+                        <option value="">반 선택</option>
+                    </select>
+                </div>
+                
+                <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 70vh;">
+                    <table class="grad-table text-sm w-full">
+                        <thead class="sticky top-0 z-10 shadow-sm">
+                            <tr>
+                                <th>반</th>
+                                <th>번호</th>
+                                <th>이름</th>
+                                <th>대학명</th>
+                                <th>전형유형</th>
+                                <th>전형명</th>
+                                <th>계열</th>
+                                <th>모집단위</th>
+                                <th>일반등급</th>
+                                <th>내등급(환산)</th>
+                                <th>1단계</th>
+                                <th>최종단계</th>
+                                <th>불합격사유</th>
+                                <th>최초후보순위</th>
+                                <th>모집인원</th>
+                                <th>선발유형</th>
+                                <th>최저학력기준</th>
+                                <th>최종발표일</th>
+                            </tr>
+                        </thead>
+                        <tbody id="classTableBody">
+                            <tr><td colspan="18" class="text-center py-10 text-gray-500">학년과 반을 선택해주세요.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -289,7 +339,7 @@
         const userInfo = document.getElementById('userInfo');
 
         if (user) {
-            // 권한 체크: 허용된 이메일인지 확인
+            // 권한 체크
             if (!ALLOWED_EMAILS.includes(user.email)) {
                 alert(`[접근 제한] ${user.email} 계정은 교사 인증 권한이 없습니다.`);
                 await signOut(auth);
@@ -304,14 +354,23 @@
             // 인증 완료 UI 전환
             document.getElementById('authRequiredMock')?.classList.add('hidden');
             document.getElementById('mockContent')?.classList.remove('hidden');
+            
             document.getElementById('authRequiredGrad')?.classList.add('hidden');
             document.getElementById('gradContent')?.classList.remove('hidden');
+            
+            // 반별 조회 뷰 인증해제
+            document.getElementById('authRequiredClass')?.classList.add('hidden');
+            document.getElementById('classContent')?.classList.remove('hidden');
 
             if (window.mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) {
                 window.populateGradeDropdown();
             }
             if (window.rawGradData.length > 0) {
                 window.applyGradFilter();
+            }
+            // 반별 드롭다운도 생성
+            if (window.classSusiData && window.classSusiData.length > 0 && document.getElementById('classGradeSelect').options.length <= 1) {
+                window.populateClassGradeDropdown();
             }
         } else {
             currentUser = null;
@@ -321,8 +380,12 @@
             // 미인증 상태 UI 전환
             document.getElementById('authRequiredMock')?.classList.remove('hidden');
             document.getElementById('mockContent')?.classList.add('hidden');
+            
             document.getElementById('authRequiredGrad')?.classList.remove('hidden');
             document.getElementById('gradContent')?.classList.add('hidden');
+            
+            document.getElementById('authRequiredClass')?.classList.remove('hidden');
+            document.getElementById('classContent')?.classList.add('hidden');
         }
     });
 
@@ -330,9 +393,7 @@
     window.loginWithGoogle = async () => {
         try {
             const result = await signInWithPopup(auth, provider);
-            const user = result.user;
-            
-            if (ALLOWED_EMAILS.includes(user.email)) {
+            if (ALLOWED_EMAILS.includes(result.user.email)) {
                 alert("교사 인증 성공!");
             }
         } catch (error) {
@@ -351,17 +412,19 @@
     window.getCurrentUser = () => currentUser;
 </script>
 
-    <!-- 기존 스크립트 기능 유지 -->
+    <!-- 기존 스크립트 기능 유지 + 반별조회 추가 -->
     <script>
         const SHEET_ID = '1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM';
         const MOCK_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
         const GRAD_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=졸업생`;
+        const SUSI_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026수시`; // 반별조회용
 
         // ---------------- 공통 화면 전환 로직 ----------------
         function showMainDashboard() {
             document.getElementById('mainDashboard').classList.remove('hidden');
             document.getElementById('mockView').classList.add('hidden');
             document.getElementById('gradView').classList.add('hidden');
+            document.getElementById('classView').classList.add('hidden');
         }
 
         function openMockView() {
@@ -393,16 +456,142 @@
                 document.getElementById('gradContent').classList.add('hidden');
             }
         }
+        
+        function openClassView() {
+            document.getElementById('mainDashboard').classList.add('hidden');
+            document.getElementById('classView').classList.remove('hidden');
 
-        // ---------------- 모의고사 스크립트 ----------------
-        let mockDataLoaded = false;
-        let studentMap = new Map();
-        let chartInstance = null;
+            const user = window.getCurrentUser ? window.getCurrentUser() : null;
+            if (user) {
+                document.getElementById('authRequiredClass').classList.add('hidden');
+                document.getElementById('classContent').classList.remove('hidden');
+                if(classSusiData.length > 0 && document.getElementById('classGradeSelect').options.length <= 1) populateClassGradeDropdown();
+            } else {
+                document.getElementById('authRequiredClass').classList.remove('hidden');
+                document.getElementById('classContent').classList.add('hidden');
+            }
+        }
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchMockData();
             fetchGradData();
+            fetchClassSusiData(); // ✨ 2026수시 데이터 호출 추가
         });
+
+        // ---------------- [기능 1] 반별 전체 조회 (2026 수시) 스크립트 ----------------
+        let classSusiData = [];
+
+        async function fetchClassSusiData() {
+            try {
+                const response = await fetch(SUSI_2026_CSV_URL);
+                if (!response.ok) throw new Error("네트워크 오류");
+                const text = await response.text();
+                
+                Papa.parse(text, {
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        const data = results.data;
+                        if(data.length > 1) {
+                            classSusiData = data.slice(1);
+                            window.classSusiData = classSusiData;
+                            if (window.getCurrentUser && window.getCurrentUser()) {
+                                populateClassGradeDropdown();
+                            }
+                        }
+                    }
+                });
+            } catch (error) { console.error("2026수시 데이터 로드 실패", error); }
+        }
+
+        function populateClassGradeDropdown() {
+            const select = document.getElementById('classGradeSelect');
+            select.innerHTML = '<option value="">학년 선택</option>';
+            const grades = new Set();
+            classSusiData.forEach(row => {
+                if(row[1]) grades.add(String(row[1]).trim());
+            });
+            Array.from(grades).sort().forEach(g => select.appendChild(new Option(`${g}학년`, g)));
+        }
+        window.populateClassGradeDropdown = populateClassGradeDropdown;
+
+        function onClassGradeChange() {
+            const g = document.getElementById('classGradeSelect').value;
+            const select = document.getElementById('classNumSelect');
+            select.innerHTML = '<option value="">반 선택</option>';
+            document.getElementById('classTableBody').innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">반을 선택해주세요.</td></tr>';
+            
+            if (!g) return;
+            
+            const classes = new Set();
+            classSusiData.forEach(row => {
+                if(String(row[1]).trim() === g && row[2]) {
+                    classes.add(String(row[2]).trim());
+                }
+            });
+            Array.from(classes).sort((a,b) => parseInt(a) - parseInt(b)).forEach(c => select.appendChild(new Option(`${c}반`, c)));
+        }
+
+        function renderClassTable() {
+            const g = document.getElementById('classGradeSelect').value;
+            const c = document.getElementById('classNumSelect').value;
+            const tbody = document.getElementById('classTableBody');
+            
+            if(!g || !c) {
+                tbody.innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">학년과 반을 선택해주세요.</td></tr>';
+                return;
+            }
+
+            // 학년과 반이 일치하는 데이터만 필터링
+            const filtered = classSusiData.filter(row => String(row[1]).trim() === g && String(row[2]).trim() === c);
+            
+            // 번호(row[3]) 순서대로 오름차순 정렬
+            filtered.sort((a, b) => parseInt(a[3] || 0) - parseInt(b[3] || 0));
+
+            tbody.innerHTML = '';
+            
+            if(filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">해당 반의 데이터가 없습니다.</td></tr>';
+                return;
+            }
+
+            // 요청된 컬럼 순서 (0-indexed 기준): 
+            // 반(2), 번호(3), 이름(4), 대학명(5), 전형유형(6), 전형명(7), 계열(8), 모집단위(9), 일반등급(13), 내등급(환산)(14), 1단계(17), 최종단계(18), 불합격사유(19), 최초후보순위(20), 모집인원(10), 선발유형(11), 최저학력기준(12), 최종발표일(24)
+            const cols = [2, 3, 4, 5, 6, 7, 8, 9, 13, 14, 17, 18, 19, 20, 10, 11, 12, 24];
+            
+            filtered.forEach(row => {
+                const tr = document.createElement('tr');
+                const finalResult = String(row[18] || '').trim(); // 18이 최종단계
+                
+                if(finalResult.includes('합격') && !finalResult.includes('불')) tr.classList.add('bg-blue-50');
+                if(finalResult.includes('불합격')) tr.classList.add('bg-red-50');
+
+                let html = '';
+                cols.forEach(idx => {
+                    let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
+                    let tdClass = "";
+
+                    if (idx === 18) { // 최종단계 결과
+                        if (val.includes('불합격')) tdClass = "font-black text-red-700 text-base";
+                        else if (val.includes('합격')) tdClass = "font-black text-blue-700 text-base";
+                        else tdClass = "font-bold text-gray-800";
+                    } else if (idx === 13 || idx === 14) { // 등급
+                        tdClass = "font-bold text-gray-900 bg-yellow-50/50";
+                    } else if (idx === 4 || idx === 5) { // 이름, 대학명
+                        tdClass = "font-bold text-gray-800";
+                    }
+
+                    html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
+                });
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+            });
+        }
+
+
+        // ---------------- [기능 2] 개별 모의고사 스크립트 ----------------
+        let mockDataLoaded = false;
+        let studentMap = new Map();
+        let chartInstance = null;
 
         async function fetchMockData() {
             try {
@@ -484,14 +673,13 @@
                 .forEach(id => sSel.appendChild(new Option(`${parseInt(id.substring(3,5),10)}번 - ${studentMap.get(id).name}`, id)));
         }
         
-       function renderMockData() {
+        function renderMockData() {
             const sid = document.getElementById('studentSelect').value;
             if (!sid || !studentMap.has(sid)) return;
             const info = studentMap.get(sid), recs = info.records;
             const ctx = document.getElementById('scoreChart').getContext('2d');
             if (chartInstance) chartInstance.destroy();
 
-            // ✨ 플러그인 등록 (차트 그리기 전에 필수)
             if (typeof ChartDataLabels !== 'undefined') {
                 Chart.register(ChartDataLabels);
             }
@@ -506,28 +694,21 @@
                         { label:'수학', data:recs.map(r=>r.mathPtc), borderColor:'#3b82f6', backgroundColor:'#3b82f6', borderWidth:2, borderDash:[5,5] }
                     ]
                 },
-                plugins: [ChartDataLabels], // ✨ 차트에 플러그인 적용
+                plugins: [ChartDataLabels], 
                 options: { 
                     maintainAspectRatio: false, 
                     plugins: { 
                         title: { display: true, text: `${sid} ${info.name} 학생 성적 추이`, font: {size: 20} },
-                        // ✨ 데이터 라벨(숫자) 상세 설정
                         datalabels: {
-                            // ✨ 조건에 따라 라벨 표시 여부 결정
+                            // ✨ 요청하신 국수탐 평균에만 값이 보이도록 제어 (이전 대화 반영)
                             display: function(context) {
-                                // 현재 데이터셋의 라벨이 '국수탐 평균'일 때만 true 반환 (표시)
                                 return context.dataset.label === '국수탐 평균';
                             },
-                            align: 'top',      // 점의 위쪽에 표시
-                            anchor: 'end',     // 점 끝부분 기준
-                            color: '#10b981',  // ✨ '국수탐 평균' 색상과 동일하게 변경하여 눈에 띄게 함
-                            font: {
-                                weight: '900', // ✨ 글씨를 더 굵게
-                                size: 14       // ✨ 글씨 크기를 더 크게
-                            },
-                            formatter: function(value) {
-                                return value; // 실제 점수 텍스트
-                            }
+                            align: 'top',
+                            anchor: 'end',
+                            color: '#10b981',
+                            font: { weight: '900', size: 14 },
+                            formatter: function(value) { return value; }
                         }
                     } 
                 }
@@ -544,7 +725,8 @@
                 tbody.appendChild(tr);
             });
         }
-        // ---------------- 졸업생 수시 스크립트 ----------------
+
+        // ---------------- [기능 3] 졸업생 수시 스크립트 ----------------
         let rawGradData = [];
         let filteredGradData = [];
         let currentSortCol = null;
@@ -615,7 +797,6 @@
                 if (fUniv && u !== fUniv) return false;
                 if (fMajor && !m.includes(fMajor)) return false;
                 
-                // 🚀 수정된 부분: '합격'을 선택했을 때 '불합격'이라는 글자가 있으면 제외
                 if (fResult) {
                     if (fResult === '합격' && r.includes('불합격')) return false;
                     if (!r.includes(fResult)) return false;
@@ -699,38 +880,22 @@
                 
                colOrder.forEach(idx => {
                     let cellData = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
-                    
                     if (idx === 5) cellData = blindName(cellData);
 
                     let tdClass = "";
-
-                    // 1) 최종단계 (24번 열) - 결과에 따라 색상과 폰트 크기/굵기 변경
                     if (idx === 24) {
                         if (cellData.includes('불합격')) {
-                            // 진한 빨간색, 아주 굵게, 폰트 키움
                             tdClass = "font-black text-red-700 text-base"; 
                         } else if (cellData.includes('합격')) {
-                            // 진한 파란색, 아주 굵게, 폰트 키움
                             tdClass = "font-black text-blue-700 text-base"; 
                         } else {
                             tdClass = "font-bold text-gray-800 text-base";
                         }
                     }
-                    // 2) 등급 관련 (20: 일반등급, 22: 내등급) - 볼드체 및 폰트 키움
-                    else if (idx === 20 || idx === 22) {
-                        tdClass = "font-bold text-gray-900 text-base bg-yellow-50/50"; // (선택) 등급 칸 배경색 살짝 추가
-                    }
-                    // 3) 이름(5), 대학명(8) - 기존 볼드체 유지
-                    else if (idx === 5 || idx === 8) {
-                        tdClass = "font-bold text-gray-800";
-                    }
+                    else if (idx === 20 || idx === 22) tdClass = "font-bold text-gray-900 text-base bg-yellow-50/50";
+                    else if (idx === 5 || idx === 8) tdClass = "font-bold text-gray-800";
 
-                    // 클래스 적용하여 HTML 생성
-                    if (tdClass) {
-                        rowHtml += `<td class="${tdClass}">${cellData}</td>`;
-                    } else {
-                        rowHtml += `<td>${cellData}</td>`;
-                    }
+                    html += tdClass ? `<td class="${tdClass}">${cellData}</td>` : `<td>${cellData}</td>`;
                 });
                 
                 tr.innerHTML = rowHtml;
