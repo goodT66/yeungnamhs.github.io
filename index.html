@@ -489,6 +489,12 @@
             const info = studentMap.get(sid), recs = info.records;
             const ctx = document.getElementById('scoreChart').getContext('2d');
             if (chartInstance) chartInstance.destroy();
+
+            // ✨ 플러그인 등록 (차트 그리기 전에 필수)
+            if (typeof ChartDataLabels !== 'undefined') {
+                Chart.register(ChartDataLabels);
+            }
+
             chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -499,7 +505,26 @@
                         { label:'수학', data:recs.map(r=>r.mathPtc), borderColor:'#3b82f6', backgroundColor:'#3b82f6', borderWidth:2, borderDash:[5,5] }
                     ]
                 },
-                options: { maintainAspectRatio: false, plugins: { title: { display: true, text: `${sid} ${info.name} 학생 성적 추이`, font: {size: 20} } } }
+                plugins: [ChartDataLabels], // ✨ 차트에 플러그인 적용
+                options: { 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        title: { display: true, text: `${sid} ${info.name} 학생 성적 추이`, font: {size: 20} },
+                        // ✨ 데이터 라벨(숫자) 상세 설정
+                        datalabels: {
+                            align: 'top',      // 점의 위쪽에 표시
+                            anchor: 'end',     // 점 끝부분 기준
+                            color: '#374151',  // 진한 회색 텍스트
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            },
+                            formatter: function(value) {
+                                return value; // 실제 점수 텍스트
+                            }
+                        }
+                    } 
+                }
             });
             document.getElementById('tableContainer').classList.remove('hidden');
             const tbody = document.getElementById('scoreTableBody'); tbody.innerHTML = '';
