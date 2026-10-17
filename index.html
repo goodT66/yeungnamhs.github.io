@@ -7,7 +7,10 @@
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    
+    <!-- ✨ [수정됨] 차트 스크립트와 데이터 라벨 플러그인을 안전하게 <head>에서 먼저 불러옵니다. -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -47,9 +50,9 @@
     </div>
 
     <!-- 전체 컨테이너 -->
-<div class="w-full z-10 relative px-4" style="max-width: 95%; margin: 0 auto;">
+    <div class="w-full z-10 relative px-4" style="max-width: 95%; margin: 0 auto;">
         
-        <!-- 상단 헤더 (항상 보임 & 구글 로그인 영역 추가) -->
+        <!-- 상단 헤더 -->
         <header class="bg-school rounded-2xl shadow-md p-6 mb-10 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div class="flex items-center gap-6">
                 <div class="bg-white rounded-full w-16 h-16 flex items-center justify-center shadow-inner shrink-0 relative overflow-hidden p-1">
@@ -77,7 +80,7 @@
         </header>
 
         <!-- [화면 1] 메인 메뉴 대시보드 grid 속성 변경 -->
-<div id="mainDashboard" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 items-stretch">
+        <div id="mainDashboard" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 items-stretch">
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-blue-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
                 <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🎓</span></div>
                 <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">학생 <span class="text-red-600">개별</span> 조회</h2>
@@ -148,34 +151,31 @@
                     <select id="studentSelect" onchange="renderMockData()" class="border border-gray-300 rounded-lg p-2 w-64 bg-white"><option value="">학생 선택</option></select>
                 </div>
                 
-              <!-- 1. 그래프에 숫자를 표시해 주는 플러그인 불러오기 -->
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+                <!-- ✨ [수정됨] 스크롤 시 상단에 고정되도록 sticky 등 클래스 적용된 그래프 영역 -->
+                <div class="sticky top-0 z-50 bg-white pt-4 pb-4 border-b border-gray-200 w-full mb-10 shadow-sm" style="height: 500px;">
+                    <canvas id="scoreChart"></canvas>
+                </div>
 
-<!-- 2. 그래프 영역 (스크롤 시 상단에 고정되도록 sticky 등 클래스 적용) -->
-<div class="sticky top-0 z-50 bg-white pt-4 pb-4 border-b border-gray-200 w-full mb-10 shadow-sm" style="height: 500px;">
-    <canvas id="scoreChart"></canvas>
-</div>
-
-<!-- 3. 성적 표 영역 (기존 코드 유지) -->
-<div id="tableContainer" class="hidden w-full overflow-x-auto pb-4">
-    <table class="score-table w-full text-sm">
-        <thead>
-            <tr>
-                <th rowspan="2" class="w-24">월(고사명)</th>
-                <th colspan="3" class="text-red-600 bg-red-50">국어</th><th colspan="3" class="text-blue-600 bg-blue-50">수학</th>
-                <th rowspan="2">영어<br>등급</th><th rowspan="2">한국사<br>등급</th>
-                <th colspan="3" class="text-emerald-600 bg-emerald-50">탐구1</th><th colspan="3" class="text-purple-600 bg-purple-50">탐구2</th>
-            </tr>
-            <tr>
-                <th class="bg-red-50">표점</th><th class="bg-red-50">백분위</th><th class="bg-red-50">등급</th>
-                <th class="bg-blue-50">표점</th><th class="bg-blue-50">백분위</th><th class="bg-blue-50">등급</th>
-                <th class="bg-emerald-50">표점</th><th class="bg-emerald-50">백분위</th><th class="bg-emerald-50">등급</th>
-                <th class="bg-purple-50">표점</th><th class="bg-purple-50">백분위</th><th class="bg-purple-50">등급</th>
-            </tr>
-        </thead>
-        <tbody id="scoreTableBody"></tbody>
-    </table>
-</div>
+                <!-- 성적 표 영역 -->
+                <div id="tableContainer" class="hidden w-full overflow-x-auto pb-4">
+                    <table class="score-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" class="w-24">월(고사명)</th>
+                                <th colspan="3" class="text-red-600 bg-red-50">국어</th><th colspan="3" class="text-blue-600 bg-blue-50">수학</th>
+                                <th rowspan="2">영어<br>등급</th><th rowspan="2">한국사<br>등급</th>
+                                <th colspan="3" class="text-emerald-600 bg-emerald-50">탐구1</th><th colspan="3" class="text-purple-600 bg-purple-50">탐구2</th>
+                            </tr>
+                            <tr>
+                                <th class="bg-red-50">표점</th><th class="bg-red-50">백분위</th><th class="bg-red-50">등급</th>
+                                <th class="bg-blue-50">표점</th><th class="bg-blue-50">백분위</th><th class="bg-blue-50">등급</th>
+                                <th class="bg-emerald-50">표점</th><th class="bg-emerald-50">백분위</th><th class="bg-emerald-50">등급</th>
+                                <th class="bg-purple-50">표점</th><th class="bg-purple-50">백분위</th><th class="bg-purple-50">등급</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scoreTableBody"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -226,28 +226,28 @@
                 <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 65vh;">
                     <table class="grad-table text-sm w-full">
                         <thead class="sticky top-0 z-10 shadow-sm">
-    <tr>
-        <th onclick="setGradSort(0)">연도 <span id="icon-0" class="sort-icon"></span></th>
-        <th onclick="setGradSort(1)">학번 <span id="icon-1" class="sort-icon"></span></th>
-        <th onclick="setGradSort(5)">이름 <span id="icon-5" class="sort-icon"></span></th>
-        <th onclick="setGradSort(8)">대학명 <span id="icon-8" class="sort-icon"></span></th>
-        <th onclick="setGradSort(12)">세부유형 <span id="icon-12" class="sort-icon"></span></th>
-        <th onclick="setGradSort(14)">계열 <span id="icon-14" class="sort-icon"></span></th>
-        <th onclick="setGradSort(15)">모집단위 <span id="icon-15" class="sort-icon"></span></th>
-        <th onclick="setGradSort(16)">모집인원 <span id="icon-16" class="sort-icon"></span></th>
-        <th onclick="setGradSort(17)">선발유형 <span id="icon-17" class="sort-icon"></span></th>
-        <th onclick="setGradSort(20)">일반등급 <span id="icon-20" class="sort-icon"></span></th>
-        <th onclick="setGradSort(22)">내등급(환산) <span id="icon-22" class="sort-icon"></span></th>
-        <th onclick="setGradSort(23)">1단계 <span id="icon-23" class="sort-icon"></span></th>
-        <th onclick="setGradSort(24)">최종단계 <span id="icon-24" class="sort-icon"></span></th>
-        <th onclick="setGradSort(25)">불합격사유 <span id="icon-25" class="sort-icon"></span></th>
-        <th onclick="setGradSort(26)">최초후보순위 <span id="icon-26" class="sort-icon"></span></th>
-        <th onclick="setGradSort(18)">최저학력 <span id="icon-18" class="sort-icon"></span></th>
-    </tr>
-</thead>
-<tbody id="gradTableBody">
-    <tr><td colspan="16" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
-</tbody>
+                            <tr>
+                                <th onclick="setGradSort(0)">연도 <span id="icon-0" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(1)">학번 <span id="icon-1" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(5)">이름 <span id="icon-5" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(8)">대학명 <span id="icon-8" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(12)">세부유형 <span id="icon-12" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(14)">계열 <span id="icon-14" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(15)">모집단위 <span id="icon-15" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(16)">모집인원 <span id="icon-16" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(17)">선발유형 <span id="icon-17" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(20)">일반등급 <span id="icon-20" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(22)">내등급(환산) <span id="icon-22" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(23)">1단계 <span id="icon-23" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(24)">최종단계 <span id="icon-24" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(25)">불합격사유 <span id="icon-25" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(26)">최초후보순위 <span id="icon-26" class="sort-icon"></span></th>
+                                <th onclick="setGradSort(18)">최저학력 <span id="icon-18" class="sort-icon"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="gradTableBody">
+                            <tr><td colspan="16" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -255,7 +255,7 @@
 
     </div>
 
-   <!-- 파이어베이스 SDK 연동 -->
+<!-- 파이어베이스 SDK 연동 -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -483,6 +483,7 @@
                 .filter(id => id.startsWith(g + c)).sort()
                 .forEach(id => sSel.appendChild(new Option(`${parseInt(id.substring(3,5),10)}번 - ${studentMap.get(id).name}`, id)));
         }
+        
         function renderMockData() {
             const sid = document.getElementById('studentSelect').value;
             if (!sid || !studentMap.has(sid)) return;
