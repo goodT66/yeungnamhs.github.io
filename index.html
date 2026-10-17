@@ -8,7 +8,6 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     
-    <!-- 차트 스크립트와 데이터 라벨 플러그인 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     
@@ -31,7 +30,6 @@
         .score-table td { border: 1px solid #e2e8f0; padding: 10px 4px; text-align: center; white-space: nowrap; }
         .score-table tr:hover td { background-color: #f1f5f9; }
         
-        /* 다목적 표 전용 (졸업생/반별조회 공통) */
         .grad-table { border-collapse: collapse; min-width: 1600px; }
         .grad-table th { background-color: #f0fdf4; font-weight: bold; border: 1px solid #bbf7d0; padding: 12px 8px; text-align: center; white-space: nowrap; cursor: pointer; transition: background 0.2s; user-select: none; }
         .grad-table th:hover { background-color: #dcfce7; }
@@ -42,17 +40,14 @@
 </head>
 <body class="min-h-screen flex flex-col items-center pt-10 pb-20 px-4 relative overflow-x-hidden">
 
-    <!-- 배경 로고 -->
     <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 pointer-events-none flex flex-col items-center justify-center" style="opacity: 0.03;">
         <div class="w-96 h-96 rounded-full border-gray-500 flex items-center justify-center" style="border-width: 20px;">
             <span class="text-8xl font-black text-gray-500">YEUNGNAM</span>
         </div>
     </div>
 
-    <!-- 전체 컨테이너 -->
     <div class="w-full z-10 relative px-4" style="max-width: 95%; margin: 0 auto;">
         
-        <!-- 상단 헤더 -->
         <header class="bg-school rounded-2xl shadow-md p-6 mb-10 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div class="flex items-center gap-6">
                 <div class="bg-white rounded-full w-16 h-16 flex items-center justify-center shadow-inner shrink-0 relative overflow-hidden p-1">
@@ -67,7 +62,6 @@
                 </div>
             </div>
 
-            <!-- 파이어베이스 구글 로그인 / 로그아웃 상자 -->
             <div class="bg-white/10 p-3 rounded-xl border border-white/20 backdrop-blur-sm text-right">
                 <button id="loginBtn" onclick="loginWithGoogle()" class="bg-white text-[#094b83] font-bold px-4 py-2 rounded-lg shadow hover:bg-gray-100 transition">
                     🔑 교사 인증 (Google 로그인)
@@ -86,7 +80,6 @@
                 <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">학생 <span class="text-red-600">개별</span> 조회</h2>
             </div>
             
-            <!-- ✨ 클릭 시 반별 전체 조회 뷰(classView) 열기 추가 -->
             <div onclick="openClassView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-green-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
                 <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🤝‍🧑</span></div>
                 <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">반별 <span class="text-red-600">전체</span> 조회</h2>
@@ -143,6 +136,8 @@
             </div>
 
             <div id="mockContent" class="hidden">
+                <div id="mockErrorMessage" class="mb-4 hidden p-4 bg-red-100 text-red-700 rounded-lg font-bold text-sm"></div>
+
                 <div class="mb-6 flex flex-col sm:flex-row gap-4 items-center bg-gray-50 p-4 rounded-lg border border-gray-200 flex-wrap">
                     <select id="gradeSelect" onchange="onGradeChange()" class="border border-gray-300 rounded-lg p-2 w-32 bg-white"><option value="">로딩 중...</option></select>
                     <select id="classSelect" onchange="onClassChange()" class="border border-gray-300 rounded-lg p-2 w-32 bg-white"><option value="">반 선택</option></select>
@@ -245,7 +240,7 @@
             </div>
         </div>
 
-        <!-- ✨ [화면 4] 반별 전체 조회 (2026 수시) 화면 신규 추가 -->
+        <!-- [화면 4] 반별 전체 조회 (2026 수시) 화면 -->
         <div id="classView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-green-500">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
                 <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -262,13 +257,25 @@
             </div>
 
             <div id="classContent" class="hidden">
+                <!-- 이름, 대학명, 학과명 드롭다운/검색 필터 -->
                 <div class="mb-4 flex flex-wrap gap-4 items-center bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <select id="classGradeSelect" onchange="onClassGradeChange()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
+                    <select id="classGradeSelect" onchange="onClassGradeChange()" class="border border-gray-300 rounded p-2 bg-white font-medium w-28">
                         <option value="">학년 선택</option>
                     </select>
-                    <select id="classNumSelect" onchange="renderClassTable()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
+                    
+                    <select id="classNumSelect" onchange="onClassNumChange()" class="border border-gray-300 rounded p-2 bg-white font-medium w-28">
                         <option value="">반 선택</option>
                     </select>
+                    
+                    <select id="classNameSelect" onchange="renderClassTable()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
+                        <option value="">이름 전체</option>
+                    </select>
+
+                    <input list="classUnivList" id="classUnivInput" placeholder="대학명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-40" onchange="renderClassTable()" onkeyup="renderClassTable()">
+                    <datalist id="classUnivList"></datalist>
+
+                    <input list="classMajorList" id="classMajorInput" placeholder="학과명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-48" onchange="renderClassTable()" onkeyup="renderClassTable()">
+                    <datalist id="classMajorList"></datalist>
                 </div>
                 
                 <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 70vh;">
@@ -305,7 +312,6 @@
 
     </div>
 
-<!-- 파이어베이스 SDK 연동 -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -324,7 +330,6 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    // 허용된 교사 이메일 목록
     const ALLOWED_EMAILS = [
         "jjoeun32@gmail.com",
         "jjoeun32@yeungnam.hs.kr",
@@ -333,13 +338,11 @@
 
     let currentUser = null;
 
-    // 로그인 상태 감지
     onAuthStateChanged(auth, async (user) => {
         const loginBtn = document.getElementById('loginBtn');
         const userInfo = document.getElementById('userInfo');
 
         if (user) {
-            // 권한 체크
             if (!ALLOWED_EMAILS.includes(user.email)) {
                 alert(`[접근 제한] ${user.email} 계정은 교사 인증 권한이 없습니다.`);
                 await signOut(auth);
@@ -351,14 +354,12 @@
             userInfo.classList.remove('hidden');
             document.getElementById('userEmail').innerText = user.email;
 
-            // 인증 완료 UI 전환
             document.getElementById('authRequiredMock')?.classList.add('hidden');
             document.getElementById('mockContent')?.classList.remove('hidden');
             
             document.getElementById('authRequiredGrad')?.classList.add('hidden');
             document.getElementById('gradContent')?.classList.remove('hidden');
             
-            // 반별 조회 뷰 인증해제
             document.getElementById('authRequiredClass')?.classList.add('hidden');
             document.getElementById('classContent')?.classList.remove('hidden');
 
@@ -368,7 +369,6 @@
             if (window.rawGradData.length > 0) {
                 window.applyGradFilter();
             }
-            // 반별 드롭다운도 생성
             if (window.classSusiData && window.classSusiData.length > 0 && document.getElementById('classGradeSelect').options.length <= 1) {
                 window.populateClassGradeDropdown();
             }
@@ -377,7 +377,6 @@
             loginBtn.classList.remove('hidden');
             userInfo.classList.add('hidden');
 
-            // 미인증 상태 UI 전환
             document.getElementById('authRequiredMock')?.classList.remove('hidden');
             document.getElementById('mockContent')?.classList.add('hidden');
             
@@ -389,7 +388,6 @@
         }
     });
 
-    // 구글 로그인
     window.loginWithGoogle = async () => {
         try {
             const result = await signInWithPopup(auth, provider);
@@ -403,7 +401,6 @@
         }
     };
 
-    // 로그아웃
     window.logout = async () => {
         await signOut(auth);
         alert("로그아웃 되었습니다.");
@@ -412,14 +409,12 @@
     window.getCurrentUser = () => currentUser;
 </script>
 
-    <!-- 기존 스크립트 기능 유지 + 반별조회 추가 -->
     <script>
         const SHEET_ID = '1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM';
         const MOCK_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
         const GRAD_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=졸업생`;
-        const SUSI_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026수시`; // 반별조회용
+        const SUSI_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026수시`; 
 
-        // ---------------- 공통 화면 전환 로직 ----------------
         function showMainDashboard() {
             document.getElementById('mainDashboard').classList.remove('hidden');
             document.getElementById('mockView').classList.add('hidden');
@@ -475,10 +470,10 @@
         document.addEventListener("DOMContentLoaded", () => {
             fetchMockData();
             fetchGradData();
-            fetchClassSusiData(); // ✨ 2026수시 데이터 호출 추가
+            fetchClassSusiData(); 
         });
 
-        // ---------------- [기능 1] 반별 전체 조회 (2026 수시) 스크립트 ----------------
+        // ---------------- [기능 1] 반별 전체 조회 (2026 수시) ----------------
         let classSusiData = [];
 
         async function fetchClassSusiData() {
@@ -518,6 +513,11 @@
             const g = document.getElementById('classGradeSelect').value;
             const select = document.getElementById('classNumSelect');
             select.innerHTML = '<option value="">반 선택</option>';
+            
+            document.getElementById('classNameSelect').innerHTML = '<option value="">이름 전체</option>';
+            document.getElementById('classUnivInput').value = '';
+            document.getElementById('classMajorInput').value = '';
+            
             document.getElementById('classTableBody').innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">반을 선택해주세요.</td></tr>';
             
             if (!g) return;
@@ -531,9 +531,61 @@
             Array.from(classes).sort((a,b) => parseInt(a) - parseInt(b)).forEach(c => select.appendChild(new Option(`${c}반`, c)));
         }
 
+        function onClassNumChange() {
+            const g = document.getElementById('classGradeSelect').value;
+            const c = document.getElementById('classNumSelect').value;
+
+            const nameSelect = document.getElementById('classNameSelect');
+            const univList = document.getElementById('classUnivList');
+            const majorList = document.getElementById('classMajorList');
+
+            nameSelect.innerHTML = '<option value="">이름 전체</option>';
+            univList.innerHTML = '';
+            majorList.innerHTML = '';
+            document.getElementById('classUnivInput').value = '';
+            document.getElementById('classMajorInput').value = '';
+
+            if (!g || !c) {
+                renderClassTable();
+                return;
+            }
+
+            const names = new Set();
+            const univs = new Set();
+            const majors = new Set();
+
+            classSusiData.forEach(row => {
+                if (String(row[1]).trim() === g && String(row[2]).trim() === c) {
+                    if (row[4]) names.add(String(row[4]).trim()); 
+                    if (row[5]) univs.add(String(row[5]).trim()); 
+                    if (row[9]) majors.add(String(row[9]).trim()); 
+                }
+            });
+
+            Array.from(names).sort().forEach(n => nameSelect.appendChild(new Option(n, n)));
+            
+            Array.from(univs).sort().forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u;
+                univList.appendChild(opt);
+            });
+            
+            Array.from(majors).sort().forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                majorList.appendChild(opt);
+            });
+
+            renderClassTable();
+        }
+
         function renderClassTable() {
             const g = document.getElementById('classGradeSelect').value;
             const c = document.getElementById('classNumSelect').value;
+            const n = document.getElementById('classNameSelect').value;
+            const u = document.getElementById('classUnivInput').value.trim();
+            const m = document.getElementById('classMajorInput').value.trim();
+            
             const tbody = document.getElementById('classTableBody');
             
             if(!g || !c) {
@@ -541,26 +593,35 @@
                 return;
             }
 
-            // 학년과 반이 일치하는 데이터만 필터링
-            const filtered = classSusiData.filter(row => String(row[1]).trim() === g && String(row[2]).trim() === c);
+            const filtered = classSusiData.filter(row => {
+                const rowG = String(row[1] || '').trim();
+                const rowC = String(row[2] || '').trim();
+                const rowN = String(row[4] || '').trim();
+                const rowU = String(row[5] || '').trim();
+                const rowM = String(row[9] || '').trim();
+
+                if (rowG !== g || rowC !== c) return false;
+                if (n && rowN !== n) return false;
+                if (u && !rowU.includes(u)) return false;
+                if (m && !rowM.includes(m)) return false;
+                
+                return true;
+            });
             
-            // 번호(row[3]) 순서대로 오름차순 정렬
             filtered.sort((a, b) => parseInt(a[3] || 0) - parseInt(b[3] || 0));
 
             tbody.innerHTML = '';
             
             if(filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">해당 반의 데이터가 없습니다.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
                 return;
             }
 
-            // 요청된 컬럼 순서 (0-indexed 기준): 
-            // 반(2), 번호(3), 이름(4), 대학명(5), 전형유형(6), 전형명(7), 계열(8), 모집단위(9), 일반등급(13), 내등급(환산)(14), 1단계(17), 최종단계(18), 불합격사유(19), 최초후보순위(20), 모집인원(10), 선발유형(11), 최저학력기준(12), 최종발표일(24)
             const cols = [2, 3, 4, 5, 6, 7, 8, 9, 13, 14, 17, 18, 19, 20, 10, 11, 12, 24];
             
             filtered.forEach(row => {
                 const tr = document.createElement('tr');
-                const finalResult = String(row[18] || '').trim(); // 18이 최종단계
+                const finalResult = String(row[18] || '').trim(); 
                 
                 if(finalResult.includes('합격') && !finalResult.includes('불')) tr.classList.add('bg-blue-50');
                 if(finalResult.includes('불합격')) tr.classList.add('bg-red-50');
@@ -570,13 +631,13 @@
                     let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
                     let tdClass = "";
 
-                    if (idx === 18) { // 최종단계 결과
+                    if (idx === 18) { 
                         if (val.includes('불합격')) tdClass = "font-black text-red-700 text-base";
                         else if (val.includes('합격')) tdClass = "font-black text-blue-700 text-base";
                         else tdClass = "font-bold text-gray-800";
-                    } else if (idx === 13 || idx === 14) { // 등급
+                    } else if (idx === 13 || idx === 14) {
                         tdClass = "font-bold text-gray-900 bg-yellow-50/50";
-                    } else if (idx === 4 || idx === 5) { // 이름, 대학명
+                    } else if (idx === 4 || idx === 5) { 
                         tdClass = "font-bold text-gray-800";
                     }
 
@@ -587,8 +648,7 @@
             });
         }
 
-
-        // ---------------- [기능 2] 개별 모의고사 스크립트 ----------------
+        // ---------------- [기능 2] 개별 모의고사 ----------------
         let mockDataLoaded = false;
         let studentMap = new Map();
         let chartInstance = null;
@@ -700,14 +760,8 @@
                     plugins: { 
                         title: { display: true, text: `${sid} ${info.name} 학생 성적 추이`, font: {size: 20} },
                         datalabels: {
-                            // ✨ 요청하신 국수탐 평균에만 값이 보이도록 제어 (이전 대화 반영)
-                            display: function(context) {
-                                return context.dataset.label === '국수탐 평균';
-                            },
-                            align: 'top',
-                            anchor: 'end',
-                            color: '#10b981',
-                            font: { weight: '900', size: 14 },
+                            display: function(context) { return context.dataset.label === '국수탐 평균'; },
+                            align: 'top', anchor: 'end', color: '#10b981', font: { weight: '900', size: 14 },
                             formatter: function(value) { return value; }
                         }
                     } 
@@ -726,7 +780,7 @@
             });
         }
 
-        // ---------------- [기능 3] 졸업생 수시 스크립트 ----------------
+        // ---------------- [기능 3] 졸업생 수시 스크립트 (오류 수정 완료) ----------------
         let rawGradData = [];
         let filteredGradData = [];
         let currentSortCol = null;
@@ -876,6 +930,7 @@
                 if(r.includes('합격') && !r.includes('불')) tr.classList.add('bg-blue-50');
                 if(r.includes('불합격')) tr.classList.add('bg-red-50');
 
+                // ✨ [오류 수정 완료] html -> rowHtml 로 이름 변경
                 let rowHtml = '';
                 
                colOrder.forEach(idx => {
@@ -884,18 +939,14 @@
 
                     let tdClass = "";
                     if (idx === 24) {
-                        if (cellData.includes('불합격')) {
-                            tdClass = "font-black text-red-700 text-base"; 
-                        } else if (cellData.includes('합격')) {
-                            tdClass = "font-black text-blue-700 text-base"; 
-                        } else {
-                            tdClass = "font-bold text-gray-800 text-base";
-                        }
+                        if (cellData.includes('불합격')) tdClass = "font-black text-red-700 text-base"; 
+                        else if (cellData.includes('합격')) tdClass = "font-black text-blue-700 text-base"; 
+                        else tdClass = "font-bold text-gray-800 text-base";
                     }
                     else if (idx === 20 || idx === 22) tdClass = "font-bold text-gray-900 text-base bg-yellow-50/50";
                     else if (idx === 5 || idx === 8) tdClass = "font-bold text-gray-800";
 
-                    html += tdClass ? `<td class="${tdClass}">${cellData}</td>` : `<td>${cellData}</td>`;
+                    rowHtml += tdClass ? `<td class="${tdClass}">${cellData}</td>` : `<td>${cellData}</td>`;
                 });
                 
                 tr.innerHTML = rowHtml;
