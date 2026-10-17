@@ -278,28 +278,31 @@
                     <datalist id="classMajorList"></datalist>
                 </div>
                 
+                <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
+
                 <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 70vh;">
                     <table class="grad-table text-sm w-full">
                         <thead class="sticky top-0 z-10 shadow-sm">
+                            <!-- ✨ 각 제목에 클릭 이벤트 및 정렬 아이콘(span) 추가 -->
                             <tr>
-                                <th>반</th>
-                                <th>번호</th>
-                                <th>이름</th>
-                                <th>대학명</th>
-                                <th>전형유형</th>
-                                <th>전형명</th>
-                                <th>계열</th>
-                                <th>모집단위</th>
-                                <th>일반등급</th>
-                                <th>내등급(환산)</th>
-                                <th>1단계</th>
-                                <th>최종단계</th>
-                                <th>불합격사유</th>
-                                <th>최초후보순위</th>
-                                <th>모집인원</th>
-                                <th>선발유형</th>
-                                <th>최저학력기준</th>
-                                <th>최종발표일</th>
+                                <th onclick="setClassSort(2)">반 <span id="class-icon-2" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(3)">번호 <span id="class-icon-3" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(4)">이름 <span id="class-icon-4" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(5)">대학명 <span id="class-icon-5" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(6)">전형유형 <span id="class-icon-6" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(7)">전형명 <span id="class-icon-7" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(8)">계열 <span id="class-icon-8" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(9)">모집단위 <span id="class-icon-9" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(13)">일반등급 <span id="class-icon-13" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(14)">내등급(환산) <span id="class-icon-14" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(17)">1단계 <span id="class-icon-17" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(18)">최종단계 <span id="class-icon-18" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(19)">불합격사유 <span id="class-icon-19" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(20)">최초후보순위 <span id="class-icon-20" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(10)">모집인원 <span id="class-icon-10" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(11)">선발유형 <span id="class-icon-11" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(12)">최저학력기준 <span id="class-icon-12" class="sort-icon"></span></th>
+                                <th onclick="setClassSort(24)">최종발표일 <span id="class-icon-24" class="sort-icon"></span></th>
                             </tr>
                         </thead>
                         <tbody id="classTableBody">
@@ -475,6 +478,11 @@
 
         // ---------------- [기능 1] 반별 전체 조회 (2026 수시) ----------------
         let classSusiData = [];
+        
+        // ✨ 반별 조회 정렬을 위한 전역 변수
+        let currentClassSortCol = null;
+        let isClassAscending = true;
+        const classColOrder = [2, 3, 4, 5, 6, 7, 8, 9, 13, 14, 17, 18, 19, 20, 10, 11, 12, 24];
 
         async function fetchClassSusiData() {
             try {
@@ -579,6 +587,28 @@
             renderClassTable();
         }
 
+        // ✨ 반별 조회 정렬 세팅 함수
+        function setClassSort(colIndex) {
+            if (currentClassSortCol === colIndex) {
+                isClassAscending = !isClassAscending;
+            } else {
+                currentClassSortCol = colIndex;
+                isClassAscending = true;
+            }
+            
+            // 모든 화살표 초기화
+            classColOrder.forEach(idx => {
+                const icon = document.getElementById(`class-icon-${idx}`);
+                if (icon) icon.textContent = '';
+            });
+            
+            // 클릭한 컬럼에 화살표 표시
+            const activeIcon = document.getElementById(`class-icon-${colIndex}`);
+            if (activeIcon) activeIcon.textContent = isClassAscending ? ' ▲' : ' ▼';
+
+            renderClassTable();
+        }
+
         function renderClassTable() {
             const g = document.getElementById('classGradeSelect').value;
             const c = document.getElementById('classNumSelect').value;
@@ -608,7 +638,29 @@
                 return true;
             });
             
-            filtered.sort((a, b) => parseInt(a[3] || 0) - parseInt(b[3] || 0));
+            // ✨ 정렬 로직 적용
+            if (currentClassSortCol !== null) {
+                filtered.sort((a, b) => {
+                    let valA = a[currentClassSortCol] !== undefined && a[currentClassSortCol] !== null ? String(a[currentClassSortCol]).trim() : '';
+                    let valB = b[currentClassSortCol] !== undefined && b[currentClassSortCol] !== null ? String(b[currentClassSortCol]).trim() : '';
+
+                    if (valA === '' || valA === '-') return 1;
+                    if (valB === '' || valB === '-') return -1;
+
+                    let numA = parseFloat(valA);
+                    let numB = parseFloat(valB);
+                    if (!isNaN(numA) && !isNaN(numB)) {
+                        return isClassAscending ? (numA - numB) : (numB - numA);
+                    }
+
+                    if (valA < valB) return isClassAscending ? -1 : 1;
+                    if (valA > valB) return isClassAscending ? 1 : -1;
+                    return 0;
+                });
+            } else {
+                // 기본 정렬: 번호(row[3]) 오름차순
+                filtered.sort((a, b) => parseInt(a[3] || 0) - parseInt(b[3] || 0));
+            }
 
             tbody.innerHTML = '';
             
@@ -616,8 +668,6 @@
                 tbody.innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
                 return;
             }
-
-            const cols = [2, 3, 4, 5, 6, 7, 8, 9, 13, 14, 17, 18, 19, 20, 10, 11, 12, 24];
             
             filtered.forEach(row => {
                 const tr = document.createElement('tr');
@@ -627,7 +677,7 @@
                 if(finalResult.includes('불합격')) tr.classList.add('bg-red-50');
 
                 let html = '';
-                cols.forEach(idx => {
+                classColOrder.forEach(idx => {
                     let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
                     let tdClass = "";
 
@@ -780,13 +830,13 @@
             });
         }
 
-        // ---------------- [기능 3] 졸업생 수시 스크립트 (오류 수정 완료) ----------------
+        // ---------------- [기능 3] 졸업생 수시 스크립트 ----------------
         let rawGradData = [];
         let filteredGradData = [];
         let currentSortCol = null;
         let isAscending = true;
 
-       const colOrder = [0, 1, 5, 8, 12, 14, 15, 16, 17, 20, 22, 23, 24, 25, 26, 18];
+       const gradColOrder = [0, 1, 5, 8, 12, 14, 15, 16, 17, 20, 22, 23, 24, 25, 26, 18];
 
         async function fetchGradData() {
             document.getElementById('gradLoadingSpinner').classList.remove('hidden');
@@ -871,7 +921,7 @@
                 isAscending = true;
             }
             
-            colOrder.forEach(idx => {
+            gradColOrder.forEach(idx => {
                 const icon = document.getElementById(`icon-${idx}`);
                 if (icon) icon.textContent = '';
             });
@@ -930,10 +980,9 @@
                 if(r.includes('합격') && !r.includes('불')) tr.classList.add('bg-blue-50');
                 if(r.includes('불합격')) tr.classList.add('bg-red-50');
 
-                // ✨ [오류 수정 완료] html -> rowHtml 로 이름 변경
                 let rowHtml = '';
                 
-               colOrder.forEach(idx => {
+               gradColOrder.forEach(idx => {
                     let cellData = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
                     if (idx === 5) cellData = blindName(cellData);
 
