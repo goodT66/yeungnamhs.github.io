@@ -148,8 +148,9 @@
                     <select id="studentSelect" onchange="renderMockData()" class="border border-gray-300 rounded-lg p-2 w-64 bg-white"><option value="">학생 선택</option></select>
                 </div>
                 
-                <div class="relative w-full mb-10" style="height: 500px;"><canvas id="scoreChart"></canvas></div>
-                
+              <div class="sticky top-0 z-50 bg-white pt-4 pb-4 border-b border-gray-200 w-full mb-10 shadow-sm" style="height: 500px;">
+    <canvas id="scoreChart"></canvas>
+</div>
                 <div id="tableContainer" class="hidden w-full overflow-x-auto pb-4">
                     <table class="score-table w-full text-sm">
                         <thead>
