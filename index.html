@@ -73,16 +73,29 @@
             </div>
         </header>
 
-        <!-- [화면 1] 메인 메뉴 대시보드 -->
-        <div id="mainDashboard" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 items-stretch">
+        <!-- [화면 1] 메인 메뉴 대시보드 (버튼 7개로 조정) -->
+        <div id="mainDashboard" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
             <div class="bg-white rounded-2xl shadow-lg border-b-8 border-blue-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
                 <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🎓</span></div>
                 <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">학생 <span class="text-red-600">개별</span> 조회</h2>
             </div>
             
+            <!-- ✨ 이름 변경된 2026 수시 지원 반별 조회 버튼 -->
             <div onclick="openClassView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-green-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
                 <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🤝‍🧑</span></div>
-                <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">반별 <span class="text-red-600">전체</span> 조회</h2>
+                <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep"><span class="text-red-600">2026 수시 지원</span> 반별 조회</h2>
+            </div>
+
+            <!-- ✨ 신규 추가: 2026 수시 면접 조편성 버튼 -->
+            <div onclick="openInterviewView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-orange-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
+                <div id="interviewLoadingSpinner" class="absolute top-4 right-4 flex h-3 w-3 hidden">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
+                </div>
+                <div class="w-24 h-24 mb-5 flex items-center justify-center bg-orange-100 rounded-3xl shadow-inner border-2 border-orange-200">
+                    <span class="text-6xl drop-shadow-md">🎙️</span>
+                </div>
+                <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep"><span class="text-orange-600">2026 수시</span> 면접 조편성</h2>
             </div>
             
             <div onclick="openMockView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-pink-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
@@ -244,7 +257,7 @@
         <div id="classView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-green-500">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
                 <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    <span class="text-3xl">🧑‍🤝‍🧑</span> 반별 전체 조회 (2026 수시)
+                    <span class="text-3xl">🧑‍🤝‍🧑</span> 2026 수시 지원 반별 조회
                 </h3>
                 <button onclick="showMainDashboard()" class="mt-4 sm:mt-0 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
                     <span>◀</span> 메인 화면으로
@@ -257,7 +270,6 @@
             </div>
 
             <div id="classContent" class="hidden">
-                <!-- 이름, 대학명, 학과명 드롭다운/검색 필터 -->
                 <div class="mb-4 flex flex-wrap gap-4 items-center bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <select id="classGradeSelect" onchange="onClassGradeChange()" class="border border-gray-300 rounded p-2 bg-white font-medium w-28">
                         <option value="">학년 선택</option>
@@ -283,7 +295,6 @@
                 <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 70vh;">
                     <table class="grad-table text-sm w-full">
                         <thead class="sticky top-0 z-10 shadow-sm">
-                            <!-- ✨ 각 제목에 클릭 이벤트 및 정렬 아이콘(span) 추가 -->
                             <tr>
                                 <th onclick="setClassSort(2)">반 <span id="class-icon-2" class="sort-icon"></span></th>
                                 <th onclick="setClassSort(3)">번호 <span id="class-icon-3" class="sort-icon"></span></th>
@@ -307,6 +318,75 @@
                         </thead>
                         <tbody id="classTableBody">
                             <tr><td colspan="18" class="text-center py-10 text-gray-500">학년과 반을 선택해주세요.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✨ [화면 5] 2026 수시 면접 조편성 화면 신규 추가 -->
+        <div id="interviewView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-orange-500">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
+                <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    <span class="text-3xl">🎙️</span> 2026 수시 면접 조편성
+                </h3>
+                <button onclick="showMainDashboard()" class="mt-4 sm:mt-0 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
+                    <span>◀</span> 메인 화면으로
+                </button>
+            </div>
+
+            <div id="authRequiredInterview" class="text-center py-10">
+                <p class="text-red-500 font-bold text-lg mb-2">🔒 교사 인증이 필요합니다.</p>
+                <p class="text-gray-600">우측 상단의 [교사 인증 (Google 로그인)] 버튼을 클릭해 주세요.</p>
+            </div>
+
+            <div id="interviewContent" class="hidden">
+                <!-- 필터/검색 바 -->
+                <div class="mb-4 flex flex-wrap gap-4 items-center bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <select id="ivTeacherSelect" onchange="renderInterviewTable()" class="border border-gray-300 rounded p-2 bg-white font-medium w-40">
+                        <option value="">지도교사 전체</option>
+                    </select>
+                    <input type="text" id="ivNameInput" placeholder="학생 이름 검색" class="border border-gray-300 rounded p-2 font-medium w-32" onkeyup="renderInterviewTable()">
+                    <input type="text" id="ivUnivInput" placeholder="대학명 검색" class="border border-gray-300 rounded p-2 font-medium w-32" onkeyup="renderInterviewTable()">
+                    
+                    <div class="ml-auto text-sm text-gray-700 font-bold bg-white px-3 py-2 rounded border border-gray-200 shadow-sm">
+                        검색 결과: <span id="ivCount" class="text-orange-600 text-lg">0</span>건
+                    </div>
+                </div>
+                
+                <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
+
+                <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 70vh;">
+                    <table class="grad-table text-sm w-full">
+                        <thead class="sticky top-0 z-10 shadow-sm">
+                            <tr>
+                                <th onclick="setIvSort(0)">순번 <span id="iv-icon-0" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(1)">학번 <span id="iv-icon-1" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(2)">학년 <span id="iv-icon-2" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(3)">반 <span id="iv-icon-3" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(4)">번호 <span id="iv-icon-4" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(5)">이름 <span id="iv-icon-5" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(6)">대학명 <span id="iv-icon-6" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(7)">세부전형명 <span id="iv-icon-7" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(8)">계열 <span id="iv-icon-8" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(9)">모집단위 <span id="iv-icon-9" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(10)">모집인원 <span id="iv-icon-10" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(11)">전형방법 <span id="iv-icon-11" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(12)">면접일자 <span id="iv-icon-12" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(13)">합격자발표 <span id="iv-icon-13" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(14)">1단계결과 <span id="iv-icon-14" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(15)">수능최저 <span id="iv-icon-15" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(16)">환산등급 <span id="iv-icon-16" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(17)">환산점수 <span id="iv-icon-17" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(18)" class="bg-orange-100 text-orange-800">지도교사 <span id="iv-icon-18" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(19)">지도1회 <span id="iv-icon-19" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(20)">지도2회 <span id="iv-icon-20" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(21)">지도3회 <span id="iv-icon-21" class="sort-icon"></span></th>
+                                <th onclick="setIvSort(22)">지도4회 <span id="iv-icon-22" class="sort-icon"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="interviewTableBody">
+                            <tr><td colspan="23" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -366,6 +446,9 @@
             document.getElementById('authRequiredClass')?.classList.add('hidden');
             document.getElementById('classContent')?.classList.remove('hidden');
 
+            document.getElementById('authRequiredInterview')?.classList.add('hidden');
+            document.getElementById('interviewContent')?.classList.remove('hidden');
+
             if (window.mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) {
                 window.populateGradeDropdown();
             }
@@ -374,6 +457,9 @@
             }
             if (window.classSusiData && window.classSusiData.length > 0 && document.getElementById('classGradeSelect').options.length <= 1) {
                 window.populateClassGradeDropdown();
+            }
+            if (window.interviewData && window.interviewData.length > 0) {
+                window.renderInterviewTable();
             }
         } else {
             currentUser = null;
@@ -388,6 +474,9 @@
             
             document.getElementById('authRequiredClass')?.classList.remove('hidden');
             document.getElementById('classContent')?.classList.add('hidden');
+
+            document.getElementById('authRequiredInterview')?.classList.remove('hidden');
+            document.getElementById('interviewContent')?.classList.add('hidden');
         }
     });
 
@@ -417,56 +506,45 @@
         const MOCK_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
         const GRAD_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=졸업생`;
         const SUSI_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026수시`; 
+        const INTERVIEW_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026면접`; 
 
         function showMainDashboard() {
             document.getElementById('mainDashboard').classList.remove('hidden');
             document.getElementById('mockView').classList.add('hidden');
             document.getElementById('gradView').classList.add('hidden');
             document.getElementById('classView').classList.add('hidden');
+            document.getElementById('interviewView').classList.add('hidden');
         }
 
         function openMockView() {
             document.getElementById('mainDashboard').classList.add('hidden');
             document.getElementById('mockView').classList.remove('hidden');
-
-            const user = window.getCurrentUser ? window.getCurrentUser() : null;
-            if (user) {
-                document.getElementById('authRequiredMock').classList.add('hidden');
-                document.getElementById('mockContent').classList.remove('hidden');
+            if (window.getCurrentUser && window.getCurrentUser()) {
                 if(mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) populateGradeDropdown();
-            } else {
-                document.getElementById('authRequiredMock').classList.remove('hidden');
-                document.getElementById('mockContent').classList.add('hidden');
             }
         }
 
         function openGradView() {
             document.getElementById('mainDashboard').classList.add('hidden');
             document.getElementById('gradView').classList.remove('hidden');
-
-            const user = window.getCurrentUser ? window.getCurrentUser() : null;
-            if (user) {
-                document.getElementById('authRequiredGrad').classList.add('hidden');
-                document.getElementById('gradContent').classList.remove('hidden');
+            if (window.getCurrentUser && window.getCurrentUser()) {
                 if(rawGradData.length > 0) applyGradFilter();
-            } else {
-                document.getElementById('authRequiredGrad').classList.remove('hidden');
-                document.getElementById('gradContent').classList.add('hidden');
             }
         }
         
         function openClassView() {
             document.getElementById('mainDashboard').classList.add('hidden');
             document.getElementById('classView').classList.remove('hidden');
-
-            const user = window.getCurrentUser ? window.getCurrentUser() : null;
-            if (user) {
-                document.getElementById('authRequiredClass').classList.add('hidden');
-                document.getElementById('classContent').classList.remove('hidden');
+            if (window.getCurrentUser && window.getCurrentUser()) {
                 if(classSusiData.length > 0 && document.getElementById('classGradeSelect').options.length <= 1) populateClassGradeDropdown();
-            } else {
-                document.getElementById('authRequiredClass').classList.remove('hidden');
-                document.getElementById('classContent').classList.add('hidden');
+            }
+        }
+
+        function openInterviewView() {
+            document.getElementById('mainDashboard').classList.add('hidden');
+            document.getElementById('interviewView').classList.remove('hidden');
+            if (window.getCurrentUser && window.getCurrentUser()) {
+                if(interviewData.length > 0) renderInterviewTable();
             }
         }
 
@@ -474,12 +552,136 @@
             fetchMockData();
             fetchGradData();
             fetchClassSusiData(); 
+            fetchInterviewData(); // 면접 데이터 로드 호출
         });
 
-        // ---------------- [기능 1] 반별 전체 조회 (2026 수시) ----------------
+        // ---------------- [신규 기능] 2026 수시 면접 조편성 ----------------
+        let interviewData = [];
+        let currentIvSortCol = null;
+        let isIvAscending = true;
+        const ivColOrder = Array.from({length: 23}, (_, i) => i); // 0부터 22까지
+
+        async function fetchInterviewData() {
+            try {
+                const response = await fetch(INTERVIEW_2026_CSV_URL);
+                if (!response.ok) throw new Error("네트워크 오류");
+                const text = await response.text();
+                
+                Papa.parse(text, {
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        const data = results.data;
+                        if(data.length > 1) {
+                            interviewData = data.slice(1);
+                            window.interviewData = interviewData;
+                            
+                            // 지도교사 드롭다운 세팅
+                            const tSelect = document.getElementById('ivTeacherSelect');
+                            const teachers = new Set();
+                            interviewData.forEach(row => {
+                                if(row[18]) teachers.add(String(row[18]).trim());
+                            });
+                            Array.from(teachers).sort().forEach(t => tSelect.appendChild(new Option(t, t)));
+                            
+                            if (window.getCurrentUser && window.getCurrentUser()) {
+                                renderInterviewTable();
+                            }
+                        }
+                    }
+                });
+            } catch (error) { console.error("2026면접 데이터 로드 실패", error); }
+        }
+
+        function setIvSort(colIndex) {
+            if (currentIvSortCol === colIndex) {
+                isIvAscending = !isIvAscending;
+            } else {
+                currentIvSortCol = colIndex;
+                isIvAscending = true;
+            }
+            
+            ivColOrder.forEach(idx => {
+                const icon = document.getElementById(`iv-icon-${idx}`);
+                if (icon) icon.textContent = '';
+            });
+            
+            const activeIcon = document.getElementById(`iv-icon-${colIndex}`);
+            if (activeIcon) activeIcon.textContent = isIvAscending ? ' ▲' : ' ▼';
+
+            renderInterviewTable();
+        }
+
+        function renderInterviewTable() {
+            const t = document.getElementById('ivTeacherSelect').value;
+            const n = document.getElementById('ivNameInput').value.trim();
+            const u = document.getElementById('ivUnivInput').value.trim();
+            const tbody = document.getElementById('interviewTableBody');
+            
+            if (interviewData.length === 0) return;
+
+            let filtered = interviewData.filter(row => {
+                const rowT = String(row[18] || '').trim(); // 지도교사
+                const rowN = String(row[5] || '').trim(); // 이름
+                const rowU = String(row[6] || '').trim(); // 대학명
+
+                if (t && rowT !== t) return false;
+                if (n && !rowN.includes(n)) return false;
+                if (u && !rowU.includes(u)) return false;
+                return true;
+            });
+            
+            if (currentIvSortCol !== null) {
+                filtered.sort((a, b) => {
+                    let valA = a[currentIvSortCol] !== undefined && a[currentIvSortCol] !== null ? String(a[currentIvSortCol]).trim() : '';
+                    let valB = b[currentIvSortCol] !== undefined && b[currentIvSortCol] !== null ? String(b[currentIvSortCol]).trim() : '';
+
+                    if (valA === '' || valA === '-') return 1;
+                    if (valB === '' || valB === '-') return -1;
+
+                    let numA = parseFloat(valA);
+                    let numB = parseFloat(valB);
+                    if (!isNaN(numA) && !isNaN(numB)) {
+                        return isIvAscending ? (numA - numB) : (numB - numA);
+                    }
+
+                    if (valA < valB) return isIvAscending ? -1 : 1;
+                    if (valA > valB) return isIvAscending ? 1 : -1;
+                    return 0;
+                });
+            } else {
+                // 기본 정렬: 순번(row[0]) 오름차순
+                filtered.sort((a, b) => parseInt(a[0] || 0) - parseInt(b[0] || 0));
+            }
+
+            document.getElementById('ivCount').textContent = filtered.length;
+            tbody.innerHTML = '';
+            
+            if(filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="23" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
+                return;
+            }
+            
+            filtered.forEach(row => {
+                const tr = document.createElement('tr');
+                let html = '';
+                ivColOrder.forEach(idx => {
+                    let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
+                    let tdClass = "";
+
+                    if (idx === 5) tdClass = "font-bold text-gray-800"; // 이름
+                    if (idx === 6) tdClass = "font-bold text-gray-800"; // 대학명
+                    if (idx === 18) tdClass = "font-bold text-orange-700 bg-orange-50/50"; // 지도교사 강조
+
+                    html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
+                });
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+            });
+        }
+        window.renderInterviewTable = renderInterviewTable;
+
+        // ---------------- [기능 1] 2026 수시 지원 반별 조회 (기존 내용 유지) ----------------
         let classSusiData = [];
-        
-        // ✨ 반별 조회 정렬을 위한 전역 변수
         let currentClassSortCol = null;
         let isClassAscending = true;
         const classColOrder = [2, 3, 4, 5, 6, 7, 8, 9, 13, 14, 17, 18, 19, 20, 10, 11, 12, 24];
@@ -489,7 +691,6 @@
                 const response = await fetch(SUSI_2026_CSV_URL);
                 if (!response.ok) throw new Error("네트워크 오류");
                 const text = await response.text();
-                
                 Papa.parse(text, {
                     skipEmptyLines: true,
                     complete: function(results) {
@@ -532,9 +733,7 @@
             
             const classes = new Set();
             classSusiData.forEach(row => {
-                if(String(row[1]).trim() === g && row[2]) {
-                    classes.add(String(row[2]).trim());
-                }
+                if(String(row[1]).trim() === g && row[2]) classes.add(String(row[2]).trim());
             });
             Array.from(classes).sort((a,b) => parseInt(a) - parseInt(b)).forEach(c => select.appendChild(new Option(`${c}반`, c)));
         }
@@ -558,9 +757,7 @@
                 return;
             }
 
-            const names = new Set();
-            const univs = new Set();
-            const majors = new Set();
+            const names = new Set(), univs = new Set(), majors = new Set();
 
             classSusiData.forEach(row => {
                 if (String(row[1]).trim() === g && String(row[2]).trim() === c) {
@@ -571,23 +768,12 @@
             });
 
             Array.from(names).sort().forEach(n => nameSelect.appendChild(new Option(n, n)));
-            
-            Array.from(univs).sort().forEach(u => {
-                const opt = document.createElement('option');
-                opt.value = u;
-                univList.appendChild(opt);
-            });
-            
-            Array.from(majors).sort().forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m;
-                majorList.appendChild(opt);
-            });
+            Array.from(univs).sort().forEach(u => { const opt = document.createElement('option'); opt.value = u; univList.appendChild(opt); });
+            Array.from(majors).sort().forEach(m => { const opt = document.createElement('option'); opt.value = m; majorList.appendChild(opt); });
 
             renderClassTable();
         }
 
-        // ✨ 반별 조회 정렬 세팅 함수
         function setClassSort(colIndex) {
             if (currentClassSortCol === colIndex) {
                 isClassAscending = !isClassAscending;
@@ -595,14 +781,10 @@
                 currentClassSortCol = colIndex;
                 isClassAscending = true;
             }
-            
-            // 모든 화살표 초기화
             classColOrder.forEach(idx => {
                 const icon = document.getElementById(`class-icon-${idx}`);
                 if (icon) icon.textContent = '';
             });
-            
-            // 클릭한 컬럼에 화살표 표시
             const activeIcon = document.getElementById(`class-icon-${colIndex}`);
             if (activeIcon) activeIcon.textContent = isClassAscending ? ' ▲' : ' ▼';
 
@@ -638,27 +820,19 @@
                 return true;
             });
             
-            // ✨ 정렬 로직 적용
             if (currentClassSortCol !== null) {
                 filtered.sort((a, b) => {
                     let valA = a[currentClassSortCol] !== undefined && a[currentClassSortCol] !== null ? String(a[currentClassSortCol]).trim() : '';
                     let valB = b[currentClassSortCol] !== undefined && b[currentClassSortCol] !== null ? String(b[currentClassSortCol]).trim() : '';
-
                     if (valA === '' || valA === '-') return 1;
                     if (valB === '' || valB === '-') return -1;
-
-                    let numA = parseFloat(valA);
-                    let numB = parseFloat(valB);
-                    if (!isNaN(numA) && !isNaN(numB)) {
-                        return isClassAscending ? (numA - numB) : (numB - numA);
-                    }
-
+                    let numA = parseFloat(valA), numB = parseFloat(valB);
+                    if (!isNaN(numA) && !isNaN(numB)) return isClassAscending ? (numA - numB) : (numB - numA);
                     if (valA < valB) return isClassAscending ? -1 : 1;
                     if (valA > valB) return isClassAscending ? 1 : -1;
                     return 0;
                 });
             } else {
-                // 기본 정렬: 번호(row[3]) 오름차순
                 filtered.sort((a, b) => parseInt(a[3] || 0) - parseInt(b[3] || 0));
             }
 
@@ -680,7 +854,6 @@
                 classColOrder.forEach(idx => {
                     let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
                     let tdClass = "";
-
                     if (idx === 18) { 
                         if (val.includes('불합격')) tdClass = "font-black text-red-700 text-base";
                         else if (val.includes('합격')) tdClass = "font-black text-blue-700 text-base";
@@ -690,7 +863,6 @@
                     } else if (idx === 4 || idx === 5) { 
                         tdClass = "font-bold text-gray-800";
                     }
-
                     html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
                 });
                 tr.innerHTML = html;
@@ -905,7 +1077,6 @@
                     if (fResult === '합격' && r.includes('불합격')) return false;
                     if (!r.includes(fResult)) return false;
                 }
-
                 return true;
             });
 
@@ -946,10 +1117,7 @@
 
                     let numA = parseFloat(valA);
                     let numB = parseFloat(valB);
-                    if (!isNaN(numA) && !isNaN(numB)) {
-                        return isAscending ? (numA - numB) : (numB - numA);
-                    }
-
+                    if (!isNaN(numA) && !isNaN(numB)) return isAscending ? (numA - numB) : (numB - numA);
                     if (valA < valB) return isAscending ? -1 : 1;
                     if (valA > valB) return isAscending ? 1 : -1;
                     return 0;
