@@ -484,7 +484,7 @@
                 .forEach(id => sSel.appendChild(new Option(`${parseInt(id.substring(3,5),10)}번 - ${studentMap.get(id).name}`, id)));
         }
         
-        function renderMockData() {
+       function renderMockData() {
             const sid = document.getElementById('studentSelect').value;
             if (!sid || !studentMap.has(sid)) return;
             const info = studentMap.get(sid), recs = info.records;
@@ -513,12 +513,17 @@
                         title: { display: true, text: `${sid} ${info.name} 학생 성적 추이`, font: {size: 20} },
                         // ✨ 데이터 라벨(숫자) 상세 설정
                         datalabels: {
+                            // ✨ 조건에 따라 라벨 표시 여부 결정
+                            display: function(context) {
+                                // 현재 데이터셋의 라벨이 '국수탐 평균'일 때만 true 반환 (표시)
+                                return context.dataset.label === '국수탐 평균';
+                            },
                             align: 'top',      // 점의 위쪽에 표시
                             anchor: 'end',     // 점 끝부분 기준
-                            color: '#374151',  // 진한 회색 텍스트
+                            color: '#10b981',  // ✨ '국수탐 평균' 색상과 동일하게 변경하여 눈에 띄게 함
                             font: {
-                                weight: 'bold',
-                                size: 12
+                                weight: '900', // ✨ 글씨를 더 굵게
+                                size: 14       // ✨ 글씨 크기를 더 크게
                             },
                             formatter: function(value) {
                                 return value; // 실제 점수 텍스트
@@ -539,7 +544,6 @@
                 tbody.appendChild(tr);
             });
         }
-
         // ---------------- 졸업생 수시 스크립트 ----------------
         let rawGradData = [];
         let filteredGradData = [];
