@@ -1660,7 +1660,68 @@ function saveInterviewDate(studentId, univName, sessionIdx, dateValue) {
     }
 }
 window.saveInterviewDate = saveInterviewDate;
-        
+        // 페이지가 열리면 저장된 전달 사항들을 불러옵니다.
+document.addEventListener('DOMContentLoaded', loadNotices);
+
+function loadNotices() {
+    renderNoticeList('grade3');
+    renderNoticeList('dept');
+}
+
+// 📝 글쓰기 기능 (모달 팝업 대신 간단한 입력창 사용)
+function writeNotice(type) {
+    const content = prompt('새로운 전달 사항을 입력하세요:');
+    
+    // 입력을 취소하거나 빈 칸일 경우 무시
+    if (!content || content.trim() === '') return;
+
+    // 기존 데이터 불러오기
+    const notices = JSON.parse(localStorage.getItem(`notices_${type}`)) || [];
+    
+    // 오늘 날짜 생성 (예: 2026.10.19)
+    const now = new Date();
+    const dateString = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
+
+    // 최신 글이 맨 위에 오도록 배열 앞에 추가
+    notices.unshift({ content: content.trim(), date: dateString });
+    
+    // 스토리지에 저장 후 화면 다시 그리기
+    localStorage.setItem(`notices_${type}`, JSON.stringify(notices));
+    renderNoticeList(type);
+}
+
+// 🗑️ 삭제 기능
+function deleteNotice(type, index) {
+    if (!confirm('이 전달 사항을 삭제하시겠습니까?')) return;
+    
+    const notices = JSON.parse(localStorage.getItem(`notices_${type}`)) || [];
+    notices.splice(index, 1); // 해당 항목 삭제
+    localStorage.setItem(`notices_${type}`, JSON.stringify(notices));
+    
+    renderNoticeList(type);
+}
+
+// 🔄 화면에 리스트를 그려주는 함수
+function renderNoticeList(type) {
+    const listElement = document.getElementById(`notice-${type}`);
+    const notices = JSON.parse(localStorage.getItem(`notices_${type}`)) || [];
+    
+    if (notices.length === 0) {
+        listElement.innerHTML = '<li class="text-gray-400 text-center py-8 text-sm bg-gray-50 rounded-lg">등록된 전달 사항이 없습니다.</li>';
+        return;
+    }
+
+    // 배열 데이터를 HTML 목록(li)으로 변환
+    listElement.innerHTML = notices.map((notice, index) => `
+        <li class="p-3 bg-gray-50 rounded-lg border border-gray-100 flex justify-between items-start hover:bg-gray-100 transition-colors">
+            <div class="pr-4">
+                <span class="text-xs text-gray-500 font-semibold mb-1 block">${notice.date}</span>
+                <p class="text-gray-800 text-sm whitespace-pre-wrap">${notice.content}</p>
+            </div>
+            <button onclick="deleteNotice('${type}', ${index})" class="text-red-400 hover:text-red-600 text-xs shrink-0 mt-1 font-semibold">삭제</button>
+        </li>
+    `).join('');
+}
     </script>
 </body>
 </html>
