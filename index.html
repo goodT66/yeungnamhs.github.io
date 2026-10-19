@@ -1305,16 +1305,38 @@
             filtered.forEach(row => {
                 const tr = document.createElement('tr');
                 let html = '';
+                
+                // 학생 식별용 데이터 추출: 학번(1), 대학명(6)
+                const studentId = String(row[1] || '').trim();
+                const univName = String(row[6] || '').trim();
+
                 ivColOrder.forEach(idx => {
                     let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
-                    let tdClass = "";
+                    
+                    // ✨ 지도 1회(19), 2회(20), 3회(21), 4회(22) 열인 경우 날짜 입력칸 렌더링
+                    if (idx === 19 || idx === 20 || idx === 21 || idx === 22) {
+                        // 저장된 날짜 불러오기
+                        const savedKey = `interview_date_${studentId}_${univName}_${idx}`;
+                        const savedDate = localStorage.getItem(savedKey) || '';
 
-                    if (idx === 5) tdClass = "font-bold text-gray-800"; // 이름
-                    if (idx === 6) tdClass = "font-bold text-gray-800"; // 대학명
-                    if (idx === 18) tdClass = "font-bold text-orange-700 bg-orange-50/50"; // 지도교사
+                        html += `
+                            <td class="p-1 text-center">
+                                <input type="date" 
+                                       value="${savedDate}" 
+                                       onchange="saveInterviewDate('${studentId}', '${univName}', ${idx}, this.value)" 
+                                       class="border border-gray-300 rounded p-1 text-xs bg-white cursor-pointer hover:border-orange-500 focus:outline-none focus:border-orange-600 transition-colors w-28">
+                            </td>
+                        `;
+                    } else {
+                        // 일반 텍스트 열 렌더링 및 스타일 적용
+                        let tdClass = "";
+                        if (idx === 18) tdClass = "font-bold text-orange-800 bg-orange-50"; // 지도교사
+                        if (idx === 5 || idx === 6) tdClass = "font-bold text-gray-800"; // 이름, 대학명
 
-                    html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
+                        html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
+                    }
                 });
+                
                 tr.innerHTML = html;
                 tbody.appendChild(tr);
             });
@@ -1540,6 +1562,19 @@ function renderSusiResultTable() {
 }
 window.renderSusiResultTable = renderSusiResultTable;;
 
+        // 💾 면접 지도 일자 브라우저(로컬) 저장 함수
+function saveInterviewDate(studentId, univName, sessionIdx, dateValue) {
+    // 학번과 대학명, 회차 인덱스를 조합하여 고유 키 생성
+    const key = `interview_date_${studentId}_${univName}_${sessionIdx}`;
+    
+    if (dateValue) {
+        localStorage.setItem(key, dateValue);
+    } else {
+        localStorage.removeItem(key); // 날짜를 지웠을 때
+    }
+}
+window.saveInterviewDate = saveInterviewDate;
+        
     </script>
 </body>
 </html>
