@@ -472,6 +472,16 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+import {
+    getFirestore,
+    doc,
+    collection,
+    setDoc,
+    onSnapshot,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+
     const firebaseConfig = {
         apiKey: "AIzaSyDMamWSRHFS8nxksJNeVmzRE8dN3c4BU2I",
         authDomain: "goodt66-15409.firebaseapp.com",
@@ -484,6 +494,7 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
 
     const ALLOWED_EMAILS = [
@@ -492,7 +503,50 @@
         "beta@yeungnam.hs.kr"
     ];
 
-    let currentUser = null;
+    
+let currentUser = null;
+
+// Firestore에서 받아온 면접 지도 날짜 저장 공간
+let interviewDateCache = {};
+
+// 실시간 구독 해제 함수를 저장할 변수
+let unsubscribeInterviewDates = null;
+
+
+function startInterviewDateSync() {
+    // 기존 실시간 구독이 있다면 먼저 해제
+    if (unsubscribeInterviewDates) {
+        unsubscribeInterviewDates();
+        unsubscribeInterviewDates = null;
+    }
+
+    // 새로 로그인한 사용자의 면접 날짜를 실시간 구독
+    unsubscribeInterviewDates = onSnapshot(
+        collection(db, "interviewDates"),
+        (snapshot) => {
+            const newCache = {};
+
+            snapshot.forEach((document) => {
+                newCache[document.id] = document.data().dateValue || "";
+            });
+
+            interviewDateCache = newCache;
+
+            // 면접 조편성 화면이 있으면 표 갱신
+            if (
+                window.interviewData &&
+                window.interviewData.length > 0 &&
+                typeof window.renderInterviewTable === "function"
+            ) {
+                window.renderInterviewTable();
+            }
+        },
+        (error) => {
+            console.error("면접 날짜 실시간 동기화 오류:", error);
+            alert("면접 날짜를 불러오지 못했습니다. Firebase 권한과 연결 상태를 확인해 주세요.");
+        }
+    );
+}
 
     onAuthStateChanged(auth, async (user) => {
         const loginBtn = document.getElementById('loginBtn');
@@ -505,10 +559,16 @@
                 return;
             }
 
-            currentUser = user;
-            loginBtn.classList.add('hidden');
-            userInfo.classList.remove('hidden');
-            document.getElementById('userEmail').innerText = user.email;
+            
+currentUser = user;
+
+// 면접 지도 날짜 실시간 동기화 시작
+startInterviewDateSync();
+
+loginBtn.classList.add('hidden');
+userInfo.classList.remove('hidden');
+document.getElementById('userEmail').innerText = user.email;
+
 
             document.getElementById('authRequiredMock')?.classList.add('hidden');
             document.getElementById('mockContent')?.classList.remove('hidden');
@@ -542,6 +602,13 @@
             }
         } else {
             currentUser = null;
+            // 로그아웃 시 실시간 구독 해제
+if (unsubscribeInterviewDates) {
+    unsubscribeInterviewDates();
+    unsubscribeInterviewDates = null;
+}
+
+interviewDateCache = {};
             loginBtn.classList.remove('hidden');
             userInfo.classList.add('hidden');
 
@@ -1523,8 +1590,14 @@ const ivColOrder = [1, 5, 18, 19, 20, 21, 22, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
                     
                     // 지도 1~4회(19~22) 달력 입력칸 렌더링
                     if (idx >= 19 && idx <= 22) {
-                        const savedKey = `interview_date_${studentId}_${studentName}_${idx}`;
-                        const savedDate = localStorage.getItem(savedKey) || '';
+                        
+const savedKey = `interview_date_${studentId}_${studentName}_${idx}`;
+
+const cloudKey = `${studentId}_${studentName}_${idx}`;
+const savedDate = Object.prototype.hasOwnProperty.call(interviewDateCache, cloudKey)
+    ? interviewDateCache[cloudKey]
+    : (localStorage.getItem(savedKey) || '');
+
 
                         html += `
                             <td class="p-1 text-center">
@@ -1551,16 +1624,53 @@ const ivColOrder = [1, 5, 18, 19, 20, 21, 22, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
         }
         window.renderInterviewTable = renderInterviewTable;
 
-        // 💾 면접 지도 일자 브라우저 저장 함수
-        function saveInterviewDate(studentId, studentName, sessionIdx, dateValue) {
-            const key = `interview_date_${studentId}_${studentName}_${sessionIdx}`;
-            if (dateValue) {
-                localStorage.setItem(key, dateValue);
-            } else {
-                localStorage.removeItem(key); // 값을 지우면 스토리지에서도 삭제
-            }
+        
+async function saveInterviewDate(studentId, studentName, sessionIdx, dateValue) {
+    const key = `interview_date_${studentId}_${studentName}_${sessionIdx}`;
+    const cloudKey = `${studentId}_${studentName}_${sessionIdx}`;
+
+    // 기존 브라우저 저장 기능 유지
+    if (dateValue) {
+        localStorage.setItem(key, dateValue);
+    } else {
+        localStorage.removeItem(key);
+    }
+
+    // 로그인하지 않은 경우 클라우드 저장은 하지 않음
+    if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) {
+        return;
+    }
+
+    try {
+        const dateRef = doc(db, "interviewDates", cloudKey);
+
+        if (dateValue) {
+            await setDoc(dateRef, {
+                studentId: String(studentId),
+                studentName: String(studentName),
+                sessionIdx: Number(sessionIdx),
+                dateValue: dateValue,
+                updatedBy: currentUser.email,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+        } else {
+            await setDoc(dateRef, {
+                studentId: String(studentId),
+                studentName: String(studentName),
+                sessionIdx: Number(sessionIdx),
+                dateValue: "",
+                updatedBy: currentUser.email,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
         }
-        window.saveInterviewDate = saveInterviewDate;
+    } catch (error) {
+        console.error("면접 날짜 저장 오류:", error);
+        alert("면접 날짜를 클라우드에 저장하지 못했습니다. 인터넷 연결과 Firebase 권한을 확인해 주세요.");
+    }
+}
+
+window.saveInterviewDate = saveInterviewDate;
+
 
         // =====================================================================
       // =====================================================================
@@ -1781,19 +1891,7 @@ function renderSusiResultTable() {
 }
 window.renderSusiResultTable = renderSusiResultTable;;
 
-        // 💾 면접 지도 일자 브라우저(로컬) 저장 함수
-function saveInterviewDate(studentId, univName, sessionIdx, dateValue) {
-    // 학번과 대학명, 회차 인덱스를 조합하여 고유 키 생성
-    const key = `interview_date_${studentId}_${univName}_${sessionIdx}`;
     
-    if (dateValue) {
-        localStorage.setItem(key, dateValue);
-    } else {
-        localStorage.removeItem(key); // 날짜를 지웠을 때
-    }
-}
-window.saveInterviewDate = saveInterviewDate;
-        
     </script>
 </body>
 </html>
