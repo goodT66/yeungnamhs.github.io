@@ -1463,14 +1463,28 @@ const ivColOrder = [1, 5, 18, 19, 20, 21, 22, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
                             interviewData = data.slice(1);
                             window.interviewData = interviewData;
                             
-                            const tSelect = document.getElementById('ivTeacherSelect');
-                            if(tSelect) {
-                                const teachers = new Set();
-                                interviewData.forEach(row => {
-                                    if(row[18]) teachers.add(String(row[18]).trim());
-                                });
-                                Array.from(teachers).sort().forEach(t => tSelect.appendChild(new Option(t, t)));
-                            }
+                            
+const tSelect = document.getElementById('ivTeacherSelect');
+if (tSelect) {
+    // 기존 지도교사 목록을 초기화하되, 기본 선택 항목은 유지
+    tSelect.innerHTML = '<option value="">지도교사 전체</option>';
+
+    const teachers = new Set();
+
+    interviewData.forEach(row => {
+        const teacher = String(row[18] || '').trim();
+        if (teacher && teacher !== '-') {
+            teachers.add(teacher);
+        }
+    });
+
+    Array.from(teachers)
+        .sort((a, b) => a.localeCompare(b, 'ko'))
+        .forEach(teacher => {
+            tSelect.appendChild(new Option(teacher, teacher));
+        });
+}
+
                             if (window.getCurrentUser && window.getCurrentUser()) {
                                 renderInterviewTable();
                             }
