@@ -971,7 +971,7 @@
        const gradColOrder = [0, 1, 5, 8, 12, 14, 15, 16, 17, 20, 22, 23, 24, 25, 26, 18];
 
         async function fetchGradData() {
-            document.getElementById('gradLoadingSpinner').classList.remove('hidden');
+            document.getElementById('gradLoadingSpinner')?.classList.remove('hidden');
             try {
                 const response = await fetch(GRAD_CSV_URL);
                 if (!response.ok) throw new Error("네트워크 오류");
@@ -984,14 +984,22 @@
                         if(data.length > 1) {
                             rawGradData = data.slice(1);
                             window.rawGradData = rawGradData;
-                            populateGradDropdowns(); 
+                            populateGradDropdowns();
+                            if (window.getCurrentUser && window.getCurrentUser()) {
+                                applyGradFilter();
+                            }
+                        } else {
+                            const tbody = document.getElementById('gradTableBody');
+                            if (tbody) tbody.innerHTML = '<tr><td colspan="19" class="text-center py-10 text-gray-500">졸업생 수시 결과 데이터가 없습니다.</td></tr>';
                         }
-                        document.getElementById('gradLoadingSpinner').classList.add('hidden');
+                        document.getElementById('gradLoadingSpinner')?.classList.add('hidden');
                     }
                 });
             } catch (error) {
+                console.error('졸업생 수시 결과 데이터 로드 실패:', error);
+                document.getElementById('gradLoadingSpinner')?.classList.add('hidden');
                 const tbody = document.getElementById('gradTableBody');
-                if(tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-red-500">데이터 로드 실패</td></tr>';
+                if(tbody) tbody.innerHTML = '<tr><td colspan="19" class="text-center py-10 text-red-500">데이터를 불러오지 못했습니다. Google Sheets 공개 설정과 네트워크를 확인해 주세요.</td></tr>';
             }
         }
 
