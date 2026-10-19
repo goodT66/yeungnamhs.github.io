@@ -74,48 +74,99 @@
             </div>
         </header>
 
-        <!-- [화면 1] 메인 메뉴 대시보드 -->
-        <div id="mainDashboard" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
-            <div class="bg-white rounded-2xl shadow-lg border-b-8 border-blue-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
-                <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🎓</span></div>
-                <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep">학생 <span class="text-red-600">개별</span> 조회</h2>
-            </div>
+        <!-- 위쪽 기존 헤더 코드 유지 -->
+        <header class="bg-school rounded-2xl shadow-md p-6 mb-10 ...">
+             <!-- 헤더 내용 -->
+        </header>
+
+        <!-- 👇 [화면 1] 메인 메뉴 대시보드 (여기서부터 기존 mainDashboard를 대체하여 덮어쓰세요) -->
+        <div id="mainDashboard" class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 bg-transparent min-h-screen">
             
-            <div onclick="openClassView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-green-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
-                <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🧑‍🤝‍🧑</span></div>
-                <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep"><span class="text-red-600">2026 수시 지원</span> 반별 조회</h2>
+            <!-- 왼쪽 영역 (상하 2단 분할) -->
+            <div class="flex flex-col gap-6">
+                
+                <!-- 상단: 3학년부 전달 사항 -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h2 class="text-lg font-bold text-gray-800">📌 3학년부 전달 사항</h2>
+                        <button onclick="writeNotice('grade3')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-semibold transition-colors shadow-sm">
+                            ✍️ 글쓰기
+                        </button>
+                    </div>
+                    <ul id="notice-grade3" class="space-y-3 h-56 overflow-y-auto pr-2 custom-scrollbar">
+                        <!-- 3학년부 내용이 여기에 표시됩니다 -->
+                    </ul>
+                </div>
+
+                <!-- 하단: 부서별 전달 사항 -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h2 class="text-lg font-bold text-gray-800">📂 부서별 전달 사항</h2>
+                        <button onclick="writeNotice('dept')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-semibold transition-colors shadow-sm">
+                            ✍️ 글쓰기
+                        </button>
+                    </div>
+                    <ul id="notice-dept" class="space-y-3 h-56 overflow-y-auto pr-2 custom-scrollbar">
+                        <!-- 부서별 내용이 여기에 표시됩니다 -->
+                    </ul>
+                </div>
+                
             </div>
 
-            <div onclick="openInterviewView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-orange-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
-                <div id="interviewLoadingSpinner" class="absolute top-4 right-4 flex h-3 w-3 hidden">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
-                </div>
-                <div class="w-24 h-24 mb-5 flex items-center justify-center bg-orange-100 rounded-3xl shadow-inner border-2 border-orange-200">
-                    <span class="text-6xl drop-shadow-md">🎙️</span>
-                </div>
-                <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep"><span class="text-orange-600">2026 수시</span> 면접 조편성</h2>
-            </div>
-            
-            <div onclick="openMockView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-pink-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
-                <div id="mockLoadingSpinner" class="absolute top-4 right-4 flex h-3 w-3">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
-                </div>
-                <div class="w-24 h-24 mb-5 flex items-center justify-center bg-pink-400 rounded-3xl shadow-inner bg-gradient-to-br from-pink-400 to-pink-500">
-                    <span class="text-6xl drop-shadow-md">📈</span>
-                </div>
-                <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep"><span class="text-red-600">개별</span> 모의고사 성적</h2>
-            </div>
+            <!-- 오른쪽 영역 (기존 퀵메뉴 타일들 배치) -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">🚀 퀵메뉴</h2>
+                
+                <!-- 기존 6개 버튼들을 2열(sm:grid-cols-2) 또는 3열로 배치 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
+                    
+                    <!-- 1. 학생 개별 조회 -->
+                    <div class="bg-white rounded-xl shadow-md border-b-4 border-blue-500 p-4 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer h-full">
+                        <div class="w-16 h-16 mb-2 flex items-end justify-center"><span class="text-5xl drop-shadow-sm">🧑‍🎓</span></div>
+                        <h2 class="text-sm font-bold text-gray-800">학생 <span class="text-red-600">개별</span> 조회</h2>
+                    </div>
+                    
+                    <!-- 2. 수시 지원 반별 조회 -->
+                    <div onclick="openClassView()" class="bg-white rounded-xl shadow-md border-b-4 border-green-500 p-4 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer h-full">
+                        <div class="w-16 h-16 mb-2 flex items-end justify-center"><span class="text-5xl drop-shadow-sm">🧑‍🤝‍🧑</span></div>
+                        <h2 class="text-sm font-bold text-gray-800"><span class="text-red-600">수시 지원</span> 반별 조회</h2>
+                    </div>
 
-            <div onclick="openGradView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-red-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
-                <div id="gradLoadingSpinner" class="absolute top-4 right-4 flex h-3 w-3 hidden">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    <!-- 3. 수시 면접 조편성 -->
+                    <div onclick="openInterviewView()" class="bg-white rounded-xl shadow-md border-b-4 border-orange-500 p-4 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer h-full">
+                        <div class="w-16 h-16 mb-2 flex items-center justify-center bg-orange-100 rounded-2xl shadow-inner">
+                            <span class="text-4xl drop-shadow-sm">🎙️</span>
+                        </div>
+                        <h2 class="text-sm font-bold text-gray-800"><span class="text-orange-600">수시</span> 면접 조편성</h2>
+                    </div>
+                    
+                    <!-- 4. 모의고사 성적 -->
+                    <div onclick="openMockView()" class="bg-white rounded-xl shadow-md border-b-4 border-pink-500 p-4 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer h-full">
+                        <div class="w-16 h-16 mb-2 flex items-center justify-center bg-gradient-to-br from-pink-400 to-pink-500 rounded-2xl shadow-inner">
+                            <span class="text-4xl drop-shadow-sm">📈</span>
+                        </div>
+                        <h2 class="text-sm font-bold text-gray-800"><span class="text-red-600">개별</span> 모의고사 성적</h2>
+                    </div>
+
+                    <!-- 5. 졸업생 수시 결과 -->
+                    <div onclick="openGradView()" class="bg-white rounded-xl shadow-md border-b-4 border-red-500 p-4 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer h-full">
+                        <div class="w-16 h-16 mb-2 flex items-end justify-center"><span class="text-5xl drop-shadow-sm">🎓</span></div>
+                        <h2 class="text-sm font-bold text-blue-600">졸업생 수시 결과</h2>
+                    </div>
+                    
+                    <!-- 6. 수시 입결 조회 -->
+                    <div onclick="openSusiResultView()" class="bg-white rounded-xl shadow-md border-b-4 border-yellow-500 p-4 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer h-full">
+                        <div class="w-16 h-16 mb-2 flex items-center justify-center bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl shadow-inner">
+                            <span class="text-4xl drop-shadow-sm">📝</span>
+                        </div>
+                        <h2 class="text-sm font-bold text-gray-800"><span class="text-red-600">수시</span> 입결 조회</h2>
+                    </div>
                 </div>
-                <div class="w-24 h-24 mb-5 flex items-end justify-center"><span class="text-7xl drop-shadow-md">🎓</span></div>
-                <h2 class="text-xl font-bold mb-4 text-blue-600 break-keep">졸업생 수시 결과</h2>
             </div>
+        </div>
+
+        <!-- 👇 여기서부터 [화면 2] 개별 모의고사 성적 화면 코드가 이어집니다 -->
+        <div id="mockView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-pink-500">
             
             <!-- ✨ 수시 입결 조회 버튼 -->
             <div onclick="openSusiResultView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-yellow-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
