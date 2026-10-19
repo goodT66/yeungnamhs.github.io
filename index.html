@@ -222,20 +222,16 @@
                     <table class="grad-table text-sm w-full">
                         <thead class="sticky top-0 z-10 shadow-sm">
     <tr>
-        <th onclick="setIvSort(0)">순번 <span id="iv-icon-0" class="sort-icon"></span></th>
+        <th onclick="setIvSort(1)">학번 <span id="iv-icon-1" class="sort-icon"></span></th>
+        <th onclick="setIvSort(5)">이름 <span id="iv-icon-5" class="sort-icon"></span></th>
         <th onclick="setIvSort(18)" class="bg-orange-100 text-orange-800">지도교사 <span id="iv-icon-18" class="sort-icon"></span></th>
         
-        <!-- ✨ 지도 1~4회가 지도교사 바로 옆으로 이동 -->
-        <th onclick="setIvSort(19)" class="bg-orange-50 text-orange-800">지도1회 <span id="iv-icon-19" class="sort-icon"></span></th>
-        <th onclick="setIvSort(20)" class="bg-orange-50 text-orange-800">지도2회 <span id="iv-icon-20" class="sort-icon"></span></th>
-        <th onclick="setIvSort(21)" class="bg-orange-50 text-orange-800">지도3회 <span id="iv-icon-21" class="sort-icon"></span></th>
-        <th onclick="setIvSort(22)" class="bg-orange-50 text-orange-800">지도4회 <span id="iv-icon-22" class="sort-icon"></span></th>
+        <!-- 면접 지도 1~4회 -->
+        <th class="bg-orange-50 text-orange-800">면접지도 1회</th>
+        <th class="bg-orange-50 text-orange-800">면접지도 2회</th>
+        <th class="bg-orange-50 text-orange-800">면접지도 3회</th>
+        <th class="bg-orange-50 text-orange-800">면접지도 4회</th>
         
-        <th onclick="setIvSort(1)">학번 <span id="iv-icon-1" class="sort-icon"></span></th>
-        <th onclick="setIvSort(2)">학년 <span id="iv-icon-2" class="sort-icon"></span></th>
-        <th onclick="setIvSort(3)">반 <span id="iv-icon-3" class="sort-icon"></span></th>
-        <th onclick="setIvSort(4)">번호 <span id="iv-icon-4" class="sort-icon"></span></th>
-        <th onclick="setIvSort(5)">이름 <span id="iv-icon-5" class="sort-icon"></span></th>
         <th onclick="setIvSort(6)">대학명 <span id="iv-icon-6" class="sort-icon"></span></th>
         <th onclick="setIvSort(7)">세부전형명 <span id="iv-icon-7" class="sort-icon"></span></th>
         <th onclick="setIvSort(8)">계열 <span id="iv-icon-8" class="sort-icon"></span></th>
@@ -244,10 +240,10 @@
         <th onclick="setIvSort(11)">전형방법 <span id="iv-icon-11" class="sort-icon"></span></th>
         <th onclick="setIvSort(12)">면접일자 <span id="iv-icon-12" class="sort-icon"></span></th>
         <th onclick="setIvSort(13)">합격자발표 <span id="iv-icon-13" class="sort-icon"></span></th>
-        <th onclick="setIvSort(14)">1단계결과 <span id="iv-icon-14" class="sort-icon"></span></th>
+        <th onclick="setIvSort(14)">1단계발표 <span id="iv-icon-14" class="sort-icon"></span></th>
         <th onclick="setIvSort(15)">수능최저 <span id="iv-icon-15" class="sort-icon"></span></th>
-        <th onclick="setIvSort(16)">환산등급 <span id="iv-icon-16" class="sort-icon"></span></th>
-        <th onclick="setIvSort(17)">환산점수 <span id="iv-icon-17" class="sort-icon"></span></th>
+        <th onclick="setIvSort(16)">환산점수 <span id="iv-icon-16" class="sort-icon"></span></th>
+        <th onclick="setIvSort(17)">환산등급 <span id="iv-icon-17" class="sort-icon"></span></th>
     </tr>
 </thead>
                         <tbody id="gradTableBody">
@@ -1203,7 +1199,8 @@
         let interviewData = [];
         let currentIvSortCol = null;
         let isIvAscending = true;
-        const ivColOrder = [0, 18, 19, 20, 21, 22, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+        // 학번(1), 이름(5), 지도교사(18), 1~4회(19~22), 대학명(6) ... 환산등급(17)
+const ivColOrder = [1, 5, 18, 19, 20, 21, 22, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 
         async function fetchInterviewData() {
             try {
@@ -1312,42 +1309,36 @@
                 return;
             }
             
-            filtered.forEach(row => {
+           filtered.forEach(row => {
                 const tr = document.createElement('tr');
                 let html = '';
                 
-                // 학생 식별용 데이터 추출: 학번(1), 대학명(6)
+                // 고유 식별자: 학번(1), 이름(5) 사용
                 const studentId = String(row[1] || '').trim();
-                const univName = String(row[6] || '').trim();
+                const studentName = String(row[5] || '').trim();
 
                 ivColOrder.forEach(idx => {
                     let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
                     
-                    // ✨ 지도 1회(19), 2회(20), 3회(21), 4회(22) 열인 경우 날짜 입력칸 렌더링
-                    if (idx === 19 || idx === 20 || idx === 21 || idx === 22) {
-                        // 저장된 날짜 불러오기
-                        const savedKey = `interview_date_${studentId}_${univName}_${idx}`;
+                    // ✨ 면접 지도 1~4회 (인덱스 19~22) 달력 입력칸 렌더링
+                    if (idx >= 19 && idx <= 22) {
+                        const savedKey = `interview_date_${studentId}_${studentName}_${idx}`;
                         const savedDate = localStorage.getItem(savedKey) || '';
 
                         html += `
                             <td class="p-1 text-center">
                                 <input type="date" 
                                        value="${savedDate}" 
-                                       onchange="saveInterviewDate('${studentId}', '${univName}', ${idx}, this.value)" 
+                                       onchange="saveInterviewDate('${studentId}', '${studentName}', ${idx}, this.value)" 
                                        class="border border-gray-300 rounded p-1 text-xs bg-white cursor-pointer hover:border-orange-500 focus:outline-none focus:border-orange-600 transition-colors w-28">
                             </td>
                         `;
-                   } else {
-                        // 일반 텍스트 열 렌더링 및 스타일 적용
+                    } else {
                         let tdClass = "";
+                        // 강조 및 너비 조절 스타일
                         if (idx === 18) tdClass = "font-bold text-orange-800 bg-orange-50"; // 지도교사
-                        if (idx === 5 || idx === 6) tdClass = "font-bold text-gray-800"; // 이름, 대학명
-
-                        // ✨ 모집 단위(인덱스 9) 가로 크기 제한 및 자동 줄바꿈 적용
-                        if (idx === 9) {
-                            // max-w-[150px] 부분의 숫자를 조절해서 원하는 가로폭으로 맞출 수 있습니다.
-                            tdClass = "max-w-[150px] whitespace-normal break-keep text-sm leading-snug text-left"; 
-                        }
+                        else if (idx === 1 || idx === 5 || idx === 6) tdClass = "font-bold text-gray-800"; // 학번, 이름, 대학명
+                        else if (idx === 9) tdClass = "max-w-[150px] whitespace-normal break-keep text-sm leading-snug"; // 모집단위 줄바꿈 처리
 
                         html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
                     }
@@ -1358,6 +1349,17 @@
             });
         }
         window.renderInterviewTable = renderInterviewTable;
+
+        // 💾 면접 지도 일자 브라우저 저장 함수
+        function saveInterviewDate(studentId, studentName, sessionIdx, dateValue) {
+            const key = `interview_date_${studentId}_${studentName}_${sessionIdx}`;
+            if (dateValue) {
+                localStorage.setItem(key, dateValue);
+            } else {
+                localStorage.removeItem(key); // 값을 지우면 스토리지에서도 삭제
+            }
+        }
+        window.saveInterviewDate = saveInterviewDate;
 
         // =====================================================================
       // =====================================================================
