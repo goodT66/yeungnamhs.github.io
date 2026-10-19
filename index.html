@@ -116,7 +116,6 @@
                 <h2 class="text-xl font-bold mb-4 text-blue-600 break-keep">졸업생 수시 결과</h2>
             </div>
             
-            <!-- 수시 입결 조회 버튼 -->
             <div onclick="openSusiResultView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-yellow-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
                 <div id="susiResultLoadingSpinner" class="absolute top-4 right-4 flex h-3 w-3 hidden">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
@@ -375,7 +374,7 @@
             </div>
         </div>
 
-        <!-- ✨ [화면 6] 수시 입결 조회 화면 -->
+        <!-- [화면 6] 수시 입결 조회 화면 -->
         <div id="susiResultView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-yellow-500">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
                 <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -392,19 +391,31 @@
             </div>
 
             <div id="susiResultContent" class="hidden">
+                <!-- ✨ 필터 및 검색 (유형 삭제, 검색/자동완성 적용, 백분위 범위 추가) -->
                 <div class="mb-4 flex flex-wrap gap-4 items-center bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                     <select id="susiYearSelect" onchange="renderSusiResultTable()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
                         <option value="">연도 전체</option>
                     </select>
-                    <select id="susiTypeSelect" onchange="renderSusiResultTable()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
-                        <option value="">유형 전체</option>
-                    </select>
-                    <input type="text" id="susiUnivInput" placeholder="대학명 검색" class="border border-gray-300 rounded p-2 font-medium w-40" onkeyup="renderSusiResultTable()">
-                    <input type="text" id="susiMajorInput" placeholder="모집단위 검색" class="border border-gray-300 rounded p-2 font-medium w-48" onkeyup="renderSusiResultTable()">
                     
-                    <div class="ml-auto text-sm text-gray-700 font-bold bg-white px-3 py-2 rounded border border-gray-200 shadow-sm">
-                        검색 결과: <span id="susiResultCount" class="text-yellow-600 text-lg">0</span>건
-                        <span id="susiResultWarning" class="text-red-500 font-normal text-xs ml-2 hidden">(최대 200건 표시)</span>
+                    <input list="susiUnivList" id="susiUnivInput" placeholder="대학명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-40" onchange="renderSusiResultTable()" onkeyup="renderSusiResultTable()">
+                    <datalist id="susiUnivList"></datalist>
+
+                    <input list="susiMajorList" id="susiMajorInput" placeholder="모집단위 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-48" onchange="renderSusiResultTable()" onkeyup="renderSusiResultTable()">
+                    <datalist id="susiMajorList"></datalist>
+                    
+                    <div class="ml-auto flex flex-wrap items-center gap-4">
+                        <!-- 수능 백분위 범위 필터 -->
+                        <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded border border-gray-300 shadow-sm">
+                            <label class="text-sm font-bold text-gray-700">수능 백분위</label>
+                            <input type="number" id="susiCsatMin" placeholder="최소" class="w-16 p-1 border-b border-gray-300 text-center focus:outline-none focus:border-yellow-500 font-medium" onchange="renderSusiResultTable()" onkeyup="renderSusiResultTable()">
+                            <span class="text-gray-500">~</span>
+                            <input type="number" id="susiCsatMax" placeholder="최대" class="w-16 p-1 border-b border-gray-300 text-center focus:outline-none focus:border-yellow-500 font-medium" onchange="renderSusiResultTable()" onkeyup="renderSusiResultTable()">
+                        </div>
+
+                        <div class="text-sm text-gray-700 font-bold bg-white px-3 py-2 rounded border border-gray-200 shadow-sm">
+                            검색 결과: <span id="susiResultCount" class="text-yellow-600 text-lg">0</span>건
+                            <span id="susiResultWarning" class="text-red-500 font-normal text-xs ml-2 hidden">(최대 200건 표시)</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -563,8 +574,6 @@
         const GRAD_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=졸업생`;
         const SUSI_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026수시`; 
         const INTERVIEW_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026면접`; 
-        
-        // ✨ 한글 시트명 오류를 방지하기 위해 GID 번호로 직접 통신하도록 수정했습니다
         const SUSI_RESULT_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1822882619`;
 
         function showMainDashboard() {
@@ -621,7 +630,7 @@
             fetchGradData();
             fetchClassSusiData(); 
             fetchInterviewData(); 
-            fetchSusiResultData(); // 수시입결 데이터 호출 추가
+            fetchSusiResultData();
         });
 
         // =====================================================================
