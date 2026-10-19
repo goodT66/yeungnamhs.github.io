@@ -79,89 +79,80 @@
              <!-- 헤더 내용 -->
         </header>
 
-        <!-- 👇 [화면 1] 메인 메뉴 대시보드 (여기서부터 기존 mainDashboard를 대체하여 덮어쓰세요) -->
-        <div id="mainDashboard" class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 bg-transparent min-h-screen">
-            
-            <!-- 왼쪽 영역 (상하 2단 분할) -->
-            <div class="flex flex-col gap-6">
-                
-                <!-- 상단: 3학년부 전달 사항 -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                    <div class="flex justify-between items-center mb-4 border-b pb-2">
-                        <h2 class="text-lg font-bold text-gray-800">📌 3학년부 전달 사항</h2>
-                        <button onclick="writeNotice('grade3')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-semibold transition-colors shadow-sm">
-                            ✍️ 글쓰기
-                        </button>
+        <!-- [화면 1] 메인 메뉴 대시보드 -->
+        <div id="mainDashboard" class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 lg:p-6 bg-transparent min-h-screen items-start">
+            <!-- 모니터 기준 왼쪽: 전달 사항 -->
+            <div class="flex flex-col gap-6 min-w-0 order-2 lg:order-1">
+                <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                    <div class="flex justify-between items-center gap-3 mb-3 border-b pb-3">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-800">📌 3학년부 전달 사항</h2>
+                            <p class="text-xs text-gray-500 mt-1">작성일별로 누적된 전달 사항을 확인할 수 있습니다.</p>
+                        </div>
+                        <button onclick="writeNotice('grade3')" class="shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm">＋ 전달 사항 추가</button>
                     </div>
-                    <ul id="notice-grade3" class="space-y-3 h-56 overflow-y-auto pr-2 custom-scrollbar">
-                        <!-- 3학년부 내용이 여기에 표시됩니다 -->
-                    </ul>
-                </div>
+                    <div id="notice-grade3-tabs" class="flex flex-wrap gap-2 mb-3" aria-label="3학년부 전달 사항 날짜 탭"></div>
+                    <ul id="notice-grade3" class="space-y-3 min-h-24 max-h-72 overflow-y-auto pr-2"></ul>
+                </section>
 
-                <!-- 하단: 부서별 전달 사항 -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                    <div class="flex justify-between items-center mb-4 border-b pb-2">
-                        <h2 class="text-lg font-bold text-gray-800">📂 부서별 전달 사항</h2>
-                        <button onclick="writeNotice('dept')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-semibold transition-colors shadow-sm">
-                            ✍️ 글쓰기
-                        </button>
+                <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                    <div class="flex justify-between items-center gap-3 mb-3 border-b pb-3">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-800">📂 부서별 전달 사항</h2>
+                            <p class="text-xs text-gray-500 mt-1">부서별 공지와 기록을 날짜별로 관리합니다.</p>
+                        </div>
+                        <button onclick="writeNotice('dept')" class="shrink-0 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm">＋ 전달 사항 추가</button>
                     </div>
-                    <ul id="notice-dept" class="space-y-3 h-56 overflow-y-auto pr-2 custom-scrollbar">
-                        <!-- 부서별 내용이 여기에 표시됩니다 -->
-                    </ul>
-                </div>
-                
+                    <div id="notice-dept-tabs" class="flex flex-wrap gap-2 mb-3" aria-label="부서별 전달 사항 날짜 탭"></div>
+                    <ul id="notice-dept" class="space-y-3 min-h-24 max-h-72 overflow-y-auto pr-2"></ul>
+                </section>
             </div>
 
-            <!-- 오른쪽 영역 (기존 퀵메뉴 타일들 배치) -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">🚀 퀵메뉴</h2>
-                
-                <!-- 기존 6개 버튼들을 2열(sm:grid-cols-2) 또는 3열로 배치 -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
-                    
-                    <!-- 1. 학생 개별 조회 -->
-                    <div class="bg-white rounded-xl shadow-md border-b-4 border-blue-500 p-4 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer h-full">
-                        <div class="w-16 h-16 mb-2 flex items-end justify-center"><span class="text-5xl drop-shadow-sm">🧑‍🎓</span></div>
-                        <h2 class="text-sm font-bold text-gray-800">학생 <span class="text-red-600">개별</span> 조회</h2>
+            <!-- 모니터 기준 오른쪽: 퀵메뉴 위, 달력 아래 -->
+            <div class="flex flex-col gap-6 min-w-0 order-1 lg:order-2">
+                <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-3">🚀 퀵메뉴</h2>
+                    <div class="grid grid-cols-2 xl:grid-cols-3 gap-3 items-stretch">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-b-4 border-blue-500 p-3 flex flex-col items-center text-center min-h-32 justify-center">
+                            <div class="text-4xl mb-2">🧑‍🎓</div><h2 class="text-sm font-bold text-gray-800">학생 <span class="text-red-600">개별</span> 조회</h2>
+                        </div>
+                        <div onclick="openClassView()" class="bg-white rounded-xl shadow-sm border border-gray-200 border-b-4 border-green-500 p-3 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer min-h-32 justify-center">
+                            <div class="text-4xl mb-2">🧑‍🤝‍🧑</div><h2 class="text-sm font-bold text-gray-800"><span class="text-red-600">수시 지원</span> 반별 조회</h2>
+                        </div>
+                        <div onclick="openInterviewView()" class="bg-white rounded-xl shadow-sm border border-gray-200 border-b-4 border-orange-500 p-3 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer min-h-32 justify-center">
+                            <div class="text-4xl mb-2">🎙️</div><h2 class="text-sm font-bold text-gray-800"><span class="text-orange-600">수시</span> 면접 조편성</h2>
+                        </div>
+                        <div onclick="openMockView()" class="bg-white rounded-xl shadow-sm border border-gray-200 border-b-4 border-pink-500 p-3 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer min-h-32 justify-center">
+                            <div class="text-4xl mb-2">📈</div><h2 class="text-sm font-bold text-gray-800"><span class="text-red-600">개별</span> 모의고사 성적</h2>
+                        </div>
+                        <div onclick="openGradView()" class="bg-white rounded-xl shadow-sm border border-gray-200 border-b-4 border-red-500 p-3 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer min-h-32 justify-center">
+                            <div class="text-4xl mb-2">🎓</div><h2 class="text-sm font-bold text-blue-600">졸업생 수시 결과</h2>
+                        </div>
+                        <div onclick="openSusiResultView()" class="bg-white rounded-xl shadow-sm border border-gray-200 border-b-4 border-yellow-500 p-3 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer min-h-32 justify-center">
+                            <div class="text-4xl mb-2">📝</div><h2 class="text-sm font-bold text-gray-800"><span class="text-red-600">수시</span> 입결 조회</h2>
+                        </div>
                     </div>
-                    
-                    <!-- 2. 수시 지원 반별 조회 -->
-                    <div onclick="openClassView()" class="bg-white rounded-xl shadow-md border-b-4 border-green-500 p-4 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer h-full">
-                        <div class="w-16 h-16 mb-2 flex items-end justify-center"><span class="text-5xl drop-shadow-sm">🧑‍🤝‍🧑</span></div>
-                        <h2 class="text-sm font-bold text-gray-800"><span class="text-red-600">수시 지원</span> 반별 조회</h2>
-                    </div>
+                </section>
 
-                    <!-- 3. 수시 면접 조편성 -->
-                    <div onclick="openInterviewView()" class="bg-white rounded-xl shadow-md border-b-4 border-orange-500 p-4 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer h-full">
-                        <div class="w-16 h-16 mb-2 flex items-center justify-center bg-orange-100 rounded-2xl shadow-inner">
-                            <span class="text-4xl drop-shadow-sm">🎙️</span>
-                        </div>
-                        <h2 class="text-sm font-bold text-gray-800"><span class="text-orange-600">수시</span> 면접 조편성</h2>
+                <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                    <div class="flex justify-between items-center gap-3 mb-4 border-b pb-3">
+                        <div><h2 class="text-lg font-bold text-gray-800">🗓️ 일정 달력</h2><p class="text-xs text-gray-500 mt-1">날짜를 선택해 일정을 추가하거나 관리하세요.</p></div>
+                        <button onclick="addCalendarEvent()" class="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-semibold">＋ 일정 추가</button>
                     </div>
-                    
-                    <!-- 4. 모의고사 성적 -->
-                    <div onclick="openMockView()" class="bg-white rounded-xl shadow-md border-b-4 border-pink-500 p-4 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer h-full">
-                        <div class="w-16 h-16 mb-2 flex items-center justify-center bg-gradient-to-br from-pink-400 to-pink-500 rounded-2xl shadow-inner">
-                            <span class="text-4xl drop-shadow-sm">📈</span>
-                        </div>
-                        <h2 class="text-sm font-bold text-gray-800"><span class="text-red-600">개별</span> 모의고사 성적</h2>
+                    <div class="flex justify-between items-center mb-3">
+                        <button onclick="changeCalendarMonth(-1)" class="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200" aria-label="이전 달">◀</button>
+                        <h3 id="calendarMonthLabel" class="font-bold text-gray-800"></h3>
+                        <button onclick="changeCalendarMonth(1)" class="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200" aria-label="다음 달">▶</button>
                     </div>
-
-                    <!-- 5. 졸업생 수시 결과 -->
-                    <div onclick="openGradView()" class="bg-white rounded-xl shadow-md border-b-4 border-red-500 p-4 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer h-full">
-                        <div class="w-16 h-16 mb-2 flex items-end justify-center"><span class="text-5xl drop-shadow-sm">🎓</span></div>
-                        <h2 class="text-sm font-bold text-blue-600">졸업생 수시 결과</h2>
+                    <div class="grid grid-cols-7 text-center text-xs font-bold text-gray-500 mb-2">
+                        <div class="text-red-500 py-1">일</div><div class="py-1">월</div><div class="py-1">화</div><div class="py-1">수</div><div class="py-1">목</div><div class="py-1">금</div><div class="text-blue-500 py-1">토</div>
                     </div>
-                    
-                    <!-- 6. 수시 입결 조회 -->
-                    <div onclick="openSusiResultView()" class="bg-white rounded-xl shadow-md border-b-4 border-yellow-500 p-4 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer h-full">
-                        <div class="w-16 h-16 mb-2 flex items-center justify-center bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl shadow-inner">
-                            <span class="text-4xl drop-shadow-sm">📝</span>
-                        </div>
-                        <h2 class="text-sm font-bold text-gray-800"><span class="text-red-600">수시</span> 입결 조회</h2>
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
+                    <div class="mt-4 pt-4 border-t">
+                        <div class="flex justify-between items-center gap-2 mb-2"><h3 id="calendarSelectedDate" class="font-bold text-gray-800"></h3><button onclick="addCalendarEvent()" class="text-sm text-indigo-700 hover:underline">＋ 선택 날짜에 일정 추가</button></div>
+                        <ul id="calendarEventList" class="space-y-2"></ul>
                     </div>
-                </div>
+                </section>
             </div>
         </div>
 
@@ -699,10 +690,156 @@
         document.addEventListener("DOMContentLoaded", () => {
             fetchMockData();
             fetchGradData();
-            fetchClassSusiData(); 
-            fetchInterviewData(); 
+            fetchClassSusiData();
+            fetchInterviewData();
             fetchSusiResultData(); // 수시입결
+            renderAllNotices();
+            renderCalendar();
         });
+
+        // =====================================================================
+        // [메인 화면] 전달 사항 및 일정 달력
+        // 브라우저 localStorage에 저장됩니다. 같은 브라우저/기기에서 다시 접속하면 기록이 유지됩니다.
+        // =====================================================================
+        const NOTICE_STORAGE_KEY = 'yeungnam_career_notices_v1';
+        const CALENDAR_STORAGE_KEY = 'yeungnam_career_calendar_events_v1';
+        const todayISO = () => {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        };
+        const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+        const makeId = () => `${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+        let activeNoticeDate = { grade3: null, dept: null };
+        let calendarCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        let selectedCalendarDate = todayISO();
+
+        function readStoredArray(key) {
+            try { const value = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(value) ? value : []; }
+            catch (e) { console.warn('저장된 데이터를 읽지 못했습니다.', e); return []; }
+        }
+        function saveStoredArray(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+        function getNotices() { return readStoredArray(NOTICE_STORAGE_KEY); }
+        function getCalendarEvents() { return readStoredArray(CALENDAR_STORAGE_KEY); }
+
+        function renderAllNotices() {
+            ['grade3', 'dept'].forEach(renderNoticeCategory);
+        }
+        function renderNoticeCategory(category) {
+            const notices = getNotices().filter(n => n.category === category).sort((a,b) => (b.date || '').localeCompare(a.date || '') || (b.createdAt || 0) - (a.createdAt || 0));
+            const tabsEl = document.getElementById(`notice-${category}-tabs`);
+            const listEl = document.getElementById(`notice-${category}`);
+            if (!tabsEl || !listEl) return;
+            const dates = [...new Set(notices.map(n => n.date).filter(Boolean))];
+            if (!activeNoticeDate[category] || !dates.includes(activeNoticeDate[category])) activeNoticeDate[category] = dates[0] || null;
+            tabsEl.innerHTML = dates.length ? dates.map(date => `<button onclick="selectNoticeDate('${category}','${date}')" class="px-3 py-1.5 rounded-full text-xs font-semibold border ${date === activeNoticeDate[category] ? 'bg-blue-700 text-white border-blue-700' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}">${escapeHTML(date)} <span class="opacity-80">(${notices.filter(n => n.date === date).length})</span></button>`).join('') : '<span class="text-sm text-gray-400 py-1">아직 등록된 전달 사항이 없습니다.</span>';
+            const selected = notices.filter(n => n.date === activeNoticeDate[category]);
+            if (!selected.length) {
+                listEl.innerHTML = '<li class="text-sm text-gray-400 py-4 text-center">날짜 탭을 선택하거나 새 전달 사항을 추가하세요.</li>';
+                return;
+            }
+            listEl.innerHTML = selected.map(n => `<li class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                <div class="flex justify-between items-start gap-3"><div class="min-w-0 flex-1"><div class="font-bold text-gray-800 break-words">${escapeHTML(n.title)}</div><p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap break-words">${escapeHTML(n.content)}</p><p class="text-xs text-gray-400 mt-2">등록일: ${escapeHTML(n.date)}</p></div>
+                <div class="flex gap-1 shrink-0"><button onclick="editNotice('${n.id}')" class="text-xs px-2 py-1 rounded bg-white border hover:bg-blue-50">수정</button><button onclick="deleteNotice('${n.id}')" class="text-xs px-2 py-1 rounded bg-white border text-red-600 hover:bg-red-50">삭제</button></div></div>
+            </li>`).join('');
+        }
+        function selectNoticeDate(category, date) { activeNoticeDate[category] = date; renderNoticeCategory(category); }
+        function writeNotice(category) {
+            const label = category === 'grade3' ? '3학년부' : '부서별';
+            const date = prompt(`${label} 전달 사항 날짜를 입력하세요. (YYYY-MM-DD)`, todayISO());
+            if (date === null) return;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) { alert('날짜는 YYYY-MM-DD 형식으로 입력해 주세요.'); return; }
+            const title = prompt('전달 사항 제목을 입력하세요.');
+            if (title === null) return;
+            if (!title.trim()) { alert('제목을 입력해 주세요.'); return; }
+            const content = prompt('전달 사항 내용을 입력하세요.');
+            if (content === null) return;
+            const notices = getNotices();
+            notices.push({ id: makeId(), category, date, title: title.trim(), content: content.trim(), createdAt: Date.now() });
+            saveStoredArray(NOTICE_STORAGE_KEY, notices);
+            activeNoticeDate[category] = date;
+            renderNoticeCategory(category);
+        }
+        function editNotice(id) {
+            const notices = getNotices(); const item = notices.find(n => n.id === id); if (!item) return;
+            const date = prompt('전달 사항 날짜 (YYYY-MM-DD)', item.date); if (date === null) return;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) { alert('날짜는 YYYY-MM-DD 형식으로 입력해 주세요.'); return; }
+            const title = prompt('전달 사항 제목', item.title); if (title === null) return;
+            if (!title.trim()) { alert('제목을 입력해 주세요.'); return; }
+            const content = prompt('전달 사항 내용', item.content); if (content === null) return;
+            item.date = date; item.title = title.trim(); item.content = content.trim();
+            saveStoredArray(NOTICE_STORAGE_KEY, notices); activeNoticeDate[item.category] = date; renderNoticeCategory(item.category);
+        }
+        function deleteNotice(id) {
+            const notices = getNotices(); const item = notices.find(n => n.id === id); if (!item) return;
+            if (!confirm('이 전달 사항을 삭제할까요?')) return;
+            saveStoredArray(NOTICE_STORAGE_KEY, notices.filter(n => n.id !== id)); renderNoticeCategory(item.category);
+        }
+
+        function changeCalendarMonth(delta) {
+            calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
+            renderCalendar();
+        }
+        function selectCalendarDate(date) { selectedCalendarDate = date; renderCalendar(); }
+        function renderCalendar() {
+            const label = document.getElementById('calendarMonthLabel');
+            const grid = document.getElementById('calendarGrid');
+            const selectedLabel = document.getElementById('calendarSelectedDate');
+            const list = document.getElementById('calendarEventList');
+            if (!label || !grid || !selectedLabel || !list) return;
+            const year = calendarCursor.getFullYear(), month = calendarCursor.getMonth();
+            label.textContent = `${year}년 ${month + 1}월`;
+            const events = getCalendarEvents();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const cells = [];
+            for (let i=0; i<firstDay; i++) cells.push('<div class="min-h-12"></div>');
+            for (let day=1; day<=daysInMonth; day++) {
+                const date = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const hasEvent = events.some(e => e.date === date);
+                const isSelected = date === selectedCalendarDate;
+                const isToday = date === todayISO();
+                cells.push(`<button onclick="selectCalendarDate('${date}')" class="relative min-h-12 rounded-lg border text-sm flex flex-col items-center justify-center ${isSelected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-100 hover:bg-indigo-50'} ${isToday && !isSelected ? 'ring-2 ring-indigo-300' : ''}"><span>${day}</span>${hasEvent ? `<span class="mt-1 w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-indigo-500'}"></span>` : '<span class="mt-1 w-1.5 h-1.5"></span>'}</button>`);
+            }
+            grid.innerHTML = cells.join('');
+            selectedLabel.textContent = `${selectedCalendarDate} 일정`;
+            const selectedEvents = events.filter(e => e.date === selectedCalendarDate).sort((a,b) => (a.time || '').localeCompare(b.time || ''));
+            list.innerHTML = selectedEvents.length ? selectedEvents.map(e => `<li class="border rounded-lg p-3 flex justify-between items-start gap-3"><div class="min-w-0"><p class="font-semibold text-sm text-gray-800">${e.time ? `<span class="text-indigo-700">${escapeHTML(e.time)}</span> ` : ''}${escapeHTML(e.title)}</p>${e.content ? `<p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap">${escapeHTML(e.content)}</p>` : ''}</div><div class="flex gap-1 shrink-0"><button onclick="editCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border hover:bg-indigo-50">수정</button><button onclick="deleteCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border text-red-600 hover:bg-red-50">삭제</button></div></li>`).join('') : '<li class="text-sm text-gray-400 py-3 text-center">선택한 날짜에 등록된 일정이 없습니다.</li>';
+        }
+        function addCalendarEvent() {
+            const date = selectedCalendarDate || todayISO();
+            const eventDate = prompt('일정 날짜 (YYYY-MM-DD)', date); if (eventDate === null) return;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDate) || Number.isNaN(Date.parse(eventDate))) { alert('날짜는 YYYY-MM-DD 형식으로 입력해 주세요.'); return; }
+            const title = prompt('일정 제목'); if (title === null) return;
+            if (!title.trim()) { alert('일정 제목을 입력해 주세요.'); return; }
+            const time = prompt('시간 (선택, 예: 14:30)', ''); if (time === null) return;
+            const content = prompt('일정 메모 (선택)', ''); if (content === null) return;
+            const events = getCalendarEvents(); events.push({ id: makeId(), date: eventDate, title: title.trim(), time: time.trim(), content: content.trim() });
+            saveStoredArray(CALENDAR_STORAGE_KEY, events); selectedCalendarDate = eventDate; calendarCursor = new Date(Number(eventDate.slice(0,4)), Number(eventDate.slice(5,7))-1, 1); renderCalendar();
+        }
+        function editCalendarEvent(id) {
+            const events = getCalendarEvents(); const item = events.find(e => e.id === id); if (!item) return;
+            const date = prompt('일정 날짜 (YYYY-MM-DD)', item.date); if (date === null) return;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) { alert('날짜는 YYYY-MM-DD 형식으로 입력해 주세요.'); return; }
+            const title = prompt('일정 제목', item.title); if (title === null) return;
+            if (!title.trim()) { alert('일정 제목을 입력해 주세요.'); return; }
+            const time = prompt('시간 (선택, 예: 14:30)', item.time || ''); if (time === null) return;
+            const content = prompt('일정 메모 (선택)', item.content || ''); if (content === null) return;
+            item.date = date; item.title = title.trim(); item.time = time.trim(); item.content = content.trim(); saveStoredArray(CALENDAR_STORAGE_KEY, events);
+            selectedCalendarDate = date; calendarCursor = new Date(Number(date.slice(0,4)), Number(date.slice(5,7))-1, 1); renderCalendar();
+        }
+        function deleteCalendarEvent(id) {
+            if (!confirm('이 일정을 삭제할까요?')) return;
+            saveStoredArray(CALENDAR_STORAGE_KEY, getCalendarEvents().filter(e => e.id !== id)); renderCalendar();
+        }
+        window.writeNotice = writeNotice;
+        window.selectNoticeDate = selectNoticeDate;
+        window.editNotice = editNotice;
+        window.deleteNotice = deleteNotice;
+        window.changeCalendarMonth = changeCalendarMonth;
+        window.selectCalendarDate = selectCalendarDate;
+        window.addCalendarEvent = addCalendarEvent;
+        window.editCalendarEvent = editCalendarEvent;
+        window.deleteCalendarEvent = deleteCalendarEvent;
 
         // =====================================================================
         // [기능 1] 학생 모의고사 관련 스크립트
@@ -1660,68 +1797,7 @@ function saveInterviewDate(studentId, univName, sessionIdx, dateValue) {
     }
 }
 window.saveInterviewDate = saveInterviewDate;
-        // 페이지가 열리면 저장된 전달 사항들을 불러옵니다.
-document.addEventListener('DOMContentLoaded', loadNotices);
-
-function loadNotices() {
-    renderNoticeList('grade3');
-    renderNoticeList('dept');
-}
-
-// 📝 글쓰기 기능 (모달 팝업 대신 간단한 입력창 사용)
-function writeNotice(type) {
-    const content = prompt('새로운 전달 사항을 입력하세요:');
-    
-    // 입력을 취소하거나 빈 칸일 경우 무시
-    if (!content || content.trim() === '') return;
-
-    // 기존 데이터 불러오기
-    const notices = JSON.parse(localStorage.getItem(`notices_${type}`)) || [];
-    
-    // 오늘 날짜 생성 (예: 2026.10.19)
-    const now = new Date();
-    const dateString = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
-
-    // 최신 글이 맨 위에 오도록 배열 앞에 추가
-    notices.unshift({ content: content.trim(), date: dateString });
-    
-    // 스토리지에 저장 후 화면 다시 그리기
-    localStorage.setItem(`notices_${type}`, JSON.stringify(notices));
-    renderNoticeList(type);
-}
-
-// 🗑️ 삭제 기능
-function deleteNotice(type, index) {
-    if (!confirm('이 전달 사항을 삭제하시겠습니까?')) return;
-    
-    const notices = JSON.parse(localStorage.getItem(`notices_${type}`)) || [];
-    notices.splice(index, 1); // 해당 항목 삭제
-    localStorage.setItem(`notices_${type}`, JSON.stringify(notices));
-    
-    renderNoticeList(type);
-}
-
-// 🔄 화면에 리스트를 그려주는 함수
-function renderNoticeList(type) {
-    const listElement = document.getElementById(`notice-${type}`);
-    const notices = JSON.parse(localStorage.getItem(`notices_${type}`)) || [];
-    
-    if (notices.length === 0) {
-        listElement.innerHTML = '<li class="text-gray-400 text-center py-8 text-sm bg-gray-50 rounded-lg">등록된 전달 사항이 없습니다.</li>';
-        return;
-    }
-
-    // 배열 데이터를 HTML 목록(li)으로 변환
-    listElement.innerHTML = notices.map((notice, index) => `
-        <li class="p-3 bg-gray-50 rounded-lg border border-gray-100 flex justify-between items-start hover:bg-gray-100 transition-colors">
-            <div class="pr-4">
-                <span class="text-xs text-gray-500 font-semibold mb-1 block">${notice.date}</span>
-                <p class="text-gray-800 text-sm whitespace-pre-wrap">${notice.content}</p>
-            </div>
-            <button onclick="deleteNotice('${type}', ${index})" class="text-red-400 hover:text-red-600 text-xs shrink-0 mt-1 font-semibold">삭제</button>
-        </li>
-    `).join('');
-}
+        
     </script>
 </body>
 </html>
