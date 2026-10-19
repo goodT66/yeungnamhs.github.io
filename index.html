@@ -393,52 +393,80 @@
             </div>
 
             <div id="susiResultContent" class="hidden">
-                <div class="mb-4 flex flex-wrap gap-4 items-center bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                    <select id="susiYearSelect" onchange="renderSusiResultTable()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
-                        <option value="">연도 전체</option>
-                    </select>
-                    <select id="susiTypeSelect" onchange="renderSusiResultTable()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
-                        <option value="">유형 전체</option>
-                    </select>
-                    <input type="text" id="susiUnivInput" placeholder="대학명 검색" class="border border-gray-300 rounded p-2 font-medium w-40" onkeyup="renderSusiResultTable()">
-                    <input type="text" id="susiMajorInput" placeholder="모집단위 검색" class="border border-gray-300 rounded p-2 font-medium w-48" onkeyup="renderSusiResultTable()">
-                    
-                    <div class="ml-auto text-sm text-gray-700 font-bold bg-white px-3 py-2 rounded border border-gray-200 shadow-sm">
-                        검색 결과: <span id="susiResultCount" class="text-yellow-600 text-lg">0</span>건
-                        <span id="susiResultWarning" class="text-red-500 font-normal text-xs ml-2 hidden">(최대 200건 표시)</span>
-                    </div>
-                </div>
-                
-                <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
+    <div class="mb-4 flex flex-wrap gap-4 items-center bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+        <!-- 1. 연도 선택 -->
+        <select id="susiYearSelect" onchange="renderSusiResultTable()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
+            <option value="">연도 전체</option>
+        </select>
+        
+        <!-- 2. 대학명 검색 및 드롭다운 (Datalist 적용) -->
+        <div class="relative">
+            <input type="text" id="susiUnivInput" list="susiUnivList" oninput="updateSusiMajorList()" placeholder="대학명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-40">
+            <datalist id="susiUnivList"></datalist>
+        </div>
 
-                <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 70vh;">
-                    <table class="grad-table text-sm w-full">
-                        <thead class="sticky top-0 z-10 shadow-sm">
-                            <tr>
-                                <th onclick="setSusiSort(1)">연도 <span id="susi-icon-1" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(5)">대학명 <span id="susi-icon-5" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(6)">모집단위 <span id="susi-icon-6" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(8)">모집전형 <span id="susi-icon-8" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(9)">유형 <span id="susi-icon-9" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(10)">모집인원 <span id="susi-icon-10" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(11)">지원인원 <span id="susi-icon-11" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(12)">경쟁률 <span id="susi-icon-12" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(13)">충원 <span id="susi-icon-13" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(17)" class="bg-blue-50 text-blue-800">수능백분위 <span id="susi-icon-17" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(18)" class="bg-blue-50 text-blue-800">국어 <span id="susi-icon-18" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(19)" class="bg-blue-50 text-blue-800">수학 <span id="susi-icon-19" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(20)" class="bg-blue-50 text-blue-800">탐구 <span id="susi-icon-20" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(14)" class="bg-yellow-50 text-yellow-800">내신 <span id="susi-icon-14" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(15)">환산점 <span id="susi-icon-15" class="sort-icon"></span></th>
-                                <th onclick="setSusiSort(16)">만점 <span id="susi-icon-16" class="sort-icon"></span></th>
-                            </tr>
-                        </thead>
-                        <tbody id="susiResultTableBody">
-                            <tr><td colspan="16" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+        <!-- 3. 모집단위 검색 및 드롭다운 (Datalist 적용) -->
+        <div class="relative">
+            <input type="text" id="susiMajorInput" list="susiMajorList" oninput="renderSusiResultTable()" placeholder="모집단위 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-48">
+            <datalist id="susiMajorList"></datalist>
+        </div>
+        
+        <!-- 우측 정렬 그룹: 수능 백분위 + 검색결과 + 엑셀 다운로드 -->
+        <div class="ml-auto flex flex-wrap items-center gap-3">
+            <!-- 4. 수능 백분위 범위 필터 -->
+            <div class="flex items-center space-x-1 bg-white px-2 py-1 rounded border border-gray-300 shadow-sm">
+                <span class="text-sm font-bold text-gray-700 pl-1">수능 백분위:</span>
+                <input type="number" id="susiCsatMin" oninput="renderSusiResultTable()" placeholder="최소" step="0.1" class="w-16 border border-gray-300 rounded p-1 text-center text-sm outline-none focus:border-yellow-500">
+                <span class="text-gray-500">~</span>
+                <input type="number" id="susiCsatMax" oninput="renderSusiResultTable()" placeholder="최대" step="0.1" class="w-16 border border-gray-300 rounded p-1 text-center text-sm outline-none focus:border-yellow-500">
             </div>
+
+            <!-- 5. 검색 결과 및 엑셀 다운로드 버튼 -->
+            <div class="flex items-center text-sm text-gray-700 font-bold bg-white px-3 py-2 rounded border border-gray-200 shadow-sm">
+                검색 결과: <span id="susiResultCount" class="text-yellow-600 text-lg mx-1">0</span>건
+                <span id="susiResultWarning" class="text-red-500 font-normal text-xs ml-2 hidden">(최대 200건 표시)</span>
+                
+                <button onclick="downloadSusiExcel()" class="ml-4 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded shadow text-xs transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    엑셀 다운로드
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
+
+    <!-- 테이블 영역 유지 -->
+    <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 70vh;">
+        <table class="grad-table text-sm w-full">
+            <thead class="sticky top-0 z-10 shadow-sm">
+                <tr>
+                    <th onclick="setSusiSort(1)">연도 <span id="susi-icon-1" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(5)">대학명 <span id="susi-icon-5" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(6)">모집단위 <span id="susi-icon-6" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(8)">모집전형 <span id="susi-icon-8" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(9)">유형 <span id="susi-icon-9" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(10)">모집인원 <span id="susi-icon-10" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(11)">지원인원 <span id="susi-icon-11" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(12)">경쟁률 <span id="susi-icon-12" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(13)">충원 <span id="susi-icon-13" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(17)" class="bg-blue-50 text-blue-800">수능백분위 <span id="susi-icon-17" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(18)" class="bg-blue-50 text-blue-800">국어 <span id="susi-icon-18" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(19)" class="bg-blue-50 text-blue-800">수학 <span id="susi-icon-19" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(20)" class="bg-blue-50 text-blue-800">탐구 <span id="susi-icon-20" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(14)" class="bg-yellow-50 text-yellow-800">내신 <span id="susi-icon-14" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(15)">환산점 <span id="susi-icon-15" class="sort-icon"></span></th>
+                    <th onclick="setSusiSort(16)">만점 <span id="susi-icon-16" class="sort-icon"></span></th>
+                </tr>
+            </thead>
+            <tbody id="susiResultTableBody">
+                <tr><td colspan="16" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
         </div>
 
     </div>
@@ -1294,172 +1322,223 @@
         window.renderInterviewTable = renderInterviewTable;
 
         // =====================================================================
-        // ✨ [신규 기능 5] 수시 입결 조회 스크립트 (안정성 강화)
-        // =====================================================================
-        let susiResultData = [];
-        let currentSusiSortCol = null;
-        let isSusiAscending = true;
+      // =====================================================================
+// ✨ [기능 5] 수시 입결 조회 스크립트 (대학 연동 및 백분위 필터 적용)
+// =====================================================================
+let susiResultData = [];
+let currentSusiSortCol = null;
+let isSusiAscending = true;
+
+// 표시할 열 인덱스 (연도~만점)
+const susiColOrder = [1, 5, 6, 8, 9, 10, 11, 12, 13, 17, 18, 19, 20, 14, 15, 16];
+
+async function fetchSusiResultData() {
+    const spinner = document.getElementById('susiResultLoadingSpinner');
+    if(spinner) spinner.classList.remove('hidden');
+    
+    try {
+        const response = await fetch(SUSI_RESULT_CSV_URL);
+        if (!response.ok) throw new Error("네트워크 오류");
+        const text = await response.text();
         
-        // 표시할 열 인덱스 (연도~만점)
-        const susiColOrder = [1, 5, 6, 8, 9, 10, 11, 12, 13, 17, 18, 19, 20, 14, 15, 16];
+        Papa.parse(text, {
+            skipEmptyLines: true,
+            complete: function(results) {
+                const data = results.data;
+                if(data.length > 1) {
+                    susiResultData = data.slice(1);
+                    window.susiResultData = susiResultData;
+                    
+                    const yearSet = new Set();
+                    const univSet = new Set(); // 대학명 데이터 추출용
+                    
+                    susiResultData.forEach(row => {
+                        if(row[1]) yearSet.add(String(row[1]).trim());
+                        if(row[5]) univSet.add(String(row[5]).trim()); // 5: 대학명
+                    });
 
-        async function fetchSusiResultData() {
-            const spinner = document.getElementById('susiResultLoadingSpinner');
-            if(spinner) spinner.classList.remove('hidden');
-            
-            try {
-                const response = await fetch(SUSI_RESULT_CSV_URL);
-                if (!response.ok) throw new Error("네트워크 오류");
-                const text = await response.text();
-                
-                Papa.parse(text, {
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        const data = results.data;
-                        if(data.length > 1) {
-                            susiResultData = data.slice(1);
-                            window.susiResultData = susiResultData;
-                            
-                            const yearSet = new Set();
-                            const typeSet = new Set();
-                            susiResultData.forEach(row => {
-                                if(row[1]) yearSet.add(String(row[1]).trim());
-                                if(row[9]) typeSet.add(String(row[9]).trim());
-                            });
-
-                            const ySelect = document.getElementById('susiYearSelect');
-                            const tSelect = document.getElementById('susiTypeSelect');
-                            
-                            // HTML 요소가 존재하는지 확인 후 안전하게 옵션 추가 (오류 방지)
-                            if (ySelect && tSelect) {
-                                Array.from(yearSet).sort((a,b) => b - a).forEach(y => ySelect.appendChild(new Option(`${y}학년도`, y)));
-                                Array.from(typeSet).sort().forEach(t => tSelect.appendChild(new Option(t, t)));
-                            }
-
-                            if (window.getCurrentUser && window.getCurrentUser()) {
-                                renderSusiResultTable();
-                            }
-                        }
-                        if(spinner) spinner.classList.add('hidden');
+                    const ySelect = document.getElementById('susiYearSelect');
+                    const uList = document.getElementById('susiUnivList'); // 대학명 datalist
+                    
+                    if (ySelect) {
+                        Array.from(yearSet).sort((a,b) => b - a).forEach(y => ySelect.appendChild(new Option(`${y}학년도`, y)));
                     }
-                });
-            } catch (error) { 
-                console.error("수시입결 데이터 로드 실패", error); 
-                const tbody = document.getElementById('susiResultTableBody');
-                if(tbody) tbody.innerHTML = `<tr><td colspan="16" class="text-red-500 py-10 font-bold text-center">데이터를 불러오는 데 실패했습니다.<br>(${error.message})</td></tr>`;
+                    if (uList) {
+                        Array.from(univSet).sort().forEach(u => {
+                            const opt = document.createElement('option');
+                            opt.value = u;
+                            uList.appendChild(opt);
+                        });
+                    }
+
+                    if (window.getCurrentUser && window.getCurrentUser()) {
+                        renderSusiResultTable();
+                    }
+                }
                 if(spinner) spinner.classList.add('hidden');
             }
-        }
+        });
+    } catch (error) { 
+        console.error("수시입결 데이터 로드 실패", error); 
+        const tbody = document.getElementById('susiResultTableBody');
+        if(tbody) tbody.innerHTML = `<tr><td colspan="16" class="text-red-500 py-10 font-bold text-center">데이터를 불러오는 데 실패했습니다.<br>(${error.message})</td></tr>`;
+        if(spinner) spinner.classList.add('hidden');
+    }
+}
 
-        function setSusiSort(colIndex) {
-            if (currentSusiSortCol === colIndex) {
-                isSusiAscending = !isSusiAscending;
-            } else {
-                currentSusiSortCol = colIndex;
-                isSusiAscending = true;
+// 대학명 입력 시 해당 대학의 모집단위만 필터링하여 Datalist에 추가
+function updateSusiMajorList() {
+    const selectedUniv = document.getElementById('susiUnivInput').value.trim();
+    const mList = document.getElementById('susiMajorList');
+    
+    // 리스트 초기화
+    if(mList) mList.innerHTML = '';
+    
+    if (selectedUniv) {
+        const majorSet = new Set();
+        susiResultData.forEach(row => {
+            const rowUniv = String(row[5] || '').trim();
+            const rowMajor = String(row[6] || '').trim();
+            // 입력된 대학명과 일치하는 행의 모집단위 수집
+            if (rowUniv === selectedUniv && rowMajor) {
+                majorSet.add(rowMajor);
             }
-            
-            susiColOrder.forEach(idx => {
-                const icon = document.getElementById(`susi-icon-${idx}`);
-                if (icon) icon.textContent = '';
-            });
-            
-            const activeIcon = document.getElementById(`susi-icon-${colIndex}`);
-            if (activeIcon) activeIcon.textContent = isSusiAscending ? ' ▲' : ' ▼';
+        });
 
-            renderSusiResultTable();
-        }
-        window.setSusiSort = setSusiSort;
+        Array.from(majorSet).sort().forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            mList.appendChild(opt);
+        });
+    }
+    
+    // 대학명이 변경되었으므로 테이블도 다시 렌더링
+    renderSusiResultTable();
+}
+window.updateSusiMajorList = updateSusiMajorList;
 
-        function renderSusiResultTable() {
-            const yEl = document.getElementById('susiYearSelect');
-            const tEl = document.getElementById('susiTypeSelect');
-            const uEl = document.getElementById('susiUnivInput');
-            const mEl = document.getElementById('susiMajorInput');
-            const tbody = document.getElementById('susiResultTableBody');
-            
-            // HTML 요소가 없으면 중단하여 에러 방지
-            if (!yEl || !tEl || !uEl || !mEl || !tbody) return;
+function setSusiSort(colIndex) {
+    if (currentSusiSortCol === colIndex) {
+        isSusiAscending = !isSusiAscending;
+    } else {
+        currentSusiSortCol = colIndex;
+        isSusiAscending = true;
+    }
+    
+    susiColOrder.forEach(idx => {
+        const icon = document.getElementById(`susi-icon-${idx}`);
+        if (icon) icon.textContent = '';
+    });
+    
+    const activeIcon = document.getElementById(`susi-icon-${colIndex}`);
+    if (activeIcon) activeIcon.textContent = isSusiAscending ? ' ▲' : ' ▼';
 
-            const y = yEl.value;
-            const t = tEl.value;
-            const u = uEl.value.trim();
-            const m = mEl.value.trim();
-            
-            if (susiResultData.length === 0) return;
+    renderSusiResultTable();
+}
+window.setSusiSort = setSusiSort;
 
-            let filtered = susiResultData.filter(row => {
-                const rowY = String(row[1] || '').trim(); // 연도
-                const rowT = String(row[9] || '').trim(); // 유형
-                const rowU = String(row[5] || '').trim(); // 대학명
-                const rowM = String(row[6] || '').trim(); // 모집단위
+function renderSusiResultTable() {
+    const yEl = document.getElementById('susiYearSelect');
+    const uEl = document.getElementById('susiUnivInput');
+    const mEl = document.getElementById('susiMajorInput');
+    const tbody = document.getElementById('susiResultTableBody');
+    
+    // 백분위 최소, 최대 값 
+    const minCsatEl = document.getElementById('susiCsatMin');
+    const maxCsatEl = document.getElementById('susiCsatMax');
 
-                if (y && rowY !== y) return false;
-                if (t && rowT !== t) return false;
-                if (u && !rowU.includes(u)) return false;
-                if (m && !rowM.includes(m)) return false;
-                return true;
-            });
-            
-            if (currentSusiSortCol !== null) {
-                filtered.sort((a, b) => {
-                    let valA = a[currentSusiSortCol] !== undefined && a[currentSusiSortCol] !== null ? String(a[currentSusiSortCol]).trim() : '';
-                    let valB = b[currentSusiSortCol] !== undefined && b[currentSusiSortCol] !== null ? String(b[currentSusiSortCol]).trim() : '';
+    if (!yEl || !uEl || !mEl || !tbody) return;
 
-                    if (valA === '' || valA === '-') return 1;
-                    if (valB === '' || valB === '-') return -1;
+    const y = yEl.value;
+    const u = uEl.value.trim();
+    const m = mEl.value.trim();
+    
+    const minCsat = minCsatEl && minCsatEl.value ? parseFloat(minCsatEl.value) : -Infinity;
+    const maxCsat = maxCsatEl && maxCsatEl.value ? parseFloat(maxCsatEl.value) : Infinity;
 
-                    let numA = parseFloat(valA);
-                    let numB = parseFloat(valB);
-                    if (!isNaN(numA) && !isNaN(numB)) {
-                        return isSusiAscending ? (numA - numB) : (numB - numA);
-                    }
+    if (susiResultData.length === 0) return;
 
-                    if (valA < valB) return isSusiAscending ? -1 : 1;
-                    if (valA > valB) return isSusiAscending ? 1 : -1;
-                    return 0;
-                });
+    let filtered = susiResultData.filter(row => {
+        const rowY = String(row[1] || '').trim(); // 연도
+        const rowU = String(row[5] || '').trim(); // 대학명
+        const rowM = String(row[6] || '').trim(); // 모집단위
+        
+        // 17번 열: 수능 백분위 (숫자로 파싱)
+        let rowCsatStr = String(row[17] || '').replace(/[^0-9.]/g, ''); 
+        let rowCsat = parseFloat(rowCsatStr);
+        let hasCsatData = !isNaN(rowCsat);
+
+        if (y && rowY !== y) return false;
+        // 대학명과 모집단위는 포함(includes) 또는 정확한 일치로 검색되도록 처리
+        if (u && !rowU.includes(u)) return false; 
+        if (m && !rowM.includes(m)) return false;
+
+        // 수능 백분위 필터 처리 (데이터가 있고, 범위를 벗어나면 false)
+        if (minCsat !== -Infinity && (!hasCsatData || rowCsat < minCsat)) return false;
+        if (maxCsat !== Infinity && (!hasCsatData || rowCsat > maxCsat)) return false;
+
+        return true;
+    });
+    
+    if (currentSusiSortCol !== null) {
+        filtered.sort((a, b) => {
+            let valA = a[currentSusiSortCol] !== undefined && a[currentSusiSortCol] !== null ? String(a[currentSusiSortCol]).trim() : '';
+            let valB = b[currentSusiSortCol] !== undefined && b[currentSusiSortCol] !== null ? String(b[currentSusiSortCol]).trim() : '';
+
+            if (valA === '' || valA === '-') return 1;
+            if (valB === '' || valB === '-') return -1;
+
+            let numA = parseFloat(valA);
+            let numB = parseFloat(valB);
+            if (!isNaN(numA) && !isNaN(numB)) {
+                return isSusiAscending ? (numA - numB) : (numB - numA);
             }
 
-            const totalCount = filtered.length;
-            const countEl = document.getElementById('susiResultCount');
-            if(countEl) countEl.textContent = totalCount;
+            if (valA < valB) return isSusiAscending ? -1 : 1;
+            if (valA > valB) return isSusiAscending ? 1 : -1;
+            return 0;
+        });
+    }
 
-            const MAX_RENDER = 200; // 데이터가 너무 많을 경우 브라우저 렉 방지를 위해 200건으로 제한
-            const finalData = filtered.slice(0, MAX_RENDER);
-            
-            const warningEl = document.getElementById('susiResultWarning');
-            if(warningEl) {
-                if (totalCount > MAX_RENDER) warningEl.classList.remove('hidden');
-                else warningEl.classList.add('hidden');
-            }
+    const totalCount = filtered.length;
+    const countEl = document.getElementById('susiResultCount');
+    if(countEl) countEl.textContent = totalCount;
 
-            tbody.innerHTML = '';
-            
-            if(finalData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="16" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
-                return;
-            }
-            
-            finalData.forEach(row => {
-                const tr = document.createElement('tr');
-                let html = '';
-                
-                susiColOrder.forEach(idx => {
-                    let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
-                    let tdClass = "";
+    const MAX_RENDER = 200; 
+    const finalData = filtered.slice(0, MAX_RENDER);
+    
+    const warningEl = document.getElementById('susiResultWarning');
+    if(warningEl) {
+        if (totalCount > MAX_RENDER) warningEl.classList.remove('hidden');
+        else warningEl.classList.add('hidden');
+    }
 
-                    if (idx === 5 || idx === 6) tdClass = "font-bold text-gray-800"; // 대학명, 모집단위
-                    if (idx === 14) tdClass = "font-bold text-yellow-700 bg-yellow-50/50"; // 내신
-                    if (idx >= 17 && idx <= 20) tdClass = "text-blue-700 bg-blue-50/30 font-medium"; // 수능백분위, 국어, 수학, 탐구
+    tbody.innerHTML = '';
+    
+    if(finalData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="16" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
+        return;
+    }
+    
+    finalData.forEach(row => {
+        const tr = document.createElement('tr');
+        let html = '';
+        
+        susiColOrder.forEach(idx => {
+            let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
+            let tdClass = "";
 
-                    html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
-                });
-                tr.innerHTML = html;
-                tbody.appendChild(tr);
-            });
-        }
-        window.renderSusiResultTable = renderSusiResultTable;
+            if (idx === 5 || idx === 6) tdClass = "font-bold text-gray-800"; // 대학명, 모집단위
+            if (idx === 14) tdClass = "font-bold text-yellow-700 bg-yellow-50/50"; // 내신
+            if (idx >= 17 && idx <= 20) tdClass = "text-blue-700 bg-blue-50/30 font-medium"; // 수능백분위, 국어, 수학, 탐구
+
+            html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
+        });
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+    });
+}
+window.renderSusiResultTable = renderSusiResultTable;;
 
     </script>
 </body>
