@@ -235,31 +235,11 @@
                 <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
                 <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 65vh;">
                     <table class="grad-table text-sm w-full">
-                      <thead class="sticky top-0 z-10 shadow-sm">
-    <tr>
-        <th onclick="setIvSort(1)">학번 <span id="iv-icon-1" class="sort-icon"></span></th>
-        <th onclick="setIvSort(5)">이름 <span id="iv-icon-5" class="sort-icon"></span></th>
-        <th onclick="setIvSort(18)" class="bg-orange-100 text-orange-800">지도교사 <span id="iv-icon-18" class="sort-icon"></span></th>
-        
-        <th class="bg-orange-50 text-orange-800">지도 1회</th>
-        <th class="bg-orange-50 text-orange-800">지도 2회</th>
-        <th class="bg-orange-50 text-orange-800">지도 3회</th>
-        <th class="bg-orange-50 text-orange-800">지도 4회</th>
-        
-        <th onclick="setIvSort(6)">대학명 <span id="iv-icon-6" class="sort-icon"></span></th>
-        <th onclick="setIvSort(7)">세부전형명 <span id="iv-icon-7" class="sort-icon"></span></th>
-        <th onclick="setIvSort(8)">계열 <span id="iv-icon-8" class="sort-icon"></span></th>
-        <th onclick="setIvSort(9)">모집단위 <span id="iv-icon-9" class="sort-icon"></span></th>
-        <th onclick="setIvSort(10)">모집인원 <span id="iv-icon-10" class="sort-icon"></span></th>
-        <th onclick="setIvSort(11)">전형방법 <span id="iv-icon-11" class="sort-icon"></span></th>
-        <th onclick="setIvSort(12)">면접일자 <span id="iv-icon-12" class="sort-icon"></span></th>
-        <th onclick="setIvSort(13)">합격자발표 <span id="iv-icon-13" class="sort-icon"></span></th>
-        <th onclick="setIvSort(14)">1단계발표 <span id="iv-icon-14" class="sort-icon"></span></th>
-        <th onclick="setIvSort(15)">수능최저 <span id="iv-icon-15" class="sort-icon"></span></th>
-        <th onclick="setIvSort(17)">환산점수 <span id="iv-icon-17" class="sort-icon"></span></th>
-        <th onclick="setIvSort(16)">환산등급 <span id="iv-icon-16" class="sort-icon"></span></th>
-    </tr>
-</thead>
+                      <thead class="sticky top-0 z-10 shadow-sm bg-gray-50">
+                        <tr id="gradTableHeaderRow">
+                            <th class="cursor-pointer">데이터를 불러오는 중...</th>
+                        </tr>
+                      </thead>
                         <tbody id="gradTableBody">
                             <tr><td colspan="16" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
                         </tbody>
@@ -965,6 +945,7 @@
         // =====================================================================
         let rawGradData = [];
         let filteredGradData = [];
+        let gradHeaders = [];
         let currentSortCol = null;
         let isAscending = true;
 
@@ -982,8 +963,10 @@
                     complete: function(results) {
                         const data = results.data;
                         if(data.length > 1) {
+                            gradHeaders = (data[0] || []).map(v => String(v || '').trim());
                             rawGradData = data.slice(1);
                             window.rawGradData = rawGradData;
+                            renderGradHeaders();
                             populateGradDropdowns();
                             if (window.getCurrentUser && window.getCurrentUser()) {
                                 applyGradFilter();
@@ -1024,6 +1007,31 @@
             return name.charAt(0) + 'O'.repeat(name.length - 1);
         }
 
+        function renderGradHeaders() {
+            const row = document.getElementById('gradTableHeaderRow');
+            if (!row) return;
+
+            // 시트의 열 제목이 병합 셀/빈 제목 등의 영향을 받아 잘못 표시되지 않도록
+            // 확인된 주요 열 제목은 명시적으로 지정하고, 나머지는 시트 제목을 사용합니다.
+            const knownGradLabels = {
+                0: '연도',
+                1: '학번',
+                5: '학생이름'
+            };
+
+            row.innerHTML = gradColOrder.map(idx => {
+                const label = knownGradLabels[idx] || gradHeaders[idx] || `열 ${idx + 1}`;
+                const active = currentSortCol === idx ? (isAscending ? ' ▲' : ' ▼') : '';
+                return `<th onclick="setGradSort(${idx})" class="cursor-pointer select-none hover:bg-blue-100 whitespace-nowrap" title="클릭하면 오름차순/내림차순 정렬">${escapeHtmlGrad(label)}<span id="icon-${idx}" class="sort-icon">${active}</span></th>`;
+            }).join('');
+        }
+
+        function escapeHtmlGrad(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[ch]));
+        }
+
        function applyGradFilter() {
             const yEl = document.getElementById('filterYear');
             const uEl = document.getElementById('filterUniv');
@@ -1050,8 +1058,16 @@
                 if (fMajor && !m.includes(fMajor)) return false;
                 
                 if (fResult) {
-                    if (fResult === '합격' && r.includes('불합격')) return false;
-                    if (!r.includes(fResult)) return false;
+                    // 결과는 부분 문자열이 아니라 분류별로 구분합니다.
+                    // '충원합격'도 '합격'이라는 글자를 포함하므로 먼저 분리해야 합니다.
+                    const normalizedResult = r.replace(/\s+/g, '');
+                    if (fResult === '충원합격') {
+                        if (!normalizedResult.includes('충원합격') && !normalizedResult.includes('추가합격')) return false;
+                    } else if (fResult === '불합격') {
+                        if (!normalizedResult.includes('불합격')) return false;
+                    } else if (fResult === '합격') {
+                        if (!normalizedResult.includes('합격') || normalizedResult.includes('충원합격') || normalizedResult.includes('추가합격') || normalizedResult.includes('불합격')) return false;
+                    }
                 }
                 return true;
             });
@@ -1068,14 +1084,7 @@
                 isAscending = true;
             }
             
-            gradColOrder.forEach(idx => {
-                const icon = document.getElementById(`icon-${idx}`);
-                if (icon) icon.textContent = '';
-            });
-            
-            const activeIcon = document.getElementById(`icon-${colIndex}`);
-            if (activeIcon) activeIcon.textContent = isAscending ? ' ▲' : ' ▼';
-
+            renderGradHeaders();
             renderGradTable();
         }
         window.setGradSort = setGradSort;
@@ -1145,7 +1154,8 @@
                     else if (idx === 20 || idx === 22) tdClass = "font-bold text-gray-900 text-base bg-yellow-50/50";
                     else if (idx === 5 || idx === 8) tdClass = "font-bold text-gray-800";
 
-                    rowHtml += tdClass ? `<td class="${tdClass}">${cellData}</td>` : `<td>${cellData}</td>`;
+                    const safeCellData = escapeHtmlGrad(cellData);
+                    rowHtml += tdClass ? `<td class="${tdClass}">${safeCellData}</td>` : `<td>${safeCellData}</td>`;
                 });
                 
                 tr.innerHTML = rowHtml;
