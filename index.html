@@ -1305,8 +1305,29 @@ const ivColOrder = [1, 5, 18, 19, 20, 21, 22, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
                 return;
             }
             
-           filtered.forEach(row => {
+          // 🎨 지도교사별로 칠해줄 파스텔톤 배경색 목록 (Tailwind CSS 클래스)
+            const rowColors = ['bg-blue-50', 'bg-green-50', 'bg-yellow-50', 'bg-purple-50', 'bg-pink-50', 'bg-teal-50', 'bg-indigo-50', 'bg-rose-50'];
+            const teacherColorMap = {};
+            let colorIdx = 0;
+
+            filtered.forEach(row => {
                 const tr = document.createElement('tr');
+                
+                // 지도교사 이름 추출 (인덱스 18)
+                const teacherName = String(row[18] || '').trim();
+                
+                // ✨ 지도교사 이름이 있으면 고유 색상 배정 및 행(tr)에 적용
+                if (teacherName && teacherName !== '-') {
+                    if (!teacherColorMap[teacherName]) {
+                        teacherColorMap[teacherName] = rowColors[colorIdx % rowColors.length];
+                        colorIdx++;
+                    }
+                    // 행 전체에 배정된 배경색 추가 (마우스 오버 시 살짝 진해지는 효과 포함)
+                    tr.classList.add(teacherColorMap[teacherName], 'hover:brightness-95', 'transition-all', 'border-b', 'border-gray-200');
+                } else {
+                    tr.classList.add('hover:bg-gray-50', 'border-b', 'border-gray-200');
+                }
+
                 let html = '';
                 
                 // 식별자: 학번(1)과 이름(5)
@@ -1316,7 +1337,7 @@ const ivColOrder = [1, 5, 18, 19, 20, 21, 22, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
                 ivColOrder.forEach(idx => {
                     let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
                     
-                    // ✨ 지도 1~4회(19~22) 달력 입력칸 렌더링
+                    // 지도 1~4회(19~22) 달력 입력칸 렌더링
                     if (idx >= 19 && idx <= 22) {
                         const savedKey = `interview_date_${studentId}_${studentName}_${idx}`;
                         const savedDate = localStorage.getItem(savedKey) || '';
@@ -1326,13 +1347,13 @@ const ivColOrder = [1, 5, 18, 19, 20, 21, 22, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
                                 <input type="date" 
                                        value="${savedDate}" 
                                        onchange="saveInterviewDate('${studentId}', '${studentName}', ${idx}, this.value)" 
-                                       class="border border-gray-300 rounded p-1 text-xs bg-white cursor-pointer hover:border-orange-500 focus:outline-none focus:border-orange-600 transition-colors w-28">
+                                       class="border border-gray-300 rounded p-1 text-xs bg-white/80 cursor-pointer hover:border-orange-500 focus:outline-none focus:border-orange-600 transition-colors w-28">
                             </td>
                         `;
                     } else {
                         let tdClass = "";
-                        // 스타일 적용
-                        if (idx === 18) tdClass = "font-bold text-orange-800 bg-orange-50"; // 지도교사
+                        // 스타일 적용 (행 전체 색상을 가리지 않도록 배경색 최소화)
+                        if (idx === 18) tdClass = "font-bold text-gray-800"; // 지도교사 (원래 있던 배경색 지움)
                         else if (idx === 1 || idx === 5 || idx === 6) tdClass = "font-bold text-gray-800"; // 학번, 이름, 대학명
                         else if (idx === 9) tdClass = "max-w-[150px] whitespace-normal break-keep text-sm leading-snug"; // 모집단위 줄바꿈
 
