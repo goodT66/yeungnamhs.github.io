@@ -505,13 +505,10 @@ import {
 
     
 let currentUser = null;
-
-// Firestore에서 받아온 면접 지도 날짜 저장 공간
 let interviewDateCache = {};
-
-// 실시간 구독 해제 함수를 저장할 변수
 let unsubscribeInterviewDates = null;
-
+window.getCurrentUser = () => currentUser;
+window.getInterviewDateCache = () => interviewDateCache;
 
 function startInterviewDateSync() {
     // 기존 실시간 구독이 있다면 먼저 해제
@@ -1608,8 +1605,12 @@ if (tSelect) {
 const savedKey = `interview_date_${studentId}_${studentName}_${idx}`;
 
 const cloudKey = `${studentId}_${studentName}_${idx}`;
-const savedDate = Object.prototype.hasOwnProperty.call(interviewDateCache, cloudKey)
-    ? interviewDateCache[cloudKey]
+const dateCache = window.getInterviewDateCache
+    ? window.getInterviewDateCache()
+    : {};
+
+const savedDate = Object.prototype.hasOwnProperty.call(dateCache, cloudKey)
+    ? dateCache[cloudKey]
     : (localStorage.getItem(savedKey) || '');
 
 
@@ -1737,8 +1738,8 @@ async function fetchSusiResultData() {
                     }
 
                     if (window.getCurrentUser && window.getCurrentUser()) {
-                        renderSusiResultTable();
-                    }
+    renderInterviewTable();
+}
                 }
                 if(spinner) spinner.classList.add('hidden');
             }
