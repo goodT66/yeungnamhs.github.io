@@ -48,6 +48,7 @@
 
     <div class="w-full z-10 relative px-4" style="max-width: 95%; margin: 0 auto;">
         
+        <!-- 헤더 -->
         <header class="bg-school rounded-2xl shadow-md p-6 mb-10 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div class="flex items-center gap-6">
                 <div class="bg-white rounded-full w-16 h-16 flex items-center justify-center shadow-inner shrink-0 relative overflow-hidden p-1">
@@ -116,6 +117,7 @@
                 <h2 class="text-xl font-bold mb-4 text-blue-600 break-keep">졸업생 수시 결과</h2>
             </div>
             
+            <!-- ✨ 수시 입결 조회 버튼 -->
             <div onclick="openSusiResultView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-yellow-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
                 <div id="susiResultLoadingSpinner" class="absolute top-4 right-4 flex h-3 w-3 hidden">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
@@ -374,7 +376,7 @@
             </div>
         </div>
 
-        <!-- [화면 6] 수시 입결 조회 화면 -->
+        <!-- ✨ [화면 6] 수시 입결 조회 화면 -->
         <div id="susiResultView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-yellow-500">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
                 <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -391,31 +393,19 @@
             </div>
 
             <div id="susiResultContent" class="hidden">
-                <!-- ✨ 필터 및 검색 (유형 삭제, 검색/자동완성 적용, 백분위 범위 추가) -->
                 <div class="mb-4 flex flex-wrap gap-4 items-center bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                     <select id="susiYearSelect" onchange="renderSusiResultTable()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
                         <option value="">연도 전체</option>
                     </select>
+                    <select id="susiTypeSelect" onchange="renderSusiResultTable()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
+                        <option value="">유형 전체</option>
+                    </select>
+                    <input type="text" id="susiUnivInput" placeholder="대학명 검색" class="border border-gray-300 rounded p-2 font-medium w-40" onkeyup="renderSusiResultTable()">
+                    <input type="text" id="susiMajorInput" placeholder="모집단위 검색" class="border border-gray-300 rounded p-2 font-medium w-48" onkeyup="renderSusiResultTable()">
                     
-                    <input list="susiUnivList" id="susiUnivInput" placeholder="대학명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-40" onchange="renderSusiResultTable()" onkeyup="renderSusiResultTable()">
-                    <datalist id="susiUnivList"></datalist>
-
-                    <input list="susiMajorList" id="susiMajorInput" placeholder="모집단위 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-48" onchange="renderSusiResultTable()" onkeyup="renderSusiResultTable()">
-                    <datalist id="susiMajorList"></datalist>
-                    
-                    <div class="ml-auto flex flex-wrap items-center gap-4">
-                        <!-- 수능 백분위 범위 필터 -->
-                        <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded border border-gray-300 shadow-sm">
-                            <label class="text-sm font-bold text-gray-700">수능 백분위</label>
-                            <input type="number" id="susiCsatMin" placeholder="최소" class="w-16 p-1 border-b border-gray-300 text-center focus:outline-none focus:border-yellow-500 font-medium" onchange="renderSusiResultTable()" onkeyup="renderSusiResultTable()">
-                            <span class="text-gray-500">~</span>
-                            <input type="number" id="susiCsatMax" placeholder="최대" class="w-16 p-1 border-b border-gray-300 text-center focus:outline-none focus:border-yellow-500 font-medium" onchange="renderSusiResultTable()" onkeyup="renderSusiResultTable()">
-                        </div>
-
-                        <div class="text-sm text-gray-700 font-bold bg-white px-3 py-2 rounded border border-gray-200 shadow-sm">
-                            검색 결과: <span id="susiResultCount" class="text-yellow-600 text-lg">0</span>건
-                            <span id="susiResultWarning" class="text-red-500 font-normal text-xs ml-2 hidden">(최대 200건 표시)</span>
-                        </div>
+                    <div class="ml-auto text-sm text-gray-700 font-bold bg-white px-3 py-2 rounded border border-gray-200 shadow-sm">
+                        검색 결과: <span id="susiResultCount" class="text-yellow-600 text-lg">0</span>건
+                        <span id="susiResultWarning" class="text-red-500 font-normal text-xs ml-2 hidden">(최대 200건 표시)</span>
                     </div>
                 </div>
                 
@@ -630,11 +620,11 @@
             fetchGradData();
             fetchClassSusiData(); 
             fetchInterviewData(); 
-            fetchSusiResultData();
+            fetchSusiResultData(); // 수시입결
         });
 
         // =====================================================================
-        // [기능 1] 학생 모의고사 관련 스크립트 (유지)
+        // [기능 1] 학생 모의고사 관련 스크립트
         // =====================================================================
         let mockDataLoaded = false;
         let studentMap = new Map();
@@ -693,6 +683,7 @@
         
         function populateGradeDropdown() {
             const select = document.getElementById('gradeSelect');
+            if(!select) return;
             select.innerHTML = '<option value="">▼ 학년 선택</option>';
             const grades = new Set();
             for (let id of studentMap.keys()) if (id && id.length >= 5) grades.add(id.charAt(0));
@@ -710,6 +701,8 @@
             for (let id of studentMap.keys()) if (id.charAt(0) === g) cls.add(id.substring(1,3));
             Array.from(cls).sort().forEach(c => cSel.appendChild(new Option(`${parseInt(c,10)}반`, c)));
         }
+        window.onGradeChange = onGradeChange;
+
         function onClassChange() {
             const g = document.getElementById('gradeSelect').value, c = document.getElementById('classSelect').value;
             const sSel = document.getElementById('studentSelect');
@@ -719,6 +712,7 @@
                 .filter(id => id.startsWith(g + c)).sort()
                 .forEach(id => sSel.appendChild(new Option(`${parseInt(id.substring(3,5),10)}번 - ${studentMap.get(id).name}`, id)));
         }
+        window.onClassChange = onClassChange;
         
         function renderMockData() {
             const sid = document.getElementById('studentSelect').value;
@@ -755,7 +749,9 @@
                 }
             });
             document.getElementById('tableContainer').classList.remove('hidden');
-            const tbody = document.getElementById('scoreTableBody'); tbody.innerHTML = '';
+            const tbody = document.getElementById('scoreTableBody'); 
+            if(!tbody) return;
+            tbody.innerHTML = '';
             [...recs].reverse().forEach(r => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td>${r.title}</td><td>${r.korStd}</td><td>${r.korPtc}</td><td class="text-red-600 font-bold">${r.korGrd}</td>
@@ -766,9 +762,10 @@
                 tbody.appendChild(tr);
             });
         }
+        window.renderMockData = renderMockData;
 
         // =====================================================================
-        // [기능 2] 졸업생 수시 결과 스크립트 (유지)
+        // [기능 2] 졸업생 수시 결과 스크립트
         // =====================================================================
         let rawGradData = [];
         let filteredGradData = [];
@@ -797,7 +794,8 @@
                     }
                 });
             } catch (error) {
-                document.getElementById('gradTableBody').innerHTML = '<tr><td colspan="17" class="text-red-500">데이터 로드 실패</td></tr>';
+                const tbody = document.getElementById('gradTableBody');
+                if(tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-red-500">데이터 로드 실패</td></tr>';
             }
         }
 
@@ -809,10 +807,10 @@
             });
 
             const yearSelect = document.getElementById('filterYear');
-            Array.from(yearSet).sort((a, b) => b - a).forEach(y => yearSelect.appendChild(new Option(y + '년', y)));
+            if(yearSelect) Array.from(yearSet).sort((a, b) => b - a).forEach(y => yearSelect.appendChild(new Option(y + '년', y)));
             
             const univSelect = document.getElementById('filterUniv');
-            Array.from(univSet).sort().forEach(u => univSelect.appendChild(new Option(u, u)));
+            if(univSelect) Array.from(univSet).sort().forEach(u => univSelect.appendChild(new Option(u, u)));
         }
 
         function blindName(name) {
@@ -823,10 +821,17 @@
         }
 
        function applyGradFilter() {
-            const fYear = document.getElementById('filterYear').value;
-            const fUniv = document.getElementById('filterUniv').value;
-            const fMajor = document.getElementById('filterMajor').value.trim();
-            const fResult = document.getElementById('filterResult').value;
+            const yEl = document.getElementById('filterYear');
+            const uEl = document.getElementById('filterUniv');
+            const mEl = document.getElementById('filterMajor');
+            const rEl = document.getElementById('filterResult');
+            
+            if(!yEl || !uEl || !mEl || !rEl) return;
+
+            const fYear = yEl.value;
+            const fUniv = uEl.value;
+            const fMajor = mEl.value.trim();
+            const fResult = rEl.value;
 
             if (rawGradData.length === 0) return;
 
@@ -869,9 +874,12 @@
 
             renderGradTable();
         }
+        window.setGradSort = setGradSort;
 
         function renderGradTable() {
             const tbody = document.getElementById('gradTableBody');
+            if(!tbody) return;
+            
             let dataToRender = [...filteredGradData];
 
             if (currentSortCol !== null) {
@@ -892,14 +900,17 @@
             }
 
             const totalCount = dataToRender.length;
-            document.getElementById('gradCount').textContent = totalCount;
+            const cEl = document.getElementById('gradCount');
+            if(cEl) cEl.textContent = totalCount;
 
             const MAX_RENDER = 100;
             const finalData = dataToRender.slice(0, MAX_RENDER);
             
             const warningEl = document.getElementById('gradWarning');
-            if (totalCount > MAX_RENDER) warningEl.classList.remove('hidden');
-            else warningEl.classList.add('hidden');
+            if(warningEl) {
+                if (totalCount > MAX_RENDER) warningEl.classList.remove('hidden');
+                else warningEl.classList.add('hidden');
+            }
 
             tbody.innerHTML = ''; 
 
@@ -939,7 +950,7 @@
         }
 
         // =====================================================================
-        // [기능 3] 2026 수시 지원 반별 조회 스크립트 (유지)
+        // [기능 3] 2026 수시 지원 반별 조회 스크립트
         // =====================================================================
         let classSusiData = [];
         let currentClassSortCol = null;
@@ -969,6 +980,7 @@
 
         function populateClassGradeDropdown() {
             const select = document.getElementById('classGradeSelect');
+            if(!select) return;
             select.innerHTML = '<option value="">학년 선택</option>';
             const grades = new Set();
             classSusiData.forEach(row => {
@@ -979,16 +991,18 @@
         window.populateClassGradeDropdown = populateClassGradeDropdown;
 
         function onClassGradeChange() {
-            const g = document.getElementById('classGradeSelect').value;
             const select = document.getElementById('classNumSelect');
+            if(!select) return;
             select.innerHTML = '<option value="">반 선택</option>';
             
             document.getElementById('classNameSelect').innerHTML = '<option value="">이름 전체</option>';
             document.getElementById('classUnivInput').value = '';
             document.getElementById('classMajorInput').value = '';
             
-            document.getElementById('classTableBody').innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">반을 선택해주세요.</td></tr>';
+            const tbody = document.getElementById('classTableBody');
+            if(tbody) tbody.innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">반을 선택해주세요.</td></tr>';
             
+            const g = document.getElementById('classGradeSelect').value;
             if (!g) return;
             
             const classes = new Set();
@@ -997,10 +1011,15 @@
             });
             Array.from(classes).sort((a,b) => parseInt(a) - parseInt(b)).forEach(c => select.appendChild(new Option(`${c}반`, c)));
         }
+        window.onClassGradeChange = onClassGradeChange;
 
         function onClassNumChange() {
-            const g = document.getElementById('classGradeSelect').value;
-            const c = document.getElementById('classNumSelect').value;
+            const gEl = document.getElementById('classGradeSelect');
+            const cEl = document.getElementById('classNumSelect');
+            if(!gEl || !cEl) return;
+            
+            const g = gEl.value;
+            const c = cEl.value;
 
             const nameSelect = document.getElementById('classNameSelect');
             const univList = document.getElementById('classUnivList');
@@ -1033,6 +1052,7 @@
 
             renderClassTable();
         }
+        window.onClassNumChange = onClassNumChange;
 
         function setClassSort(colIndex) {
             if (currentClassSortCol === colIndex) {
@@ -1050,15 +1070,23 @@
 
             renderClassTable();
         }
+        window.setClassSort = setClassSort;
 
         function renderClassTable() {
-            const g = document.getElementById('classGradeSelect').value;
-            const c = document.getElementById('classNumSelect').value;
-            const n = document.getElementById('classNameSelect').value;
-            const u = document.getElementById('classUnivInput').value.trim();
-            const m = document.getElementById('classMajorInput').value.trim();
-            
+            const gEl = document.getElementById('classGradeSelect');
+            const cEl = document.getElementById('classNumSelect');
+            const nEl = document.getElementById('classNameSelect');
+            const uEl = document.getElementById('classUnivInput');
+            const mEl = document.getElementById('classMajorInput');
             const tbody = document.getElementById('classTableBody');
+            
+            if(!gEl || !cEl || !tbody) return;
+
+            const g = gEl.value;
+            const c = cEl.value;
+            const n = nEl.value;
+            const u = uEl.value.trim();
+            const m = mEl.value.trim();
             
             if(!g || !c) {
                 tbody.innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">학년과 반을 선택해주세요.</td></tr>';
@@ -1129,9 +1157,10 @@
                 tbody.appendChild(tr);
             });
         }
+        window.renderClassTable = renderClassTable;
 
         // =====================================================================
-        // [기능 4] 2026 수시 면접 조편성 스크립트 (유지)
+        // [기능 4] 2026 수시 면접 조편성 스크립트
         // =====================================================================
         let interviewData = [];
         let currentIvSortCol = null;
@@ -1153,12 +1182,13 @@
                             window.interviewData = interviewData;
                             
                             const tSelect = document.getElementById('ivTeacherSelect');
-                            const teachers = new Set();
-                            interviewData.forEach(row => {
-                                if(row[18]) teachers.add(String(row[18]).trim());
-                            });
-                            Array.from(teachers).sort().forEach(t => tSelect.appendChild(new Option(t, t)));
-                            
+                            if(tSelect) {
+                                const teachers = new Set();
+                                interviewData.forEach(row => {
+                                    if(row[18]) teachers.add(String(row[18]).trim());
+                                });
+                                Array.from(teachers).sort().forEach(t => tSelect.appendChild(new Option(t, t)));
+                            }
                             if (window.getCurrentUser && window.getCurrentUser()) {
                                 renderInterviewTable();
                             }
@@ -1186,12 +1216,19 @@
 
             renderInterviewTable();
         }
+        window.setIvSort = setIvSort;
 
         function renderInterviewTable() {
-            const t = document.getElementById('ivTeacherSelect').value;
-            const n = document.getElementById('ivNameInput').value.trim();
-            const u = document.getElementById('ivUnivInput').value.trim();
+            const tEl = document.getElementById('ivTeacherSelect');
+            const nEl = document.getElementById('ivNameInput');
+            const uEl = document.getElementById('ivUnivInput');
             const tbody = document.getElementById('interviewTableBody');
+            
+            if(!tEl || !nEl || !uEl || !tbody) return;
+
+            const t = tEl.value;
+            const n = nEl.value.trim();
+            const u = uEl.value.trim();
             
             if (interviewData.length === 0) return;
 
@@ -1228,7 +1265,8 @@
                 filtered.sort((a, b) => parseInt(a[0] || 0) - parseInt(b[0] || 0));
             }
 
-            document.getElementById('ivCount').textContent = filtered.length;
+            const countEl = document.getElementById('ivCount');
+            if(countEl) countEl.textContent = filtered.length;
             tbody.innerHTML = '';
             
             if(filtered.length === 0) {
@@ -1256,17 +1294,19 @@
         window.renderInterviewTable = renderInterviewTable;
 
         // =====================================================================
-        // ✨ [신규 기능 5] 수시 입결 조회 스크립트 수정 완료 (GID 통신 방식 적용)
+        // ✨ [신규 기능 5] 수시 입결 조회 스크립트 (안정성 강화)
         // =====================================================================
         let susiResultData = [];
         let currentSusiSortCol = null;
         let isSusiAscending = true;
         
-        // 표시할 열 인덱스
+        // 표시할 열 인덱스 (연도~만점)
         const susiColOrder = [1, 5, 6, 8, 9, 10, 11, 12, 13, 17, 18, 19, 20, 14, 15, 16];
 
         async function fetchSusiResultData() {
-            document.getElementById('susiResultLoadingSpinner')?.classList.remove('hidden');
+            const spinner = document.getElementById('susiResultLoadingSpinner');
+            if(spinner) spinner.classList.remove('hidden');
+            
             try {
                 const response = await fetch(SUSI_RESULT_CSV_URL);
                 if (!response.ok) throw new Error("네트워크 오류");
@@ -1288,22 +1328,26 @@
                             });
 
                             const ySelect = document.getElementById('susiYearSelect');
-                            Array.from(yearSet).sort((a,b) => b - a).forEach(y => ySelect.appendChild(new Option(`${y}학년도`, y)));
-
                             const tSelect = document.getElementById('susiTypeSelect');
-                            Array.from(typeSet).sort().forEach(t => tSelect.appendChild(new Option(t, t)));
                             
+                            // HTML 요소가 존재하는지 확인 후 안전하게 옵션 추가 (오류 방지)
+                            if (ySelect && tSelect) {
+                                Array.from(yearSet).sort((a,b) => b - a).forEach(y => ySelect.appendChild(new Option(`${y}학년도`, y)));
+                                Array.from(typeSet).sort().forEach(t => tSelect.appendChild(new Option(t, t)));
+                            }
+
                             if (window.getCurrentUser && window.getCurrentUser()) {
                                 renderSusiResultTable();
                             }
                         }
-                        document.getElementById('susiResultLoadingSpinner')?.classList.add('hidden');
+                        if(spinner) spinner.classList.add('hidden');
                     }
                 });
             } catch (error) { 
                 console.error("수시입결 데이터 로드 실패", error); 
-                document.getElementById('susiResultTableBody').innerHTML = `<tr><td colspan="16" class="text-red-500 py-10 font-bold text-center">데이터를 불러오는 데 실패했습니다. (${error.message})</td></tr>`;
-                document.getElementById('susiResultLoadingSpinner')?.classList.add('hidden');
+                const tbody = document.getElementById('susiResultTableBody');
+                if(tbody) tbody.innerHTML = `<tr><td colspan="16" class="text-red-500 py-10 font-bold text-center">데이터를 불러오는 데 실패했습니다.<br>(${error.message})</td></tr>`;
+                if(spinner) spinner.classList.add('hidden');
             }
         }
 
@@ -1325,13 +1369,22 @@
 
             renderSusiResultTable();
         }
+        window.setSusiSort = setSusiSort;
 
         function renderSusiResultTable() {
-            const y = document.getElementById('susiYearSelect').value;
-            const t = document.getElementById('susiTypeSelect').value;
-            const u = document.getElementById('susiUnivInput').value.trim();
-            const m = document.getElementById('susiMajorInput').value.trim();
+            const yEl = document.getElementById('susiYearSelect');
+            const tEl = document.getElementById('susiTypeSelect');
+            const uEl = document.getElementById('susiUnivInput');
+            const mEl = document.getElementById('susiMajorInput');
             const tbody = document.getElementById('susiResultTableBody');
+            
+            // HTML 요소가 없으면 중단하여 에러 방지
+            if (!yEl || !tEl || !uEl || !mEl || !tbody) return;
+
+            const y = yEl.value;
+            const t = tEl.value;
+            const u = uEl.value.trim();
+            const m = mEl.value.trim();
             
             if (susiResultData.length === 0) return;
 
@@ -1369,14 +1422,17 @@
             }
 
             const totalCount = filtered.length;
-            document.getElementById('susiResultCount').textContent = totalCount;
+            const countEl = document.getElementById('susiResultCount');
+            if(countEl) countEl.textContent = totalCount;
 
-            const MAX_RENDER = 200; // 데이터가 너무 많을 경우 렉 방지를 위해 200건 제한
+            const MAX_RENDER = 200; // 데이터가 너무 많을 경우 브라우저 렉 방지를 위해 200건으로 제한
             const finalData = filtered.slice(0, MAX_RENDER);
             
             const warningEl = document.getElementById('susiResultWarning');
-            if (totalCount > MAX_RENDER) warningEl.classList.remove('hidden');
-            else warningEl.classList.add('hidden');
+            if(warningEl) {
+                if (totalCount > MAX_RENDER) warningEl.classList.remove('hidden');
+                else warningEl.classList.add('hidden');
+            }
 
             tbody.innerHTML = '';
             
@@ -1393,9 +1449,9 @@
                     let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
                     let tdClass = "";
 
-                    if (idx === 5 || idx === 6) tdClass = "font-bold text-gray-800"; // 대학, 모집단위
+                    if (idx === 5 || idx === 6) tdClass = "font-bold text-gray-800"; // 대학명, 모집단위
                     if (idx === 14) tdClass = "font-bold text-yellow-700 bg-yellow-50/50"; // 내신
-                    if (idx >= 17 && idx <= 20) tdClass = "text-blue-700 bg-blue-50/30 font-medium"; // 수능 점수 계열
+                    if (idx >= 17 && idx <= 20) tdClass = "text-blue-700 bg-blue-50/30 font-medium"; // 수능백분위, 국어, 수학, 탐구
 
                     html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
                 });
