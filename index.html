@@ -116,7 +116,7 @@
                 <h2 class="text-xl font-bold mb-4 text-blue-600 break-keep">졸업생 수시 결과</h2>
             </div>
             
-            <!-- ✨ 수시 입결 조회 버튼 연동 -->
+            <!-- 수시 입결 조회 버튼 -->
             <div onclick="openSusiResultView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-yellow-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
                 <div id="susiResultLoadingSpinner" class="absolute top-4 right-4 flex h-3 w-3 hidden">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
@@ -375,7 +375,7 @@
             </div>
         </div>
 
-        <!-- ✨ [화면 6] 수시 입결 조회 화면 신규 추가 -->
+        <!-- ✨ [화면 6] 수시 입결 조회 화면 -->
         <div id="susiResultView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-yellow-500">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
                 <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -413,7 +413,6 @@
                 <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 70vh;">
                     <table class="grad-table text-sm w-full">
                         <thead class="sticky top-0 z-10 shadow-sm">
-                            <!-- 표시할 항목: 연도(1), 대학명(5), 모집단위(6), 모집전형(8), 유형(9), 모집인원(10), 지원인원(11), 경쟁률(12), 충원(13), 수능백분위(17), 국어(18), 수학(19), 탐구(20), 내신(14), 환산점(15), 만점(16) -->
                             <tr>
                                 <th onclick="setSusiSort(1)">연도 <span id="susi-icon-1" class="sort-icon"></span></th>
                                 <th onclick="setSusiSort(5)">대학명 <span id="susi-icon-5" class="sort-icon"></span></th>
@@ -564,7 +563,9 @@
         const GRAD_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=졸업생`;
         const SUSI_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026수시`; 
         const INTERVIEW_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026면접`; 
-        const SUSI_RESULT_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=수시입결`;
+        
+        // ✨ 한글 시트명 오류를 방지하기 위해 GID 번호로 직접 통신하도록 수정했습니다
+        const SUSI_RESULT_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1822882619`;
 
         function showMainDashboard() {
             document.getElementById('mainDashboard').classList.remove('hidden');
@@ -620,7 +621,7 @@
             fetchGradData();
             fetchClassSusiData(); 
             fetchInterviewData(); 
-            fetchSusiResultData(); // 수시입결 데이터 로드 추가
+            fetchSusiResultData(); // 수시입결 데이터 호출 추가
         });
 
         // =====================================================================
@@ -1120,11 +1121,12 @@
             });
         }
 
-        // ---------------- [기능 4] 2026 수시 면접 조편성 스크립트 ----------------
+        // =====================================================================
+        // [기능 4] 2026 수시 면접 조편성 스크립트 (유지)
+        // =====================================================================
         let interviewData = [];
         let currentIvSortCol = null;
         let isIvAscending = true;
-        // 면접 조편성의 열 순서 (지도교사(18)를 순번(0) 다음으로 유지)
         const ivColOrder = [0, 18, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22];
 
         async function fetchInterviewData() {
@@ -1141,7 +1143,6 @@
                             interviewData = data.slice(1);
                             window.interviewData = interviewData;
                             
-                            // 지도교사 드롭다운 세팅
                             const tSelect = document.getElementById('ivTeacherSelect');
                             const teachers = new Set();
                             interviewData.forEach(row => {
@@ -1215,7 +1216,6 @@
                     return 0;
                 });
             } else {
-                // 기본 정렬: 순번(row[0]) 오름차순
                 filtered.sort((a, b) => parseInt(a[0] || 0) - parseInt(b[0] || 0));
             }
 
@@ -1236,7 +1236,7 @@
 
                     if (idx === 5) tdClass = "font-bold text-gray-800"; // 이름
                     if (idx === 6) tdClass = "font-bold text-gray-800"; // 대학명
-                    if (idx === 18) tdClass = "font-bold text-orange-700 bg-orange-50/50"; // 지도교사 강조
+                    if (idx === 18) tdClass = "font-bold text-orange-700 bg-orange-50/50"; // 지도교사
 
                     html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
                 });
@@ -1246,7 +1246,156 @@
         }
         window.renderInterviewTable = renderInterviewTable;
 
+        // =====================================================================
+        // ✨ [신규 기능 5] 수시 입결 조회 스크립트 수정 완료 (GID 통신 방식 적용)
+        // =====================================================================
+        let susiResultData = [];
+        let currentSusiSortCol = null;
+        let isSusiAscending = true;
+        
+        // 표시할 열 인덱스
+        const susiColOrder = [1, 5, 6, 8, 9, 10, 11, 12, 13, 17, 18, 19, 20, 14, 15, 16];
+
+        async function fetchSusiResultData() {
+            document.getElementById('susiResultLoadingSpinner')?.classList.remove('hidden');
+            try {
+                const response = await fetch(SUSI_RESULT_CSV_URL);
+                if (!response.ok) throw new Error("네트워크 오류");
+                const text = await response.text();
+                
+                Papa.parse(text, {
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        const data = results.data;
+                        if(data.length > 1) {
+                            susiResultData = data.slice(1);
+                            window.susiResultData = susiResultData;
+                            
+                            const yearSet = new Set();
+                            const typeSet = new Set();
+                            susiResultData.forEach(row => {
+                                if(row[1]) yearSet.add(String(row[1]).trim());
+                                if(row[9]) typeSet.add(String(row[9]).trim());
+                            });
+
+                            const ySelect = document.getElementById('susiYearSelect');
+                            Array.from(yearSet).sort((a,b) => b - a).forEach(y => ySelect.appendChild(new Option(`${y}학년도`, y)));
+
+                            const tSelect = document.getElementById('susiTypeSelect');
+                            Array.from(typeSet).sort().forEach(t => tSelect.appendChild(new Option(t, t)));
+                            
+                            if (window.getCurrentUser && window.getCurrentUser()) {
+                                renderSusiResultTable();
+                            }
+                        }
+                        document.getElementById('susiResultLoadingSpinner')?.classList.add('hidden');
+                    }
+                });
+            } catch (error) { 
+                console.error("수시입결 데이터 로드 실패", error); 
+                document.getElementById('susiResultTableBody').innerHTML = `<tr><td colspan="16" class="text-red-500 py-10 font-bold text-center">데이터를 불러오는 데 실패했습니다. (${error.message})</td></tr>`;
+                document.getElementById('susiResultLoadingSpinner')?.classList.add('hidden');
+            }
+        }
+
+        function setSusiSort(colIndex) {
+            if (currentSusiSortCol === colIndex) {
+                isSusiAscending = !isSusiAscending;
+            } else {
+                currentSusiSortCol = colIndex;
+                isSusiAscending = true;
+            }
+            
+            susiColOrder.forEach(idx => {
+                const icon = document.getElementById(`susi-icon-${idx}`);
+                if (icon) icon.textContent = '';
+            });
+            
+            const activeIcon = document.getElementById(`susi-icon-${colIndex}`);
+            if (activeIcon) activeIcon.textContent = isSusiAscending ? ' ▲' : ' ▼';
+
+            renderSusiResultTable();
+        }
+
+        function renderSusiResultTable() {
+            const y = document.getElementById('susiYearSelect').value;
+            const t = document.getElementById('susiTypeSelect').value;
+            const u = document.getElementById('susiUnivInput').value.trim();
+            const m = document.getElementById('susiMajorInput').value.trim();
+            const tbody = document.getElementById('susiResultTableBody');
+            
+            if (susiResultData.length === 0) return;
+
+            let filtered = susiResultData.filter(row => {
+                const rowY = String(row[1] || '').trim(); // 연도
+                const rowT = String(row[9] || '').trim(); // 유형
+                const rowU = String(row[5] || '').trim(); // 대학명
+                const rowM = String(row[6] || '').trim(); // 모집단위
+
+                if (y && rowY !== y) return false;
+                if (t && rowT !== t) return false;
+                if (u && !rowU.includes(u)) return false;
+                if (m && !rowM.includes(m)) return false;
+                return true;
+            });
+            
+            if (currentSusiSortCol !== null) {
+                filtered.sort((a, b) => {
+                    let valA = a[currentSusiSortCol] !== undefined && a[currentSusiSortCol] !== null ? String(a[currentSusiSortCol]).trim() : '';
+                    let valB = b[currentSusiSortCol] !== undefined && b[currentSusiSortCol] !== null ? String(b[currentSusiSortCol]).trim() : '';
+
+                    if (valA === '' || valA === '-') return 1;
+                    if (valB === '' || valB === '-') return -1;
+
+                    let numA = parseFloat(valA);
+                    let numB = parseFloat(valB);
+                    if (!isNaN(numA) && !isNaN(numB)) {
+                        return isSusiAscending ? (numA - numB) : (numB - numA);
+                    }
+
+                    if (valA < valB) return isSusiAscending ? -1 : 1;
+                    if (valA > valB) return isSusiAscending ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            const totalCount = filtered.length;
+            document.getElementById('susiResultCount').textContent = totalCount;
+
+            const MAX_RENDER = 200; // 데이터가 너무 많을 경우 렉 방지를 위해 200건 제한
+            const finalData = filtered.slice(0, MAX_RENDER);
+            
+            const warningEl = document.getElementById('susiResultWarning');
+            if (totalCount > MAX_RENDER) warningEl.classList.remove('hidden');
+            else warningEl.classList.add('hidden');
+
+            tbody.innerHTML = '';
+            
+            if(finalData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="16" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
+                return;
+            }
+            
+            finalData.forEach(row => {
+                const tr = document.createElement('tr');
+                let html = '';
+                
+                susiColOrder.forEach(idx => {
+                    let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
+                    let tdClass = "";
+
+                    if (idx === 5 || idx === 6) tdClass = "font-bold text-gray-800"; // 대학, 모집단위
+                    if (idx === 14) tdClass = "font-bold text-yellow-700 bg-yellow-50/50"; // 내신
+                    if (idx >= 17 && idx <= 20) tdClass = "text-blue-700 bg-blue-50/30 font-medium"; // 수능 점수 계열
+
+                    html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
+                });
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+            });
+        }
+        window.renderSusiResultTable = renderSusiResultTable;
+
     </script>
 </body>
 </html>
-```<FollowUp label="코드 적용 시 문의사항 확인" query="코드를 덮어쓰기 한 후 다른 기능들이 정상 작동하는지 확인해 보시고, '반별 조회'에 따로 추가해야 할 항목이 있는지 알려주시면 바로 반영하겠습니다."/>
