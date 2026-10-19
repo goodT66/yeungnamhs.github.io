@@ -74,10 +74,27 @@
             </div>
         </header>
 
-        <!-- 위쪽 기존 헤더 코드 유지 -->
-        <header class="bg-school rounded-2xl shadow-md p-6 mb-10 ...">
-             <!-- 헤더 내용 -->
-        </header>
+        <!-- 메인 헤더 바로 아래 메뉴: 버튼별 테두리와 배경색으로 구분 -->
+        <nav aria-label="주요 메뉴" class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 mb-5 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
+            <button type="button" class="min-w-0 px-3 py-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 text-sm font-bold shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-150" title="학생 개별 조회">
+                <span class="block text-xl mb-1" aria-hidden="true">🧑‍🎓</span><span class="block leading-snug">학생 개별 조회</span>
+            </button>
+            <button type="button" onclick="openClassView()" class="min-w-0 px-3 py-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-sm font-bold shadow-sm hover:bg-emerald-100 hover:border-emerald-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition duration-150">
+                <span class="block text-xl mb-1" aria-hidden="true">🧑‍🤝‍🧑</span><span class="block leading-snug">수시 지원 반별 조회</span>
+            </button>
+            <button type="button" onclick="openInterviewView()" class="min-w-0 px-3 py-3 rounded-xl border border-orange-200 bg-orange-50 text-orange-900 text-sm font-bold shadow-sm hover:bg-orange-100 hover:border-orange-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-orange-300 transition duration-150">
+                <span class="block text-xl mb-1" aria-hidden="true">🎙️</span><span class="block leading-snug">수시 면접 조편성</span>
+            </button>
+            <button type="button" onclick="openMockView()" class="min-w-0 px-3 py-3 rounded-xl border border-pink-200 bg-pink-50 text-pink-900 text-sm font-bold shadow-sm hover:bg-pink-100 hover:border-pink-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-pink-300 transition duration-150">
+                <span class="block text-xl mb-1" aria-hidden="true">📈</span><span class="block leading-snug">개별 모의고사 성적</span>
+            </button>
+            <button type="button" onclick="openGradView()" class="min-w-0 px-3 py-3 rounded-xl border border-violet-200 bg-violet-50 text-violet-900 text-sm font-bold shadow-sm hover:bg-violet-100 hover:border-violet-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-violet-300 transition duration-150">
+                <span class="block text-xl mb-1" aria-hidden="true">🎓</span><span class="block leading-snug">졸업생 수시 결과</span>
+            </button>
+            <button type="button" onclick="openSusiResultView()" class="min-w-0 px-3 py-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-sm font-bold shadow-sm hover:bg-amber-100 hover:border-amber-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-amber-300 transition duration-150">
+                <span class="block text-xl mb-1" aria-hidden="true">📝</span><span class="block leading-snug">수시 입결 조회</span>
+            </button>
+        </nav>
 
         <!-- [화면 1] 메인 메뉴 대시보드 -->
         <div id="mainDashboard" class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 lg:p-6 bg-transparent min-h-screen items-start">
@@ -110,29 +127,7 @@
 
             <!-- 모니터 기준 오른쪽: 퀵메뉴 위, 달력 아래 -->
             <div class="flex flex-col gap-6 min-w-0 order-1 lg:order-2">
-                <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                    <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-3">🚀 퀵메뉴</h2>
-                    <div class="grid grid-cols-2 xl:grid-cols-3 gap-3 items-stretch">
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-b-4 border-blue-500 p-3 flex flex-col items-center text-center min-h-32 justify-center">
-                            <div class="text-4xl mb-2">🧑‍🎓</div><h2 class="text-sm font-bold text-gray-800">학생 <span class="text-red-600">개별</span> 조회</h2>
-                        </div>
-                        <div onclick="openClassView()" class="bg-white rounded-xl shadow-sm border border-gray-200 border-b-4 border-green-500 p-3 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer min-h-32 justify-center">
-                            <div class="text-4xl mb-2">🧑‍🤝‍🧑</div><h2 class="text-sm font-bold text-gray-800"><span class="text-red-600">수시 지원</span> 반별 조회</h2>
-                        </div>
-                        <div onclick="openInterviewView()" class="bg-white rounded-xl shadow-sm border border-gray-200 border-b-4 border-orange-500 p-3 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer min-h-32 justify-center">
-                            <div class="text-4xl mb-2">🎙️</div><h2 class="text-sm font-bold text-gray-800"><span class="text-orange-600">수시</span> 면접 조편성</h2>
-                        </div>
-                        <div onclick="openMockView()" class="bg-white rounded-xl shadow-sm border border-gray-200 border-b-4 border-pink-500 p-3 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer min-h-32 justify-center">
-                            <div class="text-4xl mb-2">📈</div><h2 class="text-sm font-bold text-gray-800"><span class="text-red-600">개별</span> 모의고사 성적</h2>
-                        </div>
-                        <div onclick="openGradView()" class="bg-white rounded-xl shadow-sm border border-gray-200 border-b-4 border-red-500 p-3 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer min-h-32 justify-center">
-                            <div class="text-4xl mb-2">🎓</div><h2 class="text-sm font-bold text-blue-600">졸업생 수시 결과</h2>
-                        </div>
-                        <div onclick="openSusiResultView()" class="bg-white rounded-xl shadow-sm border border-gray-200 border-b-4 border-yellow-500 p-3 flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer min-h-32 justify-center">
-                            <div class="text-4xl mb-2">📝</div><h2 class="text-sm font-bold text-gray-800"><span class="text-red-600">수시</span> 입결 조회</h2>
-                        </div>
-                    </div>
-                </section>
+
 
                 <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
                     <div class="flex justify-between items-center gap-3 mb-4 border-b pb-3">
@@ -156,29 +151,7 @@
             </div>
         </div>
 
-        <!-- 👇 여기서부터 [화면 2] 개별 모의고사 성적 화면 코드가 이어집니다 -->
-        <div id="mockView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-pink-500">
-            
-            <!-- ✨ 수시 입결 조회 버튼 -->
-            <div onclick="openSusiResultView()" class="bg-white rounded-2xl shadow-lg border-b-8 border-yellow-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full relative">
-                <div id="susiResultLoadingSpinner" class="absolute top-4 right-4 flex h-3 w-3 hidden">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
-                </div>
-                <div class="w-24 h-24 mb-5 flex items-center justify-center bg-yellow-500 rounded-3xl shadow-inner bg-gradient-to-br from-yellow-400 to-yellow-600">
-                    <span class="text-6xl drop-shadow-md">📝</span>
-                </div>
-                <h2 class="text-xl font-bold mb-4 text-gray-800 break-keep"><span class="text-red-600">수시</span> 입결 조회</h2>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-lg border-b-8 border-purple-500 p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 cursor-pointer h-full">
-                <div class="w-24 h-24 mb-5 flex items-center justify-center bg-purple-600 rounded-3xl shadow-inner bg-gradient-to-br from-purple-500 to-indigo-600">
-                    <span class="text-6xl drop-shadow-md">🎯</span>
-                </div>
-                <h2 class="text-xl font-bold mb-4 text-blue-600 break-keep"><span class="text-blue-600">정시</span> 입결 조회</h2>
-            </div>
-        </div>
-
+        <!-- 개별 모의고사 화면은 아래의 단일 mockView 영역에서 표시합니다. -->
         <!-- [화면 2] 개별 모의고사 성적 화면 -->
         <div id="mockView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-pink-500">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
@@ -638,17 +611,22 @@
         const INTERVIEW_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026면접`; 
         const SUSI_RESULT_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1822882619`;
 
+        // 화면 전환 시 메인 대시보드와 각 조회 화면 중 하나만 표시합니다.
+        function hideAllContentViews() {
+            ['mainDashboard', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView']
+                .forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.add('hidden');
+                });
+        }
+
         function showMainDashboard() {
+            hideAllContentViews();
             document.getElementById('mainDashboard').classList.remove('hidden');
-            document.getElementById('mockView').classList.add('hidden');
-            document.getElementById('gradView').classList.add('hidden');
-            document.getElementById('classView').classList.add('hidden');
-            document.getElementById('interviewView').classList.add('hidden');
-            document.getElementById('susiResultView').classList.add('hidden');
         }
 
         function openMockView() {
-            document.getElementById('mainDashboard').classList.add('hidden');
+            hideAllContentViews();
             document.getElementById('mockView').classList.remove('hidden');
             if (window.getCurrentUser && window.getCurrentUser()) {
                 if(mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) populateGradeDropdown();
@@ -656,7 +634,7 @@
         }
 
         function openGradView() {
-            document.getElementById('mainDashboard').classList.add('hidden');
+            hideAllContentViews();
             document.getElementById('gradView').classList.remove('hidden');
             if (window.getCurrentUser && window.getCurrentUser()) {
                 if(rawGradData.length > 0) applyGradFilter();
@@ -664,7 +642,7 @@
         }
         
         function openClassView() {
-            document.getElementById('mainDashboard').classList.add('hidden');
+            hideAllContentViews();
             document.getElementById('classView').classList.remove('hidden');
             if (window.getCurrentUser && window.getCurrentUser()) {
                 if(classSusiData.length > 0 && document.getElementById('classGradeSelect').options.length <= 1) populateClassGradeDropdown();
@@ -672,7 +650,7 @@
         }
 
         function openInterviewView() {
-            document.getElementById('mainDashboard').classList.add('hidden');
+            hideAllContentViews();
             document.getElementById('interviewView').classList.remove('hidden');
             if (window.getCurrentUser && window.getCurrentUser()) {
                 if(interviewData.length > 0) renderInterviewTable();
@@ -680,7 +658,7 @@
         }
 
         function openSusiResultView() {
-            document.getElementById('mainDashboard').classList.add('hidden');
+            hideAllContentViews();
             document.getElementById('susiResultView').classList.remove('hidden');
             if (window.getCurrentUser && window.getCurrentUser()) {
                 if(susiResultData.length > 0) renderSusiResultTable();
