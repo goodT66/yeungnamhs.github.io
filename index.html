@@ -772,8 +772,7 @@ interviewDateCache = {};
             hideAllContentViews();
             document.getElementById('gradView').classList.remove('hidden');
             if (window.getCurrentUser && window.getCurrentUser()) {
-                if (rawGradData.length === 0) fetchGradData();
-                else applyGradFilter();
+                if(rawGradData.length > 0) applyGradFilter();
             }
         }
         
@@ -1178,70 +1177,38 @@ interviewDateCache = {};
 
        const gradColOrder = [0, 1, 5, 8, 12, 14, 15, 16, 17, 20, 22, 23, 24, 25, 26, 18];
 
-        let gradFetchInProgress = false;
-        let gradLastFetchAt = 0;
-
         async function fetchGradData() {
-            // 중복 요청으로 같은 시트 데이터를 동시에 덮어쓰지 않도록 방지합니다.
-            if (gradFetchInProgress) return;
-            gradFetchInProgress = true;
             document.getElementById('gradLoadingSpinner')?.classList.remove('hidden');
             try {
-                // 브라우저/중간 캐시에 남은 CSV 대신 최신 응답을 받도록 캐시 방지 값을 붙입니다.
-                const separator = GRAD_CSV_URL.includes('?') ? '&' : '?';
-                const response = await fetch(`${GRAD_CSV_URL}${separator}_refresh=${Date.now()}`, { cache: 'no-store' });
-                if (!response.ok) throw new Error(`네트워크 오류 (${response.status})`);
+                const response = await fetch(GRAD_CSV_URL);
+                if (!response.ok) throw new Error("네트워크 오류");
                 const text = await response.text();
-
+                
                 Papa.parse(text, {
                     skipEmptyLines: true,
                     complete: function(results) {
-                        try {
-                            const data = results.data;
-                            if (data.length > 1) {
-                                // 필터 선택값은 유지한 채 최신 시트 데이터로 교체합니다.
-                                const yearSelect = document.getElementById('filterYear');
-                                const univSelect = document.getElementById('filterUniv');
-                                const selectedYear = yearSelect?.value || '';
-                                const selectedUniv = univSelect?.value || '';
-
-                                gradHeaders = (data[0] || []).map(v => String(v || '').trim());
-                                rawGradData = data.slice(1);
-                                window.rawGradData = rawGradData;
-                                renderGradHeaders();
-
-                                if (yearSelect) yearSelect.innerHTML = '<option value="">연도 전체</option>';
-                                if (univSelect) univSelect.innerHTML = '<option value="">대학명 전체</option>';
-                                populateGradDropdowns();
-                                if (yearSelect && Array.from(yearSelect.options).some(o => o.value === selectedYear)) yearSelect.value = selectedYear;
-                                if (univSelect && Array.from(univSelect.options).some(o => o.value === selectedUniv)) univSelect.value = selectedUniv;
-
-                                if (window.getCurrentUser && window.getCurrentUser()) applyGradFilter();
-                                gradLastFetchAt = Date.now();
-                            } else {
-                                const tbody = document.getElementById('gradTableBody');
-                                if (tbody) tbody.innerHTML = '<tr><td colspan="19" class="text-center py-10 text-gray-500">졸업생 수시 결과 데이터가 없습니다.</td></tr>';
+                        const data = results.data;
+                        if(data.length > 1) {
+                            gradHeaders = (data[0] || []).map(v => String(v || '').trim());
+                            rawGradData = data.slice(1);
+                            window.rawGradData = rawGradData;
+                            renderGradHeaders();
+                            populateGradDropdowns();
+                            if (window.getCurrentUser && window.getCurrentUser()) {
+                                applyGradFilter();
                             }
-                        } catch (parseError) {
-                            console.error('졸업생 수시 결과 데이터 처리 실패:', parseError);
-                        } finally {
-                            document.getElementById('gradLoadingSpinner')?.classList.add('hidden');
-                            gradFetchInProgress = false;
+                        } else {
+                            const tbody = document.getElementById('gradTableBody');
+                            if (tbody) tbody.innerHTML = '<tr><td colspan="19" class="text-center py-10 text-gray-500">졸업생 수시 결과 데이터가 없습니다.</td></tr>';
                         }
-                    },
-                    error: function(error) {
-                        console.error('졸업생 수시 결과 CSV 분석 실패:', error);
                         document.getElementById('gradLoadingSpinner')?.classList.add('hidden');
-                        gradFetchInProgress = false;
                     }
                 });
             } catch (error) {
                 console.error('졸업생 수시 결과 데이터 로드 실패:', error);
                 document.getElementById('gradLoadingSpinner')?.classList.add('hidden');
-                gradFetchInProgress = false;
-                // 기존에 정상적으로 불러온 데이터가 있다면 오류 때문에 표를 지우지 않습니다.
                 const tbody = document.getElementById('gradTableBody');
-                if (tbody && rawGradData.length === 0) tbody.innerHTML = '<tr><td colspan="19" class="text-center py-10 text-red-500">데이터를 불러오지 못했습니다. Google Sheets 공개 설정과 네트워크를 확인해 주세요.</td></tr>';
+                if(tbody) tbody.innerHTML = '<tr><td colspan="19" class="text-center py-10 text-red-500">데이터를 불러오지 못했습니다. Google Sheets 공개 설정과 네트워크를 확인해 주세요.</td></tr>';
             }
         }
 
