@@ -1419,7 +1419,7 @@ interviewDateCache = {};
                     rowHtml += tdClass ? `<td class="${tdClass}">${safeCellData}</td>` : `<td>${safeCellData}</td>`;
                 });
 
-                // 졸업생 수시 결과에서도 지도 1~4회 날짜를 입력하고 한 번에 Firebase에 저장합니다.
+                // 지도1회~4회 날짜는 각각의 저장 버튼으로 개별 Firebase 저장합니다.
                 const studentId = String(row[1] ?? '').trim();
                 const studentName = String(row[5] ?? '').trim();
                 const encodedStudentId = encodeURIComponent(studentId);
@@ -1427,9 +1427,8 @@ interviewDateCache = {};
                 for (let sessionIdx = 0; sessionIdx < 4; sessionIdx++) {
                     const cloudKey = `${studentId}_${studentName}_${sessionIdx}`;
                     const savedDate = interviewDateCache[cloudKey] || '';
-                    rowHtml += `<td class="p-1 text-center"><input type="date" data-grad-session="${sessionIdx}" value="${escapeHtmlGrad(savedDate)}" class="grad-interview-date border border-gray-300 rounded p-1 text-xs bg-white w-32" aria-label="${escapeHtmlGrad(studentName)} 지도${sessionIdx + 1}회 날짜"></td>`;
+                    rowHtml += `<td class="p-1 text-center"><div class="flex flex-col items-center gap-1"><input type="date" data-grad-session="${sessionIdx}" value="${escapeHtmlGrad(savedDate)}" class="grad-interview-date border border-gray-300 rounded p-1 text-xs bg-white w-32" aria-label="${escapeHtmlGrad(studentName)} 지도${sessionIdx + 1}회 날짜"><button type="button" onclick="saveGradInterviewDate(decodeURIComponent('${encodedStudentId}'), decodeURIComponent('${encodedStudentName}'), ${sessionIdx}, this.previousElementSibling, this)" class="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded px-3 py-1 text-xs whitespace-nowrap">저장</button></div></td>`;
                 }
-                rowHtml += `<td class="p-1 text-center"><button type="button" onclick="saveGradInterviewDates(decodeURIComponent('${encodedStudentId}'), decodeURIComponent('${encodedStudentName}'), this)" class="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded px-3 py-2 text-xs whitespace-nowrap">저장</button></td>`;
                 
                 tr.innerHTML = rowHtml;
                 tbody.appendChild(tr);
@@ -1849,57 +1848,64 @@ const savedDate = Object.prototype.hasOwnProperty.call(dateCache, cloudKey)
         window.renderInterviewTable = renderInterviewTable;
 
         
-async function saveGradInterviewDates(studentId, studentName, button) {
+async function saveGradInterviewDate(studentId, studentName, sessionIdx, input, button) {
     if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) {
         alert('지도 일자를 Firebase에 저장하려면 먼저 교사 Google 로그인을 해 주세요.');
         return;
     }
-    if (!studentId || !studentName) {
-        alert('학번 또는 학생 이름을 확인할 수 없어 저장하지 못했습니다.');
+    if (!studentId || !studentName || !Number.isInteger(Number(sessionIdx)) || Number(sessionIdx) < 0 || Number(sessionIdx) > 3 || !input) {
+        alert('학생 정보 또는 지도 회차를 확인할 수 없어 저장하지 못했습니다.');
         return;
     }
 
-    const row = button?.closest('tr');
-    if (!row) return;
-    const inputs = Array.from(row.querySelectorAll('input[data-grad-session]'));
-    const values = [0, 1, 2, 3].map(idx => inputs.find(input => Number(input.dataset.gradSession) === idx)?.value || '');
-    const previousValues = {};
-    const encodedStudentId = String(studentId);
-    const encodedStudentName = String(studentName);
+    const idx = Number(sessionIdx);
+    const cloudKey = `${studentId}_${studentName}_${idx}`;
+    const previousValue = Object.prototype.hasOwnProperty.call(interviewDateCache, cloudKey)
+        ? interviewDateCache[cloudKey]
+        : '';
+    const dateValue = input.value || '';
+    const originalLabel = button?.textContent || '저장';
 
-    button.disabled = true;
-    const originalLabel = button.textContent;
-    button.textContent = '저장 중…';
+    if (button) {
+        button.disabled = true;
+        button.textContent = '저장 중…';
+    }
+
     try {
-        const batch = writeBatch(db);
-        const newValues = {};
-        for (let sessionIdx = 0; sessionIdx < 4; sessionIdx++) {
-            const cloudKey = `${encodedStudentId}_${encodedStudentName}_${sessionIdx}`;
-            previousValues[cloudKey] = Object.prototype.hasOwnProperty.call(interviewDateCache, cloudKey) ? interviewDateCache[cloudKey] : '';
-            newValues[cloudKey] = values[sessionIdx];
-            batch.set(doc(db, 'interviewDates', cloudKey), {
-                studentId: encodedStudentId,
-                studentName: encodedStudentName,
-                sessionIdx,
-                dateValue: values[sessionIdx],
-                updatedBy: currentUser.email,
-                updatedAt: serverTimestamp()
-            }, { merge: true });
+        await setDoc(doc(db, 'interviewDates', cloudKey), {
+            studentId: String(studentId),
+            studentName: String(studentName),
+            sessionIdx: idx,
+            dateValue,
+            updatedBy: currentUser.email,
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        interviewDateCache[cloudKey] = dateValue;
+        if (button) {
+            button.textContent = '저장 완료';
+            button.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+            button.classList.add('bg-green-600', 'hover:bg-green-700');
         }
-        await batch.commit();
-        Object.assign(interviewDateCache, newValues);
-        alert('지도1회~4회 날짜를 Firebase에 저장했습니다.');
-        if (typeof window.renderInterviewTable === 'function' && window.interviewData?.length) window.renderInterviewTable();
+        setTimeout(() => {
+            if (button) {
+                button.textContent = originalLabel;
+                button.classList.remove('bg-green-600', 'hover:bg-green-700');
+                button.classList.add('bg-orange-500', 'hover:bg-orange-600');
+                button.disabled = false;
+            }
+        }, 1200);
     } catch (error) {
-        Object.assign(interviewDateCache, previousValues);
+        interviewDateCache[cloudKey] = previousValue;
         console.error('졸업생 수시 결과 지도 날짜 저장 오류:', error);
-        alert('지도 날짜를 Firebase에 저장하지 못했습니다. Firestore 보안 규칙과 로그인 권한을 확인해 주세요.');
-    } finally {
-        button.disabled = false;
-        button.textContent = originalLabel;
+        alert(`지도${idx + 1}회 날짜를 Firebase에 저장하지 못했습니다. Firestore 보안 규칙과 로그인 권한을 확인해 주세요.`);
+        if (button) {
+            button.disabled = false;
+            button.textContent = originalLabel;
+        }
     }
 }
-window.saveGradInterviewDates = saveGradInterviewDates;
+window.saveGradInterviewDate = saveGradInterviewDate;
 
 async function saveInterviewDate(studentId, studentName, sessionIdx, dateValue) {
     const cloudKey = `${studentId}_${studentName}_${sessionIdx}`;
