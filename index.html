@@ -1132,12 +1132,14 @@ window.saveInterviewDate = saveInterviewDate;
                 const teacher = item?.teacherName
                     ? `${String(item.teacherName).replace(/\s*선생님\s*$/, '').trim()} 선생님`
                     : '—';
-                return `<div class="flex items-center justify-between gap-3 border rounded-lg px-3 py-3 min-h-[40px] ${group.row}">
+                return `<div class="flex flex-col items-start justify-center gap-1 border rounded-lg px-3 py-3 min-h-[64px] ${group.row}">
                     <span class="font-bold text-sm ${group.text}">${slot}</span>
-                    <span class="text-sm font-medium ${item ? 'text-gray-800' : 'text-gray-400'} text-right">${teacher}</span>
+                    <span class="text-sm font-medium ${item ? 'text-gray-800' : 'text-gray-400'}">${teacher}</span>
                 </div>`;
             };
-            target.className = 'space-y-3';
+            target.className = 'grid grid-cols-1 md:grid-cols-3 gap-3';
+            target.style.width = '66.6667%';
+            target.style.maxWidth = '100%';
             target.innerHTML = groups.map(group => `
                 <section class="space-y-2 border rounded-xl p-3 ${group.section}">
                     <div class="text-xs font-bold ${group.text}">${group.title}</div>
