@@ -1282,9 +1282,9 @@ interviewDateCache = {};
                 const label = knownGradLabels[idx] || gradHeaders[idx] || `열 ${idx + 1}`;
                 const active = currentSortCol === idx ? (isAscending ? ' ▲' : ' ▼') : '';
                 return `<th onclick="setGradSort(${idx})" class="cursor-pointer select-none hover:bg-blue-100 whitespace-nowrap" title="클릭하면 오름차순/내림차순 정렬">${escapeHtmlGrad(label)}<span id="icon-${idx}" class="sort-icon">${active}</span></th>`;
-            }).join('') + ['지도1회', '지도2회', '지도3회', '지도4회'].map(label =>
-                `<th class="whitespace-nowrap bg-orange-50 text-orange-800">${label}</th>`
-            ).join('') + '<th class="whitespace-nowrap bg-orange-50 text-orange-800">저장</th>';
+            }).join('') + ['지도1회 날짜', '지도1회 저장', '지도2회 날짜', '지도2회 저장', '지도3회 날짜', '지도3회 저장', '지도4회 날짜', '지도4회 저장'].map((label, i) =>
+                `<th class="whitespace-nowrap ${i % 2 === 0 ? 'bg-orange-50 text-orange-800' : 'bg-orange-100 text-orange-900'}">${label}</th>`
+            ).join('');
         }
 
         function escapeHtmlGrad(value) {
@@ -1419,7 +1419,7 @@ interviewDateCache = {};
                     rowHtml += tdClass ? `<td class="${tdClass}">${safeCellData}</td>` : `<td>${safeCellData}</td>`;
                 });
 
-                // 지도1회~4회 날짜는 각각의 저장 버튼으로 개별 Firebase 저장합니다.
+                // 지도1회~4회는 날짜 입력칸과 개별 저장 버튼을 각각 별도 열로 표시합니다.
                 const studentId = String(row[1] ?? '').trim();
                 const studentName = String(row[5] ?? '').trim();
                 const encodedStudentId = encodeURIComponent(studentId);
@@ -1427,7 +1427,8 @@ interviewDateCache = {};
                 for (let sessionIdx = 0; sessionIdx < 4; sessionIdx++) {
                     const cloudKey = `${studentId}_${studentName}_${sessionIdx}`;
                     const savedDate = interviewDateCache[cloudKey] || '';
-                    rowHtml += `<td class="p-1 text-center"><div class="flex flex-col items-center gap-1"><input type="date" data-grad-session="${sessionIdx}" value="${escapeHtmlGrad(savedDate)}" class="grad-interview-date border border-gray-300 rounded p-1 text-xs bg-white w-32" aria-label="${escapeHtmlGrad(studentName)} 지도${sessionIdx + 1}회 날짜"><button type="button" onclick="saveGradInterviewDate(decodeURIComponent('${encodedStudentId}'), decodeURIComponent('${encodedStudentName}'), ${sessionIdx}, this.previousElementSibling, this)" class="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded px-3 py-1 text-xs whitespace-nowrap">저장</button></div></td>`;
+                    rowHtml += `<td class="p-1 text-center bg-orange-50/40"><input type="date" data-grad-session="${sessionIdx}" value="${escapeHtmlGrad(savedDate)}" class="grad-interview-date border-2 border-orange-300 rounded p-2 text-sm bg-white w-36 min-w-36" aria-label="${escapeHtmlGrad(studentName)} 지도${sessionIdx + 1}회 날짜"></td>`;
+                    rowHtml += `<td class="p-2 text-center bg-orange-50/40"><button type="button" onclick="saveGradInterviewDate(decodeURIComponent('${encodedStudentId}'), decodeURIComponent('${encodedStudentName}'), ${sessionIdx}, this.parentElement.previousElementSibling.querySelector('input'), this)" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold rounded-lg px-4 py-2 text-sm whitespace-nowrap shadow-sm border border-orange-700" style="display:inline-block;visibility:visible;opacity:1;">지도${sessionIdx + 1}회 저장</button></td>`;
                 }
                 
                 tr.innerHTML = rowHtml;
