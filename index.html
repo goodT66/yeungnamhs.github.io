@@ -1361,7 +1361,7 @@ interviewDateCache = {};
             tbody.innerHTML = ''; 
 
             if (totalCount === 0) {
-                tbody.innerHTML = '<tr><td colspan="22" class="text-gray-500 py-10">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="16" class="text-gray-500 py-10">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
                 return;
             }
 
@@ -1390,23 +1390,6 @@ interviewDateCache = {};
                     const safeCellData = escapeHtmlGrad(cellData);
                     rowHtml += tdClass ? `<td class="${tdClass}">${safeCellData}</td>` : `<td>${safeCellData}</td>`;
 
-                    // 학생 이름 바로 뒤에 날짜 입력칸과 회차별 저장 버튼을 배치합니다.
-                    if (idx === 5) {
-                        const studentId = String(row[1] ?? '').trim();
-                        const studentName = String(row[5] ?? '').trim();
-                        const encodedStudentId = encodeURIComponent(studentId);
-                        const encodedStudentName = encodeURIComponent(studentName);
-                        for (let sessionIdx = 0; sessionIdx < 4; sessionIdx++) {
-                            const cloudKey = `${studentId}_${studentName}_${sessionIdx}`;
-                            const savedDate = interviewDateCache[cloudKey] || '';
-                            rowHtml += `<td class="p-2 text-center bg-orange-50/40">
-                                <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:150px;">
-                                    <input type="date" data-grad-session="${sessionIdx}" value="${escapeHtmlGrad(savedDate)}" class="grad-interview-date border-2 border-orange-300 rounded p-2 text-sm bg-white" style="display:block;visibility:visible;opacity:1;width:140px;min-width:140px;" aria-label="${escapeHtmlGrad(studentName)} 지도${sessionIdx + 1}회 날짜">
-                                    <button type="button" onclick="saveGradInterviewDate(decodeURIComponent('${encodedStudentId}'), decodeURIComponent('${encodedStudentName}'), ${sessionIdx}, this.parentElement.querySelector('input.grad-interview-date'), this)" class="grad-date-save-button" style="display:block !important;visibility:visible !important;opacity:1 !important;background:#ea580c;color:#ffffff;font-weight:800;border:2px solid #c2410c;border-radius:8px;padding:8px 12px;font-size:13px;white-space:nowrap;min-width:130px;cursor:pointer;">지도${sessionIdx + 1}회 저장</button>
-                                </div>
-                            </td>`;
-                        }
-                    }
                 });
                 
                 tr.innerHTML = rowHtml;
