@@ -1789,8 +1789,11 @@ const savedDate = Object.prototype.hasOwnProperty.call(dateCache, cloudKey)
                                            class="border border-gray-300 rounded p-1 text-xs bg-white cursor-pointer hover:border-orange-500 focus:outline-none focus:border-orange-600 transition-colors"
                                            style="display:inline-block;width:112px;min-width:0;padding:5px 3px;">
                                     <button type="button"
-                                            onclick="saveInterviewDate(decodeURIComponent('${safeStudentId}'), decodeURIComponent('${safeStudentName}'), ${idx}, this.parentElement.querySelector('input[data-interview-date]').value, this)"
-                                            style="display:inline-block !important;visibility:visible !important;opacity:1 !important;background:#64748b;color:white;font-weight:700;border:1px solid #475569;border-radius:5px;padding:5px 8px;font-size:12px;white-space:nowrap;cursor:pointer;min-width:0;">
+                                            class="interview-date-save-button"
+                                            data-student-id="${safeStudentId}"
+                                            data-student-name="${safeStudentName}"
+                                            data-session-idx="${idx}"
+                                            style="display:inline-block !important;visibility:visible !important;opacity:1 !important;background:#64748b;color:white;font-weight:700;border:1px solid #475569;border-radius:5px;padding:5px 8px;font-size:12px;white-space:nowrap;cursor:pointer;min-width:0;position:relative;z-index:5;pointer-events:auto;">
                                         저장
                                     </button>
                                 </div>
@@ -1930,6 +1933,36 @@ async function saveInterviewDate(studentId, studentName, sessionIdx, dateValue, 
     }
 }
 window.saveInterviewDate = saveInterviewDate;
+
+// 모듈 스크립트와 동적 표 렌더링에 영향을 받지 않도록 이벤트 위임으로 저장 클릭을 처리합니다.
+const interviewTableBodyForSave = document.getElementById("interviewTableBody");
+if (interviewTableBodyForSave && !interviewTableBodyForSave.dataset.saveListenerAttached) {
+    interviewTableBodyForSave.dataset.saveListenerAttached = "true";
+    interviewTableBodyForSave.addEventListener("click", async (event) => {
+        const button = event.target.closest(".interview-date-save-button");
+        if (!button) return;
+        event.preventDefault();
+        event.stopPropagation();
+
+        const cell = button.closest("td");
+        const dateInput = cell?.querySelector('input[data-interview-date="true"]');
+        if (!dateInput) {
+            alert("날짜 입력칸을 찾을 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.");
+            return;
+        }
+
+        const studentId = decodeURIComponent(button.dataset.studentId || "");
+        const studentName = decodeURIComponent(button.dataset.studentName || "");
+        const sessionIdx = Number(button.dataset.sessionIdx);
+
+        try {
+            await saveInterviewDate(studentId, studentName, sessionIdx, dateInput.value, button);
+        } catch (error) {
+            console.error("면접 날짜 저장 클릭 처리 오류:", error);
+            alert(`저장 버튼 처리 중 오류가 발생했습니다: ${error?.message || error}`);
+        }
+    });
+}
 
 
         // =====================================================================
