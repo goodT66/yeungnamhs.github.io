@@ -477,6 +477,7 @@ import {
     doc,
     collection,
     setDoc,
+    writeBatch,
     deleteDoc,
     onSnapshot,
     serverTimestamp
@@ -620,6 +621,10 @@ function startInterviewDateSync() {
                 typeof window.renderInterviewTable === "function"
             ) {
                 window.renderInterviewTable();
+            }
+            // 졸업생 수시 결과 화면의 지도 날짜도 다른 기기에서 변경되면 실시간 갱신합니다.
+            if (typeof window.applyGradFilter === "function" && window.rawGradData && window.rawGradData.length > 0) {
+                window.applyGradFilter();
             }
         },
         (error) => {
@@ -767,7 +772,8 @@ interviewDateCache = {};
             hideAllContentViews();
             document.getElementById('gradView').classList.remove('hidden');
             if (window.getCurrentUser && window.getCurrentUser()) {
-                if(rawGradData.length > 0) applyGradFilter();
+                if (rawGradData.length === 0) fetchGradData();
+                else applyGradFilter();
             }
         }
         
@@ -803,6 +809,7 @@ interviewDateCache = {};
             fetchSusiResultData(); // 수시입결
             renderAllNotices();
             renderCalendar();
+
         });
 
         // =====================================================================
@@ -1171,38 +1178,70 @@ interviewDateCache = {};
 
        const gradColOrder = [0, 1, 5, 8, 12, 14, 15, 16, 17, 20, 22, 23, 24, 25, 26, 18];
 
+        let gradFetchInProgress = false;
+        let gradLastFetchAt = 0;
+
         async function fetchGradData() {
+            // 중복 요청으로 같은 시트 데이터를 동시에 덮어쓰지 않도록 방지합니다.
+            if (gradFetchInProgress) return;
+            gradFetchInProgress = true;
             document.getElementById('gradLoadingSpinner')?.classList.remove('hidden');
             try {
-                const response = await fetch(GRAD_CSV_URL);
-                if (!response.ok) throw new Error("네트워크 오류");
+                // 브라우저/중간 캐시에 남은 CSV 대신 최신 응답을 받도록 캐시 방지 값을 붙입니다.
+                const separator = GRAD_CSV_URL.includes('?') ? '&' : '?';
+                const response = await fetch(`${GRAD_CSV_URL}${separator}_refresh=${Date.now()}`, { cache: 'no-store' });
+                if (!response.ok) throw new Error(`네트워크 오류 (${response.status})`);
                 const text = await response.text();
-                
+
                 Papa.parse(text, {
                     skipEmptyLines: true,
                     complete: function(results) {
-                        const data = results.data;
-                        if(data.length > 1) {
-                            gradHeaders = (data[0] || []).map(v => String(v || '').trim());
-                            rawGradData = data.slice(1);
-                            window.rawGradData = rawGradData;
-                            renderGradHeaders();
-                            populateGradDropdowns();
-                            if (window.getCurrentUser && window.getCurrentUser()) {
-                                applyGradFilter();
+                        try {
+                            const data = results.data;
+                            if (data.length > 1) {
+                                // 필터 선택값은 유지한 채 최신 시트 데이터로 교체합니다.
+                                const yearSelect = document.getElementById('filterYear');
+                                const univSelect = document.getElementById('filterUniv');
+                                const selectedYear = yearSelect?.value || '';
+                                const selectedUniv = univSelect?.value || '';
+
+                                gradHeaders = (data[0] || []).map(v => String(v || '').trim());
+                                rawGradData = data.slice(1);
+                                window.rawGradData = rawGradData;
+                                renderGradHeaders();
+
+                                if (yearSelect) yearSelect.innerHTML = '<option value="">연도 전체</option>';
+                                if (univSelect) univSelect.innerHTML = '<option value="">대학명 전체</option>';
+                                populateGradDropdowns();
+                                if (yearSelect && Array.from(yearSelect.options).some(o => o.value === selectedYear)) yearSelect.value = selectedYear;
+                                if (univSelect && Array.from(univSelect.options).some(o => o.value === selectedUniv)) univSelect.value = selectedUniv;
+
+                                if (window.getCurrentUser && window.getCurrentUser()) applyGradFilter();
+                                gradLastFetchAt = Date.now();
+                            } else {
+                                const tbody = document.getElementById('gradTableBody');
+                                if (tbody) tbody.innerHTML = '<tr><td colspan="19" class="text-center py-10 text-gray-500">졸업생 수시 결과 데이터가 없습니다.</td></tr>';
                             }
-                        } else {
-                            const tbody = document.getElementById('gradTableBody');
-                            if (tbody) tbody.innerHTML = '<tr><td colspan="19" class="text-center py-10 text-gray-500">졸업생 수시 결과 데이터가 없습니다.</td></tr>';
+                        } catch (parseError) {
+                            console.error('졸업생 수시 결과 데이터 처리 실패:', parseError);
+                        } finally {
+                            document.getElementById('gradLoadingSpinner')?.classList.add('hidden');
+                            gradFetchInProgress = false;
                         }
+                    },
+                    error: function(error) {
+                        console.error('졸업생 수시 결과 CSV 분석 실패:', error);
                         document.getElementById('gradLoadingSpinner')?.classList.add('hidden');
+                        gradFetchInProgress = false;
                     }
                 });
             } catch (error) {
                 console.error('졸업생 수시 결과 데이터 로드 실패:', error);
                 document.getElementById('gradLoadingSpinner')?.classList.add('hidden');
+                gradFetchInProgress = false;
+                // 기존에 정상적으로 불러온 데이터가 있다면 오류 때문에 표를 지우지 않습니다.
                 const tbody = document.getElementById('gradTableBody');
-                if(tbody) tbody.innerHTML = '<tr><td colspan="19" class="text-center py-10 text-red-500">데이터를 불러오지 못했습니다. Google Sheets 공개 설정과 네트워크를 확인해 주세요.</td></tr>';
+                if (tbody && rawGradData.length === 0) tbody.innerHTML = '<tr><td colspan="19" class="text-center py-10 text-red-500">데이터를 불러오지 못했습니다. Google Sheets 공개 설정과 네트워크를 확인해 주세요.</td></tr>';
             }
         }
 
@@ -1243,7 +1282,9 @@ interviewDateCache = {};
                 const label = knownGradLabels[idx] || gradHeaders[idx] || `열 ${idx + 1}`;
                 const active = currentSortCol === idx ? (isAscending ? ' ▲' : ' ▼') : '';
                 return `<th onclick="setGradSort(${idx})" class="cursor-pointer select-none hover:bg-blue-100 whitespace-nowrap" title="클릭하면 오름차순/내림차순 정렬">${escapeHtmlGrad(label)}<span id="icon-${idx}" class="sort-icon">${active}</span></th>`;
-            }).join('');
+            }).join('') + ['지도1회', '지도2회', '지도3회', '지도4회'].map(label =>
+                `<th class="whitespace-nowrap bg-orange-50 text-orange-800">${label}</th>`
+            ).join('') + '<th class="whitespace-nowrap bg-orange-50 text-orange-800">저장</th>';
         }
 
         function escapeHtmlGrad(value) {
@@ -1348,7 +1389,7 @@ interviewDateCache = {};
             tbody.innerHTML = ''; 
 
             if (totalCount === 0) {
-                tbody.innerHTML = '<tr><td colspan="17" class="text-gray-500 py-10">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="22" class="text-gray-500 py-10">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
                 return;
             }
 
@@ -1377,6 +1418,18 @@ interviewDateCache = {};
                     const safeCellData = escapeHtmlGrad(cellData);
                     rowHtml += tdClass ? `<td class="${tdClass}">${safeCellData}</td>` : `<td>${safeCellData}</td>`;
                 });
+
+                // 졸업생 수시 결과에서도 지도 1~4회 날짜를 입력하고 한 번에 Firebase에 저장합니다.
+                const studentId = String(row[1] ?? '').trim();
+                const studentName = String(row[5] ?? '').trim();
+                const encodedStudentId = encodeURIComponent(studentId);
+                const encodedStudentName = encodeURIComponent(studentName);
+                for (let sessionIdx = 0; sessionIdx < 4; sessionIdx++) {
+                    const cloudKey = `${studentId}_${studentName}_${sessionIdx}`;
+                    const savedDate = interviewDateCache[cloudKey] || '';
+                    rowHtml += `<td class="p-1 text-center"><input type="date" data-grad-session="${sessionIdx}" value="${escapeHtmlGrad(savedDate)}" class="grad-interview-date border border-gray-300 rounded p-1 text-xs bg-white w-32" aria-label="${escapeHtmlGrad(studentName)} 지도${sessionIdx + 1}회 날짜"></td>`;
+                }
+                rowHtml += `<td class="p-1 text-center"><button type="button" onclick="saveGradInterviewDates(decodeURIComponent('${encodedStudentId}'), decodeURIComponent('${encodedStudentName}'), this)" class="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded px-3 py-2 text-xs whitespace-nowrap">저장</button></td>`;
                 
                 tr.innerHTML = rowHtml;
                 tbody.appendChild(tr);
@@ -1796,6 +1849,58 @@ const savedDate = Object.prototype.hasOwnProperty.call(dateCache, cloudKey)
         window.renderInterviewTable = renderInterviewTable;
 
         
+async function saveGradInterviewDates(studentId, studentName, button) {
+    if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) {
+        alert('지도 일자를 Firebase에 저장하려면 먼저 교사 Google 로그인을 해 주세요.');
+        return;
+    }
+    if (!studentId || !studentName) {
+        alert('학번 또는 학생 이름을 확인할 수 없어 저장하지 못했습니다.');
+        return;
+    }
+
+    const row = button?.closest('tr');
+    if (!row) return;
+    const inputs = Array.from(row.querySelectorAll('input[data-grad-session]'));
+    const values = [0, 1, 2, 3].map(idx => inputs.find(input => Number(input.dataset.gradSession) === idx)?.value || '');
+    const previousValues = {};
+    const encodedStudentId = String(studentId);
+    const encodedStudentName = String(studentName);
+
+    button.disabled = true;
+    const originalLabel = button.textContent;
+    button.textContent = '저장 중…';
+    try {
+        const batch = writeBatch(db);
+        const newValues = {};
+        for (let sessionIdx = 0; sessionIdx < 4; sessionIdx++) {
+            const cloudKey = `${encodedStudentId}_${encodedStudentName}_${sessionIdx}`;
+            previousValues[cloudKey] = Object.prototype.hasOwnProperty.call(interviewDateCache, cloudKey) ? interviewDateCache[cloudKey] : '';
+            newValues[cloudKey] = values[sessionIdx];
+            batch.set(doc(db, 'interviewDates', cloudKey), {
+                studentId: encodedStudentId,
+                studentName: encodedStudentName,
+                sessionIdx,
+                dateValue: values[sessionIdx],
+                updatedBy: currentUser.email,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+        }
+        await batch.commit();
+        Object.assign(interviewDateCache, newValues);
+        alert('지도1회~4회 날짜를 Firebase에 저장했습니다.');
+        if (typeof window.renderInterviewTable === 'function' && window.interviewData?.length) window.renderInterviewTable();
+    } catch (error) {
+        Object.assign(interviewDateCache, previousValues);
+        console.error('졸업생 수시 결과 지도 날짜 저장 오류:', error);
+        alert('지도 날짜를 Firebase에 저장하지 못했습니다. Firestore 보안 규칙과 로그인 권한을 확인해 주세요.');
+    } finally {
+        button.disabled = false;
+        button.textContent = originalLabel;
+    }
+}
+window.saveGradInterviewDates = saveGradInterviewDates;
+
 async function saveInterviewDate(studentId, studentName, sessionIdx, dateValue) {
     const cloudKey = `${studentId}_${studentName}_${sessionIdx}`;
 
