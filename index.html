@@ -130,9 +130,12 @@
 
 
                 <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                    <div class="flex justify-between items-center gap-3 mb-4 border-b pb-3">
-                        <div><h2 class="text-lg font-bold text-gray-800">🗓️ 일정 달력</h2><p class="text-xs text-gray-500 mt-1">날짜를 선택해 일정을 추가하거나 관리하세요.</p></div>
-                        <div class="flex items-center gap-2 shrink-0"><button onclick="openSupervisorModal()" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap">＋ 감독 변경</button><button onclick="addCalendarEvent()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap">＋ 일정 추가</button></div>
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 border-b pb-3 w-full min-w-0">
+                        <div class="min-w-0"><h2 class="text-lg font-bold text-gray-800">🗓️ 일정 달력</h2><p class="text-xs text-gray-500 mt-1">날짜를 선택해 일정을 추가하거나 관리하세요.</p></div>
+                        <div class="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
+                            <button type="button" onclick="openSupervisorModal()" class="inline-flex items-center justify-center bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap" style="display:inline-flex;visibility:visible;opacity:1;position:relative;z-index:10;pointer-events:auto;">＋ 근무 변경</button>
+                            <button type="button" onclick="addCalendarEvent()" class="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap">＋ 일정 추가</button>
+                        </div>
                     </div>
                     <div class="flex justify-between items-center mb-3">
                         <button onclick="changeCalendarMonth(-1)" class="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200" aria-label="이전 달">◀</button>
