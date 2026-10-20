@@ -132,7 +132,7 @@
                 <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
                     <div class="flex justify-between items-center gap-3 mb-4 border-b pb-3">
                         <div><h2 class="text-lg font-bold text-gray-800">🗓️ 일정 달력</h2><p class="text-xs text-gray-500 mt-1">날짜를 선택해 일정을 추가하거나 관리하세요.</p></div>
-                        <button onclick="addCalendarEvent()" class="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-semibold">＋ 일정 추가</button>
+                        <div class="flex items-center gap-2 shrink-0"><button onclick="openSupervisorModal()" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap">＋ 감독 변경</button><button onclick="addCalendarEvent()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap">＋ 일정 추가</button></div>
                     </div>
                     <div class="flex justify-between items-center mb-3">
                         <button onclick="changeCalendarMonth(-1)" class="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200" aria-label="이전 달">◀</button>
@@ -146,8 +146,48 @@
                     <div class="mt-4 pt-4 border-t">
                         <div class="flex justify-between items-center gap-2 mb-2"><h3 id="calendarSelectedDate" class="font-bold text-gray-800"></h3><button onclick="addCalendarEvent()" class="text-sm text-indigo-700 hover:underline">＋ 선택 날짜에 일정 추가</button></div>
                         <ul id="calendarEventList" class="space-y-2"></ul>
+                        <div class="mt-5 pt-4 border-t">
+                            <h3 class="font-bold text-gray-800 mb-3">감독 근무표</h3>
+                            <div id="supervisorDutyRoster" class="space-y-2"></div>
+                        </div>
                     </div>
                 </section>
+            </div>
+        </div>
+
+        <!-- 감독 변경 입력 창 -->
+        <div id="supervisorModal" class="hidden fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="supervisorModalTitle">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 id="supervisorModalTitle" class="text-lg font-bold text-gray-800">감독 변경</h3>
+                    <button type="button" onclick="closeSupervisorModal()" class="text-gray-500 hover:text-gray-800 text-xl" aria-label="닫기">×</button>
+                </div>
+                <form id="supervisorDutyForm" class="space-y-4">
+                    <div>
+                        <label for="supervisorDutyDate" class="block text-sm font-semibold text-gray-700 mb-1">1. 감독 일자</label>
+                        <input id="supervisorDutyDate" type="date" required class="w-full border border-gray-300 rounded-lg p-2">
+                    </div>
+                    <div>
+                        <label for="supervisorDutyType" class="block text-sm font-semibold text-gray-700 mb-1">2. 감독 종류</label>
+                        <select id="supervisorDutyType" required class="w-full border border-gray-300 rounded-lg p-2" onchange="updateSupervisorDutySlots()">
+                            <option value="">선택하세요</option>
+                            <option value="afternoon">오후 감독</option>
+                            <option value="night">야자</option>
+                            <option value="cheongun">청운관 감독</option>
+                        </select>
+                    </div>
+                    <div id="supervisorDutySlotWrap" class="hidden">
+                        <label for="supervisorDutySlot" class="block text-sm font-semibold text-gray-700 mb-1">3. 세부 근무</label>
+                        <select id="supervisorDutySlot" class="w-full border border-gray-300 rounded-lg p-2">
+                            <option value="">선택하세요</option>
+                        </select>
+                    </div>
+                    <p class="text-xs text-gray-500">저장하면 해당 날짜의 감독 근무표에 반영됩니다.</p>
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button type="button" onclick="closeSupervisorModal()" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700">취소</button>
+                        <button id="supervisorDutySaveBtn" type="submit" class="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold">저장</button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -511,6 +551,8 @@ let interviewDateCache = {};
 let unsubscribeInterviewDates = null;
 let noticeCache = [];
 let calendarEventCache = [];
+let supervisorDutyCache = [];
+let unsubscribeSupervisorDuties = null;
 let unsubscribeNotices = null;
 let unsubscribeCalendarEvents = null;
 let noticesReady = false;
@@ -522,6 +564,7 @@ window.getInterviewDateCache = () => interviewDateCache;
 window.cloudDataStore = {
     getNotices: () => noticeCache.map(item => ({ ...item })),
     getCalendarEvents: () => calendarEventCache.map(item => ({ ...item })),
+    getSupervisorDuties: () => supervisorDutyCache.map(item => ({ ...item })),
     isReady: () => noticesReady && calendarEventsReady,
     saveNotice: async (item) => {
         if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
@@ -538,6 +581,10 @@ window.cloudDataStore = {
     deleteCalendarEvent: async (id) => {
         if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
         await deleteDoc(doc(db, "calendarEvents", String(id)));
+    },
+    saveSupervisorDuty: async (item) => {
+        if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
+        await setDoc(doc(db, "supervisorDuties", String(item.id)), { ...item, updatedBy: currentUser.email, updatedAt: serverTimestamp() }, { merge: true });
     }
 };
 
@@ -548,12 +595,15 @@ function notifyCloudDataChanged() {
 function stopCloudDataSync() {
     if (unsubscribeNotices) unsubscribeNotices();
     if (unsubscribeCalendarEvents) unsubscribeCalendarEvents();
+    if (unsubscribeSupervisorDuties) unsubscribeSupervisorDuties();
     unsubscribeNotices = null;
     unsubscribeCalendarEvents = null;
+    unsubscribeSupervisorDuties = null;
     noticesReady = false;
     calendarEventsReady = false;
     noticeCache = [];
     calendarEventCache = [];
+    supervisorDutyCache = [];
     notifyCloudDataChanged();
 }
 
@@ -592,6 +642,13 @@ function startCloudDataSync() {
     }, (error) => {
         console.error("일정 달력 Firestore 동기화 오류:", error);
         alert("일정을 Firebase에서 불러오지 못했습니다. Firestore 보안 규칙과 인터넷 연결을 확인해 주세요.");
+    });
+    unsubscribeSupervisorDuties = onSnapshot(collection(db, "supervisorDuties"), (snapshot) => {
+        supervisorDutyCache = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
+        notifyCloudDataChanged();
+    }, (error) => {
+        console.error("감독 근무표 Firestore 동기화 오류:", error);
+        alert("감독 근무표를 Firebase에서 불러오지 못했습니다. Firestore 보안 규칙과 인터넷 연결을 확인해 주세요.");
     });
 }
 
@@ -1024,7 +1081,77 @@ window.saveInterviewDate = saveInterviewDate;
             selectedLabel.textContent = `${selectedCalendarDate} 일정`;
             const selectedEvents = events.filter(e => e.date === selectedCalendarDate).sort((a,b) => (a.time || '').localeCompare(b.time || ''));
             list.innerHTML = selectedEvents.length ? selectedEvents.map(e => `<li class="border rounded-lg p-3 flex justify-between items-start gap-3"><div class="min-w-0"><p class="font-semibold text-sm text-gray-800">${e.time ? `<span class="text-indigo-700">${escapeHTML(e.time)}</span> ` : ''}${escapeHTML(e.title)}</p>${e.content ? `<p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap">${escapeHTML(e.content)}</p>` : ''}</div><div class="flex gap-1 shrink-0"><button onclick="editCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border hover:bg-indigo-50">수정</button><button onclick="deleteCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border text-red-600 hover:bg-red-50">삭제</button></div></li>`).join('') : '<li class="text-sm text-gray-400 py-3 text-center">선택한 날짜에 등록된 일정이 없습니다.</li>';
+            renderSupervisorDutyRoster();
         }
+        function openSupervisorModal() {
+            if (!requireCloudEditor()) return;
+            document.getElementById('supervisorDutyDate').value = selectedCalendarDate || todayISO();
+            document.getElementById('supervisorDutyType').value = '';
+            document.getElementById('supervisorDutySlot').innerHTML = '<option value="">선택하세요</option>';
+            document.getElementById('supervisorDutySlotWrap').classList.add('hidden');
+            document.getElementById('supervisorModal').classList.remove('hidden');
+        }
+        function closeSupervisorModal() {
+            document.getElementById('supervisorModal').classList.add('hidden');
+        }
+        function updateSupervisorDutySlots() {
+            const type = document.getElementById('supervisorDutyType').value;
+            const wrap = document.getElementById('supervisorDutySlotWrap');
+            const slot = document.getElementById('supervisorDutySlot');
+            const options = type === 'afternoon'
+                ? ['오후1', '오후2']
+                : type === 'night'
+                    ? ['야자1', '야자2', '야자3']
+                    : type === 'cheongun' ? ['청운관 감독'] : [];
+            slot.innerHTML = '<option value="">선택하세요</option>' + options.map(v => `<option value="${v}">${v}</option>`).join('');
+            wrap.classList.toggle('hidden', type === '' || type === 'cheongun');
+            slot.required = type === 'afternoon' || type === 'night';
+        }
+        function renderSupervisorDutyRoster() {
+            const target = document.getElementById('supervisorDutyRoster');
+            if (!target) return;
+            const records = (window.cloudDataStore && window.getCurrentUser && window.getCurrentUser())
+                ? window.cloudDataStore.getSupervisorDuties().filter(item => item.date === selectedCalendarDate)
+                : [];
+            const order = ['오후1', '오후2', '야자1', '야자2', '야자3', '청운관 감독'];
+            const bySlot = new Map(records.map(item => [item.slot, item]));
+            target.innerHTML = order.map(slot => {
+                const item = bySlot.get(slot);
+                return `<div class="flex items-center justify-between gap-3 border rounded-lg px-3 py-2 ${item ? 'bg-teal-50 border-teal-200' : 'bg-gray-50 border-gray-100'}"><span class="font-semibold text-sm text-gray-800">${slot}</span><span class="text-sm ${item ? 'text-teal-700' : 'text-gray-400'}">${item ? '등록됨' : '—'}</span></div>`;
+            }).join('');
+        }
+        document.getElementById('supervisorDutyForm')?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!requireCloudEditor()) return;
+            const date = document.getElementById('supervisorDutyDate').value;
+            const type = document.getElementById('supervisorDutyType').value;
+            const slot = type === 'cheongun' ? '청운관 감독' : document.getElementById('supervisorDutySlot').value;
+            if (!date || !type || !slot) {
+                alert('감독 일자와 감독 종류를 모두 선택해 주세요.');
+                return;
+            }
+            const saveBtn = document.getElementById('supervisorDutySaveBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '저장 중...';
+            try {
+                const item = { id: `${date}_${slot.replace(/[^가-힣0-9]/g, '')}`, date, type, slot, createdAt: Date.now() };
+                await window.cloudDataStore.saveSupervisorDuty(item);
+                selectedCalendarDate = date;
+                calendarCursor = new Date(Number(date.slice(0,4)), Number(date.slice(5,7))-1, 1);
+                closeSupervisorModal();
+                renderCalendar();
+            } catch (error) {
+                console.error('감독 근무표 저장 오류:', error);
+                alert(`감독 근무표 저장에 실패했습니다: ${error?.code || error?.message || error}`);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '저장';
+            }
+        });
+        window.openSupervisorModal = openSupervisorModal;
+        window.closeSupervisorModal = closeSupervisorModal;
+        window.updateSupervisorDutySlots = updateSupervisorDutySlots;
+
         async function addCalendarEvent() {
             if (!requireCloudEditor()) return;
             const date = selectedCalendarDate || todayISO();
