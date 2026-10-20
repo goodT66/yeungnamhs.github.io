@@ -1285,10 +1285,9 @@ interviewDateCache = {};
             });
             const dateHeaders = [];
             for (let i = 0; i < 4; i++) {
-                dateHeaders.push(`<th class="whitespace-nowrap bg-orange-50 text-orange-800">지도${i + 1}회 날짜</th>`);
-                dateHeaders.push(`<th class="whitespace-nowrap bg-orange-100 text-orange-900">지도${i + 1}회 저장</th>`);
+                dateHeaders.push(`<th class="whitespace-nowrap bg-orange-100 text-orange-900">지도${i + 1}회 날짜 / 저장</th>`);
             }
-            // 저장 영역을 표 맨 오른쪽이 아니라 학생 이름 바로 뒤에 배치해 처음부터 쉽게 보이게 합니다.
+            // 각 회차의 날짜 입력칸 바로 아래에 개별 저장 버튼을 표시합니다.
             baseHeaders.splice(3, 0, ...dateHeaders);
             row.innerHTML = baseHeaders.join('');
         }
@@ -1433,8 +1432,12 @@ interviewDateCache = {};
                         for (let sessionIdx = 0; sessionIdx < 4; sessionIdx++) {
                             const cloudKey = `${studentId}_${studentName}_${sessionIdx}`;
                             const savedDate = interviewDateCache[cloudKey] || '';
-                            rowHtml += `<td class="p-1 text-center bg-orange-50/40"><input type="date" data-grad-session="${sessionIdx}" value="${escapeHtmlGrad(savedDate)}" class="grad-interview-date border-2 border-orange-300 rounded p-2 text-sm bg-white w-36 min-w-36" aria-label="${escapeHtmlGrad(studentName)} 지도${sessionIdx + 1}회 날짜"></td>`;
-                            rowHtml += `<td class="p-2 text-center bg-orange-50/40"><button type="button" onclick="saveGradInterviewDate(decodeURIComponent('${encodedStudentId}'), decodeURIComponent('${encodedStudentName}'), ${sessionIdx}, this.parentElement.previousElementSibling.querySelector('input'), this)" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold rounded-lg px-4 py-2 text-sm whitespace-nowrap shadow-sm border border-orange-700" style="display:inline-block;visibility:visible;opacity:1;">지도${sessionIdx + 1}회 저장</button></td>`;
+                            rowHtml += `<td class="p-2 text-center bg-orange-50/40">
+                                <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:150px;">
+                                    <input type="date" data-grad-session="${sessionIdx}" value="${escapeHtmlGrad(savedDate)}" class="grad-interview-date border-2 border-orange-300 rounded p-2 text-sm bg-white" style="display:block;visibility:visible;opacity:1;width:140px;min-width:140px;" aria-label="${escapeHtmlGrad(studentName)} 지도${sessionIdx + 1}회 날짜">
+                                    <button type="button" onclick="saveGradInterviewDate(decodeURIComponent('${encodedStudentId}'), decodeURIComponent('${encodedStudentName}'), ${sessionIdx}, this.parentElement.querySelector('input.grad-interview-date'), this)" class="grad-date-save-button" style="display:block !important;visibility:visible !important;opacity:1 !important;background:#ea580c;color:#ffffff;font-weight:800;border:2px solid #c2410c;border-radius:8px;padding:8px 12px;font-size:13px;white-space:nowrap;min-width:130px;cursor:pointer;">지도${sessionIdx + 1}회 저장</button>
+                                </div>
+                            </td>`;
                         }
                     }
                 });
