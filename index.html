@@ -1245,18 +1245,11 @@ interviewDateCache = {};
                 5: '학생이름'
             };
 
-            const baseHeaders = gradColOrder.map(idx => {
+            row.innerHTML = gradColOrder.map(idx => {
                 const label = knownGradLabels[idx] || gradHeaders[idx] || `열 ${idx + 1}`;
                 const active = currentSortCol === idx ? (isAscending ? ' ▲' : ' ▼') : '';
                 return `<th onclick="setGradSort(${idx})" class="cursor-pointer select-none hover:bg-blue-100 whitespace-nowrap" title="클릭하면 오름차순/내림차순 정렬">${escapeHtmlGrad(label)}<span id="icon-${idx}" class="sort-icon">${active}</span></th>`;
-            });
-            const dateHeaders = [];
-            for (let i = 0; i < 4; i++) {
-                dateHeaders.push(`<th class="whitespace-nowrap bg-orange-100 text-orange-900">지도${i + 1}회 날짜 / 저장</th>`);
-            }
-            // 각 회차의 날짜 입력칸 바로 아래에 개별 저장 버튼을 표시합니다.
-            baseHeaders.splice(3, 0, ...dateHeaders);
-            row.innerHTML = baseHeaders.join('');
+            }).join('');
         }
 
         function escapeHtmlGrad(value) {
