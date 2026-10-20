@@ -1834,12 +1834,22 @@ const savedDate = Object.prototype.hasOwnProperty.call(dateCache, cloudKey)
     : '';
 
 
+                        const safeStudentId = encodeURIComponent(studentId);
+                        const safeStudentName = encodeURIComponent(studentName);
                         html += `
                             <td class="p-1 text-center">
-                                <input type="date" 
-                                       value="${savedDate}" 
-                                       onchange="saveInterviewDate('${studentId}', '${studentName}', ${idx}, this.value)" 
-                                       class="border border-gray-300 rounded p-1 text-xs bg-white/80 cursor-pointer hover:border-orange-500 focus:outline-none focus:border-orange-600 transition-colors w-28">
+                                <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:125px;">
+                                    <input type="date"
+                                           value="${savedDate}"
+                                           data-interview-date="true"
+                                           class="border border-gray-300 rounded p-1 text-xs bg-white cursor-pointer hover:border-orange-500 focus:outline-none focus:border-orange-600 transition-colors"
+                                           style="display:block;width:120px;min-width:120px;">
+                                    <button type="button"
+                                            onclick="saveInterviewDate(decodeURIComponent('${safeStudentId}'), decodeURIComponent('${safeStudentName}'), ${idx}, this.parentElement.querySelector('input[data-interview-date]').value)"
+                                            style="display:inline-block !important;visibility:visible !important;opacity:1 !important;background:#ea580c;color:white;font-weight:700;border:2px solid #c2410c;border-radius:6px;padding:6px 9px;font-size:12px;white-space:nowrap;cursor:pointer;min-width:108px;">
+                                        지도${idx - 18}회 저장
+                                    </button>
+                                </div>
                             </td>
                         `;
                     } else {
