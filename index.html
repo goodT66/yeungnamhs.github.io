@@ -1115,13 +1115,117 @@ window.saveInterviewDate = saveInterviewDate;
             wrap.classList.toggle('hidden', type === '' || type === 'cheongun');
             slot.required = type === 'afternoon' || type === 'night';
         }
+        const SUPERVISOR_SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxsT3h1Qt9OYcsY6EL8E2-mQIT-zf2i_3fGQKbVo6bOlcM2II_QrGQL3_frC03r9-Jm/exec';
+        let supervisorSheetValues = null;
+        let supervisorSheetLoadPromise = null;
+        let supervisorSheetError = '';
+
+        async function loadSupervisorSheet() {
+            if (supervisorSheetValues) return supervisorSheetValues;
+            if (!supervisorSheetLoadPromise) {
+                supervisorSheetLoadPromise = fetch(SUPERVISOR_SHEET_API_URL, { cache: 'no-store' })
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data || data.success !== true || !Array.isArray(data.values)) {
+                            throw new Error(data?.message || '감독표 데이터 형식이 올바르지 않습니다.');
+                        }
+                        supervisorSheetValues = data.values;
+                        supervisorSheetError = '';
+                        renderSupervisorDutyRoster();
+                        return supervisorSheetValues;
+                    })
+                    .catch(error => {
+                        supervisorSheetError = error?.message || String(error);
+                        console.error('구글 스프레드시트 감독표 불러오기 오류:', error);
+                        supervisorSheetLoadPromise = null;
+                        renderSupervisorDutyRoster();
+                        return null;
+                    });
+            }
+            return supervisorSheetLoadPromise;
+        }
+
+        function getBaseSupervisorDuty(date) {
+            if (!Array.isArray(supervisorSheetValues)) return {};
+            const [year, month, day] = date.split('-').map(Number);
+            const values = supervisorSheetValues;
+            const monthLabel = `${month}월`;
+            const result = {};
+            let dateRowIndexes = [];
+
+            // 월 제목 행에서 요청한 달을 확인합니다. 시트는 매월 같은 형식이며 내용만 바뀝니다.
+            const titleMatchesMonth = values.some(row => row.some(cell => String(cell || '').includes(monthLabel) && String(cell || '').includes('감독')));
+            if (!titleMatchesMonth) return result;
+
+            for (let r = 0; r < values.length; r++) {
+                const row = values[r] || [];
+                const hasDay = row.slice(1, 8).some(cell => {
+                    const n = Number(String(cell || '').trim());
+                    return Number.isInteger(n) && n >= 1 && n <= 31 && String(cell || '').trim() !== '';
+                });
+                if (hasDay) dateRowIndexes.push(r);
+            }
+
+            for (const r of dateRowIndexes) {
+                const row = values[r] || [];
+                const nextDateRow = dateRowIndexes.find(idx => idx > r);
+                const blockEnd = nextDateRow === undefined ? values.length : nextDateRow;
+                for (let c = 1; c <= 6; c++) {
+                    const rawDay = String(row[c] || '').trim();
+                    const n = Number(rawDay);
+                    if (!Number.isInteger(n) || n < 1 || n > 31 || n !== day) continue;
+                    const weekday = new Date(year, month - 1, day).getDay();
+                    // 표의 B~F열은 월~금, G열은 토요일입니다.
+                    if ((weekday >= 1 && weekday <= 5 && c !== weekday - 1) || (weekday === 6 && c !== 6)) continue;
+
+                    const column = c;
+                    const candidates = [];
+                    for (let rr = r + 1; rr < blockEnd; rr++) {
+                        const cell = String((values[rr] || [])[column] || '').trim();
+                        if (!cell) continue;
+                        if (['오전','오후','야간','날짜','요일'].includes(cell)) continue;
+                        if (cell.includes('정기고사') || cell.includes('사기간') || cell.includes('대체휴일')) continue;
+                        candidates.push({ row: rr, name: cell.replace(/\\s*선생님\\s*$/, '').trim() });
+                    }
+
+                    // 일반 평일 배정표는 오후 2명, 야간 3명 순서로 배치되어 있습니다.
+                    // 병합 셀은 표시값이 첫 행에만 있으므로 실제로 값이 있는 셀만 읽습니다.
+                    const afternoon = candidates.slice(0, 2);
+                    const night = candidates.slice(2, 5);
+                    ['오후1','오후2'].forEach((slot, i) => {
+                        if (afternoon[i]?.name) result[slot] = afternoon[i].name;
+                    });
+                    ['야자1','야자2','야자3'].forEach((slot, i) => {
+                        if (night[i]?.name) result[slot] = night[i].name;
+                    });
+                    break;
+                }
+            }
+            return result;
+        }
+
         function renderSupervisorDutyRoster() {
             const target = document.getElementById('supervisorDutyRoster');
             if (!target) return;
+            if (!supervisorSheetValues && !supervisorSheetLoadPromise) loadSupervisorSheet();
+
+            const base = getBaseSupervisorDuty(selectedCalendarDate);
             const records = (window.cloudDataStore && window.getCurrentUser && window.getCurrentUser())
                 ? window.cloudDataStore.getSupervisorDuties().filter(item => item.date === selectedCalendarDate)
                 : [];
-            const bySlot = new Map(records.map(item => [item.slot, item]));
+            const bySlot = new Map();
+            Object.entries(base).forEach(([slot, teacherName]) => bySlot.set(slot, { slot, teacherName, source: 'sheet' }));
+            // Firebase에 저장된 변경 사항이 기본 스프레드시트 배정보다 우선합니다.
+            records.forEach(item => bySlot.set(item.slot, { ...item, source: 'firebase' }));
+
+            if (!supervisorSheetValues && supervisorSheetError) {
+                target.innerHTML = `<p class="text-sm text-red-600">기본 감독표를 불러오지 못했습니다. 연결 및 배포 권한을 확인해 주세요. (${escapeHTML(supervisorSheetError)})</p>`;
+                return;
+            }
+
             const groups = [
                 { title: '오후 감독', slots: ['오후1', '오후2'], section: 'bg-amber-50 border-amber-200', row: 'bg-white border-amber-100', text: 'text-amber-800' },
                 { title: '야자 감독', slots: ['야자1', '야자2', '야자3'], section: 'bg-indigo-50 border-indigo-200', row: 'bg-white border-indigo-100', text: 'text-indigo-800' },
@@ -1130,11 +1234,12 @@ window.saveInterviewDate = saveInterviewDate;
             const card = (slot, group) => {
                 const item = bySlot.get(slot);
                 const teacher = item?.teacherName
-                    ? `${String(item.teacherName).replace(/\s*선생님\s*$/, '').trim()} 선생님`
+                    ? `${String(item.teacherName).replace(/\\s*선생님\\s*$/, '').trim()} 선생님`
                     : '—';
+                const changed = item?.source === 'firebase';
                 return `<div class="flex flex-col items-start justify-center gap-1 border rounded-lg px-3 py-3 min-h-[64px] ${group.row}">
-                    <span class="font-bold text-sm ${group.text}">${slot}</span>
-                    <span class="text-sm font-medium ${item ? 'text-gray-800' : 'text-gray-400'}">${teacher}</span>
+                    <span class="font-bold text-sm ${group.text}">${slot}${changed ? ' · 변경' : ''}</span>
+                    <span class="text-sm font-medium ${item ? 'text-gray-800' : 'text-gray-400'}">${escapeHTML(teacher)}</span>
                 </div>`;
             };
             target.className = 'grid grid-cols-1 md:grid-cols-3 gap-3';
