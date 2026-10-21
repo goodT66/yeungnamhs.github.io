@@ -1343,9 +1343,9 @@ window.saveInterviewDate = saveInterviewDate;
             }
 
             const groups = [
-                { title: '오후 감독', slots: ['오후1', '오후2'], section: 'bg-amber-50 border-amber-200', row: 'bg-white border-amber-100', text: 'text-amber-800' },
-                { title: '야자 감독', slots: ['야자1', '야자2', '야자3'], section: 'bg-indigo-50 border-indigo-200', row: 'bg-white border-indigo-100', text: 'text-indigo-800' },
-                { title: '청운관 감독', slots: ['청운관 감독'], section: 'bg-emerald-50 border-emerald-200', row: 'bg-white border-emerald-100', text: 'text-emerald-800' }
+                { title: '오후 감독', slots: ['오후1', '오후2'], section: 'bg-orange-100 border-orange-300', row: 'bg-orange-50 border-orange-200', text: 'text-orange-900' },
+                { title: '야자 감독', slots: ['야자1', '야자2', '야자3'], section: 'bg-violet-100 border-violet-300', row: 'bg-violet-50 border-violet-200', text: 'text-violet-900' },
+                { title: '청운관 감독', slots: ['청운관 감독'], section: 'bg-cyan-100 border-cyan-300', row: 'bg-cyan-50 border-cyan-200', text: 'text-cyan-900' }
             ];
             const card = (slot, group) => {
                 const item = bySlot.get(slot);
@@ -1359,7 +1359,7 @@ window.saveInterviewDate = saveInterviewDate;
                 </div>`;
             };
             target.className = 'grid grid-cols-1 md:grid-cols-3 gap-3';
-            target.style.width = '66.6667%';
+            target.style.width = '100%';
             target.style.maxWidth = '100%';
             target.innerHTML = groups.map(group => `
                 <section class="space-y-2 border rounded-xl p-3 ${group.section}">
