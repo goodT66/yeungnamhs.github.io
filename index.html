@@ -1353,9 +1353,9 @@ window.saveInterviewDate = saveInterviewDate;
                     ? `${String(item.teacherName).replace(/\s*선생님\s*$/, '').trim()} 선생님`
                     : '—';
                 const changed = item?.source === 'firebase';
-                return `<div class="flex flex-col items-start justify-center gap-1 border rounded-lg px-3 py-3 min-h-[64px] " style="${group.rowStyle}">
-                    <span class="font-bold text-sm " style="${group.textStyle}">${slot}${changed ? ' · 변경' : ''}</span>
-                    <span class="text-sm font-medium ${item ? 'text-gray-800' : 'text-gray-400'}">${escapeHTML(teacher)}</span>
+                return `<div class="flex flex-row items-center gap-4 border rounded-lg px-4 py-3 min-h-[64px] " style="${group.rowStyle}">
+                    <span class="font-bold text-sm flex-shrink-0 " style="${group.textStyle}">${slot}${changed ? ' · 변경' : ''}</span>
+                    <span class="text-lg font-extrabold ${item ? 'text-gray-900' : 'text-gray-400'}" style="letter-spacing:0.01em;">${escapeHTML(teacher)}</span>
                 </div>`;
             };
             target.className = 'grid grid-cols-1 md:grid-cols-3 gap-3';
