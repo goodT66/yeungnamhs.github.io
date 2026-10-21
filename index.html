@@ -1154,55 +1154,62 @@ window.saveInterviewDate = saveInterviewDate;
             const values = supervisorSheetValues;
             const monthLabel = `${month}월`;
             const result = {};
-            let dateRowIndexes = [];
 
-            // 월 제목 행에서 요청한 달을 확인합니다. 시트는 매월 같은 형식이며 내용만 바뀝니다.
-            const titleMatchesMonth = values.some(row => row.some(cell => String(cell || '').includes(monthLabel) && String(cell || '').includes('감독')));
+            // 요청한 달의 감독표인지 확인합니다.
+            const titleMatchesMonth = values.some(row =>
+                (row || []).some(cell => String(cell || '').includes(monthLabel) && String(cell || '').includes('감독'))
+            );
             if (!titleMatchesMonth) return result;
 
+            // 날짜 행은 B~H열(배열 인덱스 1~7)에 숫자 날짜가 있는 행입니다.
+            const dateRowIndexes = [];
             for (let r = 0; r < values.length; r++) {
                 const row = values[r] || [];
                 const hasDay = row.slice(1, 8).some(cell => {
-                    const n = Number(String(cell || '').trim());
-                    return Number.isInteger(n) && n >= 1 && n <= 31 && String(cell || '').trim() !== '';
+                    const raw = String(cell ?? '').trim();
+                    const n = Number(raw);
+                    return raw !== '' && Number.isInteger(n) && n >= 1 && n <= 31;
                 });
                 if (hasDay) dateRowIndexes.push(r);
             }
 
+            const weekday = new Date(year, month - 1, day).getDay(); // 일=0, 월=1, ... 토=6
+            // 평일은 B~F열(인덱스 1~5), 토요일은 G열(인덱스 6)에 날짜가 있습니다.
+            const expectedDateColumn = weekday >= 1 && weekday <= 5 ? weekday : (weekday === 6 ? 6 : -1);
+            if (expectedDateColumn < 0) return result; // 일요일은 감독표의 날짜 열에 없음
+
             for (const r of dateRowIndexes) {
                 const row = values[r] || [];
+                const rawDay = String(row[expectedDateColumn] ?? '').trim();
+                if (Number(rawDay) !== day) continue;
+
                 const nextDateRow = dateRowIndexes.find(idx => idx > r);
                 const blockEnd = nextDateRow === undefined ? values.length : nextDateRow;
-                for (let c = 1; c <= 6; c++) {
-                    const rawDay = String(row[c] || '').trim();
-                    const n = Number(rawDay);
-                    if (!Number.isInteger(n) || n < 1 || n > 31 || n !== day) continue;
-                    const weekday = new Date(year, month - 1, day).getDay();
-                    // 표의 B~F열은 월~금, G열은 토요일입니다.
-                    if ((weekday >= 1 && weekday <= 5 && c !== weekday - 1) || (weekday === 6 && c !== 6)) continue;
-
-                    const column = c;
-                    const candidates = [];
-                    for (let rr = r + 1; rr < blockEnd; rr++) {
-                        const cell = String((values[rr] || [])[column] || '').trim();
-                        if (!cell) continue;
-                        if (['오전','오후','야간','날짜','요일'].includes(cell)) continue;
-                        if (cell.includes('정기고사') || cell.includes('사기간') || cell.includes('대체휴일')) continue;
-                        candidates.push({ row: rr, name: cell.replace(/\\s*선생님\\s*$/, '').trim() });
-                    }
-
-                    // 일반 평일 배정표는 오후 2명, 야간 3명 순서로 배치되어 있습니다.
-                    // 병합 셀은 표시값이 첫 행에만 있으므로 실제로 값이 있는 셀만 읽습니다.
-                    const afternoon = candidates.slice(0, 2);
-                    const night = candidates.slice(2, 5);
-                    ['오후1','오후2'].forEach((slot, i) => {
-                        if (afternoon[i]?.name) result[slot] = afternoon[i].name;
-                    });
-                    ['야자1','야자2','야자3'].forEach((slot, i) => {
-                        if (night[i]?.name) result[slot] = night[i].name;
-                    });
-                    break;
+                // 토요일은 G열이 오전, H열이 오후로 분리되어 있습니다.
+                const dutyColumn = weekday === 6 ? 7 : expectedDateColumn;
+                const candidates = [];
+                for (let rr = r + 1; rr < blockEnd; rr++) {
+                    const cell = String((values[rr] || [])[dutyColumn] ?? '').trim();
+                    if (!cell) continue;
+                    if (['오전', '오후', '야간', '날짜', '요일'].includes(cell)) continue;
+                    if (/정기고사|사기간|대체휴일/.test(cell)) continue;
+                    if (/^\d{1,2}$/.test(cell)) continue;
+                    candidates.push(cell.replace(/\s*선생님\s*$/, '').trim());
                 }
+
+                // 평일 표의 교사 이름은 오후 2명 다음 야간 3명 순서입니다.
+                if (weekday >= 1 && weekday <= 5) {
+                    ['오후1', '오후2'].forEach((slot, i) => {
+                        if (candidates[i]) result[slot] = candidates[i];
+                    });
+                    ['야자1', '야자2', '야자3'].forEach((slot, i) => {
+                        if (candidates[i + 2]) result[slot] = candidates[i + 2];
+                    });
+                } else if (weekday === 6) {
+                    // 토요일 오후 감독은 H열에 배정된 교사를 오후1로 표시합니다.
+                    if (candidates[0]) result['오후1'] = candidates[0];
+                }
+                break;
             }
             return result;
         }
@@ -1234,7 +1241,7 @@ window.saveInterviewDate = saveInterviewDate;
             const card = (slot, group) => {
                 const item = bySlot.get(slot);
                 const teacher = item?.teacherName
-                    ? `${String(item.teacherName).replace(/\\s*선생님\\s*$/, '').trim()} 선생님`
+                    ? `${String(item.teacherName).replace(/\s*선생님\s*$/, '').trim()} 선생님`
                     : '—';
                 const changed = item?.source === 'firebase';
                 return `<div class="flex flex-col items-start justify-center gap-1 border rounded-lg px-3 py-3 min-h-[64px] ${group.row}">
