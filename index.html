@@ -228,15 +228,16 @@
                         <thead>
                             <tr>
                                 <th rowspan="2" class="w-24">월(고사명)</th>
+                                <th rowspan="2" class="text-emerald-700 bg-emerald-50 whitespace-nowrap">국수탐 백분위 평균</th>
                                 <th colspan="3" class="text-red-600 bg-red-50">국어</th><th colspan="3" class="text-blue-600 bg-blue-50">수학</th>
                                 <th rowspan="2">영어<br>등급</th><th rowspan="2">한국사<br>등급</th>
-                                <th colspan="3" class="text-emerald-600 bg-emerald-50">탐구1</th><th colspan="3" class="text-purple-600 bg-purple-50">탐구2</th>
+                                <th colspan="4" class="text-emerald-600 bg-emerald-50">탐구1</th><th colspan="4" class="text-purple-600 bg-purple-50">탐구2</th>
                             </tr>
                             <tr>
                                 <th class="bg-red-50">표점</th><th class="bg-red-50">백분위</th><th class="bg-red-50">등급</th>
                                 <th class="bg-blue-50">표점</th><th class="bg-blue-50">백분위</th><th class="bg-blue-50">등급</th>
-                                <th class="bg-emerald-50">표점</th><th class="bg-emerald-50">백분위</th><th class="bg-emerald-50">등급</th>
-                                <th class="bg-purple-50">표점</th><th class="bg-purple-50">백분위</th><th class="bg-purple-50">등급</th>
+                                <th class="bg-emerald-50">선택과목</th><th class="bg-emerald-50">표점</th><th class="bg-emerald-50">백분위</th><th class="bg-emerald-50">등급</th>
+                                <th class="bg-purple-50">선택과목</th><th class="bg-purple-50">표점</th><th class="bg-purple-50">백분위</th><th class="bg-purple-50">등급</th>
                             </tr>
                         </thead>
                         <tbody id="scoreTableBody"></tbody>
@@ -1385,9 +1386,11 @@ window.saveInterviewDate = saveInterviewDate;
                         const kStd = headers.findIndex(h=>h.includes('국어표점')), kPtc = headers.findIndex(h=>h.includes('국어백분위')), kGrd = headers.findIndex(h=>h.includes('국어등급'));
                         const mStd = headers.findIndex(h=>h.includes('수학표점')), mPtc = headers.findIndex(h=>h.includes('수학백분위')), mGrd = headers.findIndex(h=>h.includes('수학등급'));
                         const eGrd = headers.findIndex(h=>h.includes('영어등급')), hGrd = headers.findIndex(h=>h.includes('한국사등급'));
+                        const i1Sub = headers.findIndex(h => h.includes('탐구1') && (h.includes('선택과목') || h.includes('과목명') || h.includes('과목')) && !h.includes('표점') && !h.includes('백분위') && !h.includes('등급'));
+                        const i2Sub = headers.findIndex(h => h.includes('탐구2') && (h.includes('선택과목') || h.includes('과목명') || h.includes('과목')) && !h.includes('표점') && !h.includes('백분위') && !h.includes('등급'));
                         const i1Std = headers.findIndex(h=>h.includes('탐구1표점')), i1Ptc = headers.findIndex(h=>h.includes('탐구1백분위')), i1Grd = headers.findIndex(h=>h.includes('탐구1등급'));
                         const i2Std = headers.findIndex(h=>h.includes('탐구2표점')), i2Ptc = headers.findIndex(h=>h.includes('탐구2백분위')), i2Grd = headers.findIndex(h=>h.includes('탐구2등급'));
-                        const aIdx = headers.findIndex(h=>h.includes('국수탐백분위'));
+                        const aIdx = headers.findIndex(h=>h.includes('국수탐백분위') || h.includes('국수탐평균') || h.includes('국수탐백분위평균'));
 
                         for (let i = headerIndex + 1; i < data.length; i++) {
                             const r = data[i];
@@ -1396,11 +1399,13 @@ window.saveInterviewDate = saveInterviewDate;
                             if(sid && sname) {
                                 if(!studentMap.has(sid)) studentMap.set(sid, { name: sname, records: [] });
                                 studentMap.get(sid).records.push({
-                                    title: r[titleIdx]||'', avg: parseFloat(r[aIdx])||null,
+                                    title: r[titleIdx]||'', avg: aIdx >= 0 ? (r[aIdx] ?? '') : '',
                                     korStd: r[kStd]||'-', korPtc: parseFloat(r[kPtc])||null, korGrd: r[kGrd]||'-',
                                     mathStd: r[mStd]||'-', mathPtc: parseFloat(r[mPtc])||null, mathGrd: r[mGrd]||'-',
                                     engGrd: r[eGrd]||'-', histGrd: r[hGrd]||'-',
+                                    inq1Sub: i1Sub >= 0 ? (r[i1Sub] || '-') : '-',
                                     inq1Std: r[i1Std]||'-', inq1Ptc: r[i1Ptc]||'-', inq1Grd: r[i1Grd]||'-',
+                                    inq2Sub: i2Sub >= 0 ? (r[i2Sub] || '-') : '-',
                                     inq2Std: r[i2Std]||'-', inq2Ptc: r[i2Ptc]||'-', inq2Grd: r[i2Grd]||'-'
                                 });
                             }
@@ -1486,11 +1491,13 @@ window.saveInterviewDate = saveInterviewDate;
             tbody.innerHTML = '';
             [...recs].reverse().forEach(r => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${r.title}</td><td>${r.korStd}</td><td>${r.korPtc}</td><td class="text-red-600 font-bold">${r.korGrd}</td>
-                <td>${r.mathStd}</td><td>${r.mathPtc}</td><td class="text-blue-600 font-bold">${r.mathGrd}</td>
+                tr.innerHTML = `<td>${r.title}</td>
+                <td class="text-emerald-700 font-bold bg-emerald-50/40">${r.avg !== '' && r.avg !== null && r.avg !== undefined ? r.avg : '-'}</td>
+                <td>${r.korStd}</td><td>${r.korPtc ?? '-'}</td><td class="text-red-600 font-bold">${r.korGrd}</td>
+                <td>${r.mathStd}</td><td>${r.mathPtc ?? '-'}</td><td class="text-blue-600 font-bold">${r.mathGrd}</td>
                 <td class="font-bold">${r.engGrd}</td><td class="font-bold">${r.histGrd}</td>
-                <td>${r.inq1Std}</td><td>${r.inq1Ptc}</td><td class="text-emerald-600 font-bold">${r.inq1Grd}</td>
-                <td>${r.inq2Std}</td><td>${r.inq2Ptc}</td><td class="text-purple-600 font-bold">${r.inq2Grd}</td>`;
+                <td>${r.inq1Sub}</td><td>${r.inq1Std}</td><td>${r.inq1Ptc}</td><td class="text-emerald-600 font-bold">${r.inq1Grd}</td>
+                <td>${r.inq2Sub}</td><td>${r.inq2Std}</td><td>${r.inq2Ptc}</td><td class="text-purple-600 font-bold">${r.inq2Grd}</td>`;
                 tbody.appendChild(tr);
             });
         }
