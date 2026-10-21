@@ -1386,8 +1386,10 @@ window.saveInterviewDate = saveInterviewDate;
                         const kStd = headers.findIndex(h=>h.includes('국어표점')), kPtc = headers.findIndex(h=>h.includes('국어백분위')), kGrd = headers.findIndex(h=>h.includes('국어등급'));
                         const mStd = headers.findIndex(h=>h.includes('수학표점')), mPtc = headers.findIndex(h=>h.includes('수학백분위')), mGrd = headers.findIndex(h=>h.includes('수학등급'));
                         const eGrd = headers.findIndex(h=>h.includes('영어등급')), hGrd = headers.findIndex(h=>h.includes('한국사등급'));
-                        const i1Sub = headers.findIndex(h => h.includes('탐구1') && (h.includes('선택과목') || h.includes('과목명') || h.includes('과목')) && !h.includes('표점') && !h.includes('백분위') && !h.includes('등급'));
-                        const i2Sub = headers.findIndex(h => h.includes('탐구2') && (h.includes('선택과목') || h.includes('과목명') || h.includes('과목')) && !h.includes('표점') && !h.includes('백분위') && !h.includes('등급'));
+                        // 원본 성적 시트의 R열(18번째 열), V열(22번째 열)이 각각 제1·제2 선택과목
+                        // CSV 배열은 0부터 시작하므로 R=17, V=21로 직접 참조합니다.
+                        const i1Sub = 17;
+                        const i2Sub = 21;
                         const i1Std = headers.findIndex(h=>h.includes('탐구1표점')), i1Ptc = headers.findIndex(h=>h.includes('탐구1백분위')), i1Grd = headers.findIndex(h=>h.includes('탐구1등급'));
                         const i2Std = headers.findIndex(h=>h.includes('탐구2표점')), i2Ptc = headers.findIndex(h=>h.includes('탐구2백분위')), i2Grd = headers.findIndex(h=>h.includes('탐구2등급'));
                         const aIdx = headers.findIndex(h=>h.includes('국수탐백분위') || h.includes('국수탐평균') || h.includes('국수탐백분위평균'));
@@ -1403,9 +1405,9 @@ window.saveInterviewDate = saveInterviewDate;
                                     korStd: r[kStd]||'-', korPtc: parseFloat(r[kPtc])||null, korGrd: r[kGrd]||'-',
                                     mathStd: r[mStd]||'-', mathPtc: parseFloat(r[mPtc])||null, mathGrd: r[mGrd]||'-',
                                     engGrd: r[eGrd]||'-', histGrd: r[hGrd]||'-',
-                                    inq1Sub: i1Sub >= 0 ? (r[i1Sub] || '-') : '-',
+                                    inq1Sub: i1Sub < r.length && String(r[i1Sub] ?? '').trim() ? String(r[i1Sub]).trim() : '-',
                                     inq1Std: r[i1Std]||'-', inq1Ptc: r[i1Ptc]||'-', inq1Grd: r[i1Grd]||'-',
-                                    inq2Sub: i2Sub >= 0 ? (r[i2Sub] || '-') : '-',
+                                    inq2Sub: i2Sub < r.length && String(r[i2Sub] ?? '').trim() ? String(r[i2Sub]).trim() : '-',
                                     inq2Std: r[i2Std]||'-', inq2Ptc: r[i2Ptc]||'-', inq2Grd: r[i2Grd]||'-'
                                 });
                             }
