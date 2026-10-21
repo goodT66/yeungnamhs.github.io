@@ -36,17 +36,6 @@
         .grad-table td { border: 1px solid #e2e8f0; padding: 10px 8px; text-align: center; white-space: nowrap; }
         .grad-table tr:hover td { background-color: #f8fafc; }
         .sort-icon { display: inline-block; width: 14px; color: #16a34a; }
-    
-        #noticeEditorOverlay { display:none; position:fixed; inset:0; z-index:10000; background:rgba(15,23,42,.62); align-items:center; justify-content:center; padding:18px; }
-        #noticeEditorOverlay.is-open { display:flex; }
-        #noticeEditorPanel { width:min(900px, 96vw); max-height:92vh; display:flex; flex-direction:column; background:#fff; border-radius:16px; box-shadow:0 25px 70px rgba(0,0,0,.35); overflow:hidden; position:relative; z-index:10001; }
-        #noticeEditorContent { min-height:260px; max-height:48vh; overflow:auto; padding:14px; outline:none; line-height:1.65; }
-        #noticeEditorContent:empty:before { content:attr(data-placeholder); color:#9ca3af; }
-        .notice-tool { border:1px solid #cbd5e1; border-radius:6px; padding:6px 9px; background:#fff; font-size:13px; cursor:pointer; }
-        .notice-tool:hover { background:#eff6ff; border-color:#93c5fd; }
-        #noticeEditorContent ul { list-style:disc; padding-left:1.5rem; }
-        #noticeEditorContent ol { list-style:decimal; padding-left:1.5rem; }
-
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center pt-10 pb-20 px-4 relative overflow-x-hidden">
@@ -191,6 +180,7 @@
                             <option value="">선택하세요</option>
                             <option value="afternoon">오후 감독</option>
                             <option value="night">야자</option>
+                            <option value="saturday">토요일 감독</option>
                             <option value="cheongun">청운관 감독</option>
                         </select>
                     </div>
@@ -239,16 +229,15 @@
                         <thead>
                             <tr>
                                 <th rowspan="2" class="w-24">월(고사명)</th>
-                                <th rowspan="2" class="text-emerald-700 bg-emerald-50 whitespace-nowrap">국수탐 백분위 평균</th>
-                                <th colspan="4" class="text-red-600 bg-red-50">국어</th><th colspan="4" class="text-blue-600 bg-blue-50">수학</th>
+                                <th colspan="3" class="text-red-600 bg-red-50">국어</th><th colspan="3" class="text-blue-600 bg-blue-50">수학</th>
                                 <th rowspan="2">영어<br>등급</th><th rowspan="2">한국사<br>등급</th>
-                                <th colspan="4" class="text-emerald-600 bg-emerald-50">탐구1</th><th colspan="4" class="text-purple-600 bg-purple-50">탐구2</th>
+                                <th colspan="3" class="text-emerald-600 bg-emerald-50">탐구1</th><th colspan="3" class="text-purple-600 bg-purple-50">탐구2</th>
                             </tr>
                             <tr>
-                                <th class="bg-red-50">과목</th><th class="bg-red-50">표점</th><th class="bg-red-50">백분위</th><th class="bg-red-50">등급</th>
-                                <th class="bg-blue-50">과목</th><th class="bg-blue-50">표점</th><th class="bg-blue-50">백분위</th><th class="bg-blue-50">등급</th>
-                                <th class="bg-emerald-50">선택과목</th><th class="bg-emerald-50">표점</th><th class="bg-emerald-50">백분위</th><th class="bg-emerald-50">등급</th>
-                                <th class="bg-purple-50">선택과목</th><th class="bg-purple-50">표점</th><th class="bg-purple-50">백분위</th><th class="bg-purple-50">등급</th>
+                                <th class="bg-red-50">표점</th><th class="bg-red-50">백분위</th><th class="bg-red-50">등급</th>
+                                <th class="bg-blue-50">표점</th><th class="bg-blue-50">백분위</th><th class="bg-blue-50">등급</th>
+                                <th class="bg-emerald-50">표점</th><th class="bg-emerald-50">백분위</th><th class="bg-emerald-50">등급</th>
+                                <th class="bg-purple-50">표점</th><th class="bg-purple-50">백분위</th><th class="bg-purple-50">등급</th>
                             </tr>
                         </thead>
                         <tbody id="scoreTableBody"></tbody>
@@ -572,6 +561,8 @@ let noticeCache = [];
 let calendarEventCache = [];
 let supervisorDutyCache = [];
 let unsubscribeSupervisorDuties = null;
+let cheongunScheduleByDate = {};
+let cheongunScheduleLoaded = false;
 let unsubscribeNotices = null;
 let unsubscribeCalendarEvents = null;
 let noticesReady = false;
@@ -1014,147 +1005,50 @@ window.saveInterviewDate = saveInterviewDate;
                 return;
             }
             listEl.innerHTML = selected.map(n => `<li class="rounded-lg border border-gray-100 bg-gray-50 p-3">
-                <div class="flex justify-between items-start gap-3"><div class="min-w-0 flex-1"><div class="font-bold text-gray-800 break-words">${escapeHTML(n.title)}</div><div class="notice-rendered-content text-sm text-gray-600 mt-1 break-words">${renderNoticeContent(n.content)}</div><p class="text-xs text-gray-400 mt-2">등록일: ${escapeHTML(n.date)}</p></div>
+                <div class="flex justify-between items-start gap-3"><div class="min-w-0 flex-1"><div class="font-bold text-gray-800 break-words">${escapeHTML(n.title)}</div><p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap break-words">${escapeHTML(n.content)}</p><p class="text-xs text-gray-400 mt-2">등록일: ${escapeHTML(n.date)}</p></div>
                 <div class="flex gap-1 shrink-0"><button onclick="editNotice('${n.id}')" class="text-xs px-2 py-1 rounded bg-white border hover:bg-blue-50">수정</button><button onclick="deleteNotice('${n.id}')" class="text-xs px-2 py-1 rounded bg-white border text-red-600 hover:bg-red-50">삭제</button></div></div>
             </li>`).join('');
         }
         function selectNoticeDate(category, date) { activeNoticeDate[category] = date; renderNoticeCategory(category); }
-        let noticeEditorState = { mode: 'create', category: 'grade3', id: null };
-        function openNoticeEditor() {
-            const overlay = document.getElementById('noticeEditorOverlay');
-            overlay.classList.add('is-open'); overlay.setAttribute('aria-hidden','false');
-            document.body.style.overflow = 'hidden';
-            setTimeout(() => document.getElementById('noticeEditorTitle')?.focus(), 30);
-        }
-        function closeNoticeEditor() {
-            const overlay = document.getElementById('noticeEditorOverlay');
-            overlay.classList.remove('is-open'); overlay.setAttribute('aria-hidden','true');
-            document.body.style.overflow = '';
-        }
-        let savedNoticeSelection = null;
-        function saveNoticeSelection() {
-            const editor = document.getElementById('noticeEditorContent');
-            const selection = window.getSelection();
-            if (!editor || !selection || selection.rangeCount === 0) return;
-            const range = selection.getRangeAt(0);
-            if (editor.contains(range.commonAncestorContainer)) savedNoticeSelection = range.cloneRange();
-        }
-        function restoreNoticeSelection() {
-            const editor = document.getElementById('noticeEditorContent');
-            if (!editor) return;
-            editor.focus();
-            const selection = window.getSelection();
-            if (savedNoticeSelection && selection) {
-                selection.removeAllRanges();
-                selection.addRange(savedNoticeSelection);
-            }
-        }
-        function formatNotice(command) {
-            restoreNoticeSelection();
-            document.execCommand(command, false, null);
-            saveNoticeSelection();
-        }
-        function applyNoticeColor(kind, color) {
-            restoreNoticeSelection();
-            const selection = window.getSelection();
-            if (!selection || selection.rangeCount === 0 || selection.getRangeAt(0).collapsed) {
-                alert('색상을 적용할 글자를 먼저 선택해 주세요.');
-                return;
-            }
-            document.execCommand(kind === 'highlight' ? 'hiliteColor' : 'foreColor', false, color);
-            saveNoticeSelection();
-        }
-        function applyNoticeFont(font) {
-            restoreNoticeSelection();
-            document.execCommand('fontName', false, font);
-            saveNoticeSelection();
-        }
-        function applyNoticeSize(size) {
-            restoreNoticeSelection();
-            const selection = window.getSelection();
-            if (!selection || selection.rangeCount === 0) return;
-            const range = selection.getRangeAt(0);
-            if (range.collapsed) { alert('글자 크기를 바꿀 글자를 먼저 선택해 주세요.'); return; }
-            const span = document.createElement('span'); span.style.fontSize = size;
-            try { span.appendChild(range.extractContents()); range.insertNode(span); selection.removeAllRanges(); const r=document.createRange(); r.selectNodeContents(span); selection.addRange(r); saveNoticeSelection(); } catch(e) { console.warn(e); }
-        }
-        function plainTextToNoticeHtml(value) {
-            const text = String(value ?? '');
-            if (/<(p|div|span|br|b|strong|i|em|u|ul|ol|li|h[1-6])\b/i.test(text)) return text;
-            return escapeHTML(text).replace(/\r?\n/g, '<br>');
-        }
-        function renderNoticeContent(value) {
-            // 기존 일반 텍스트와 새 서식 HTML을 모두 표시합니다.
-            const raw = plainTextToNoticeHtml(value);
-            const template = document.createElement('template'); template.innerHTML = raw;
-            const allowed = new Set(['B','STRONG','I','EM','U','BR','P','DIV','SPAN','UL','OL','LI','H1','H2','H3','FONT']);
-            const walk = node => {
-                [...node.childNodes].forEach(child => {
-                    if (child.nodeType === 1) {
-                        if (!allowed.has(child.tagName)) { child.replaceWith(document.createTextNode(child.textContent || '')); return; }
-                        [...child.attributes].forEach(attr => {
-                            if (attr.name !== 'style' && !(child.tagName === 'FONT' && attr.name === 'face')) child.removeAttribute(attr.name);
-                        });
-                        if (child.hasAttribute('style')) {
-                            const safe = [...child.style].filter(k => ['font-size','font-family','text-align','font-weight','font-style','text-decoration','color','background-color'].includes(k)).map(k => `${k}:${child.style.getPropertyValue(k)}`).join(';');
-                            if (safe) child.setAttribute('style',safe); else child.removeAttribute('style');
-                        }
-                        walk(child);
-                    }
-                });
-            };
-            walk(template.content); return template.innerHTML;
-        }
-        function writeNotice(category) {
+        async function writeNotice(category) {
             if (!requireCloudEditor()) return;
-            noticeEditorState = { mode:'create', category, id:null };
-            document.getElementById('noticeEditorHeading').textContent = (category === 'grade3' ? '3학년부' : '부서별') + ' 전달 사항 추가';
-            document.getElementById('noticeEditorDate').value = todayISO();
-            document.getElementById('noticeEditorTitle').value = '';
-            document.getElementById('noticeEditorContent').innerHTML = '';
-            openNoticeEditor();
-        }
-        function editNotice(id) {
-            if (!requireCloudEditor()) return;
-            const item = getNotices().find(n => n.id === id); if (!item) return;
-            noticeEditorState = { mode:'edit', category:item.category, id:item.id };
-            document.getElementById('noticeEditorHeading').textContent = '전달 사항 수정';
-            document.getElementById('noticeEditorDate').value = item.date || todayISO();
-            document.getElementById('noticeEditorTitle').value = item.title || '';
-            document.getElementById('noticeEditorContent').innerHTML = plainTextToNoticeHtml(item.content || '');
-            openNoticeEditor();
-        }
-        async function saveNoticeEditor() {
-            if (!requireCloudEditor()) return;
-            const date = document.getElementById('noticeEditorDate').value;
-            const title = document.getElementById('noticeEditorTitle').value.trim();
-            const content = document.getElementById('noticeEditorContent').innerHTML.trim();
-            if (!date) { alert('날짜를 선택해 주세요.'); return; }
-            if (!title) { alert('전달 사항 제목을 입력해 주세요.'); document.getElementById('noticeEditorTitle').focus(); return; }
-            if (!document.getElementById('noticeEditorContent').innerText.trim()) { alert('전달 사항 내용을 입력해 주세요.'); document.getElementById('noticeEditorContent').focus(); return; }
-            const existing = noticeEditorState.mode === 'edit' ? getNotices().find(n => n.id === noticeEditorState.id) : null;
-            const item = existing
-                ? { ...existing, date, title, content }
-                : { id: makeId(), category:noticeEditorState.category, date, title, content, createdAt:Date.now() };
+            const label = category === 'grade3' ? '3학년부' : '부서별';
+            const date = prompt(`${label} 전달 사항 날짜를 입력하세요. (YYYY-MM-DD)`, todayISO());
+            if (date === null) return;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) { alert('날짜는 YYYY-MM-DD 형식으로 입력해 주세요.'); return; }
+            const title = prompt('전달 사항 제목을 입력하세요.');
+            if (title === null) return;
+            if (!title.trim()) { alert('제목을 입력해 주세요.'); return; }
+            const content = prompt('전달 사항 내용을 입력하세요.');
+            if (content === null) return;
+            const item = { id: makeId(), category, date, title: title.trim(), content: content.trim(), createdAt: Date.now() };
             try {
                 await window.cloudDataStore.saveNotice(item);
-                activeNoticeDate[item.category] = date;
-                closeNoticeEditor();
-                renderNoticeCategory(item.category);
+                activeNoticeDate[category] = date;
+                renderNoticeCategory(category);
             } catch (error) {
                 console.error('전달 사항 저장 오류:', error);
                 alert('전달 사항을 Firebase에 저장하지 못했습니다. Firestore 보안 규칙과 로그인 권한을 확인해 주세요.');
             }
         }
-        window.writeNotice = writeNotice;
-        window.editNotice = editNotice;
-        window.closeNoticeEditor = closeNoticeEditor;
-        window.formatNotice = formatNotice;
-        window.applyNoticeFont = applyNoticeFont;
-        window.applyNoticeSize = applyNoticeSize;
-        window.saveNoticeEditor = saveNoticeEditor;
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeNoticeEditor(); });
-        document.getElementById('noticeEditorOverlay')?.addEventListener('click', e => { if (e.target.id === 'noticeEditorOverlay') closeNoticeEditor(); });
+        async function editNotice(id) {
+            if (!requireCloudEditor()) return;
+            const item = getNotices().find(n => n.id === id); if (!item) return;
+            const date = prompt('전달 사항 날짜 (YYYY-MM-DD)', item.date); if (date === null) return;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) { alert('날짜는 YYYY-MM-DD 형식으로 입력해 주세요.'); return; }
+            const title = prompt('전달 사항 제목', item.title); if (title === null) return;
+            if (!title.trim()) { alert('제목을 입력해 주세요.'); return; }
+            const content = prompt('전달 사항 내용', item.content); if (content === null) return;
+            const updated = { ...item, date, title: title.trim(), content: content.trim() };
+            try {
+                await window.cloudDataStore.saveNotice(updated);
+                activeNoticeDate[updated.category] = date;
+                renderNoticeCategory(updated.category);
+            } catch (error) {
+                console.error('전달 사항 수정 오류:', error);
+                alert('전달 사항 변경 내용을 Firebase에 저장하지 못했습니다. Firestore 보안 규칙과 로그인 권한을 확인해 주세요.');
+            }
+        }
         async function deleteNotice(id) {
             if (!requireCloudEditor()) return;
             const item = getNotices().find(n => n.id === id); if (!item) return;
@@ -1219,157 +1113,120 @@ window.saveInterviewDate = saveInterviewDate;
                 ? ['오후1', '오후2']
                 : type === 'night'
                     ? ['야자1', '야자2', '야자3']
-                    : type === 'cheongun' ? ['청운관 감독'] : [];
+                    : type === 'saturday'
+                        ? ['오전1', '오전2', '오후1']
+                        : type === 'cheongun' ? ['청운관 감독'] : [];
             slot.innerHTML = '<option value="">선택하세요</option>' + options.map(v => `<option value="${v}">${v}</option>`).join('');
             wrap.classList.toggle('hidden', type === '' || type === 'cheongun');
-            slot.required = type === 'afternoon' || type === 'night';
+            slot.required = ['afternoon', 'night', 'saturday'].includes(type);
         }
-        const SUPERVISOR_SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxsT3h1Qt9OYcsY6EL8E2-mQIT-zf2i_3fGQKbVo6bOlcM2II_QrGQL3_frC03r9-Jm/exec';
-        let supervisorSheetValues = null;
-        let supervisorSheetLoadPromise = null;
-        let supervisorSheetError = '';
 
-        async function loadSupervisorSheet() {
-            if (supervisorSheetValues) return supervisorSheetValues;
-            if (!supervisorSheetLoadPromise) {
-                supervisorSheetLoadPromise = fetch(SUPERVISOR_SHEET_API_URL, { cache: 'no-store' })
-                    .then(response => {
-                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (!data || data.success !== true || !Array.isArray(data.values)) {
-                            throw new Error(data?.message || '감독표 데이터 형식이 올바르지 않습니다.');
+        // 공개된 Google 스프레드시트의 '청운관감독표' 값을 읽어 날짜별 감독을 구성합니다.
+        async function loadCheongunSchedule() {
+            if (cheongunScheduleLoaded) return;
+            const spreadsheetId = '1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM';
+            const sheetGid = '757003230';
+            const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json&gid=${sheetGid}`;
+            try {
+                const response = await fetch(url, { cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const raw = await response.text();
+                const jsonText = raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1);
+                const payload = JSON.parse(jsonText);
+                const rows = (payload.table?.rows || []).map(row => (row.c || []).map(cell => cell ? String(cell.f ?? cell.v ?? '').trim() : ''));
+                const colCount = Math.max(0, ...rows.map(row => row.length));
+                const grid = rows.map(row => Array.from({ length: colCount }, (_, i) => row[i] || ''));
+                const monthCols = new Set();
+                for (let c = 0; c < colCount; c++) {
+                    if (grid.some(row => /^\d{1,2}\s*월$/.test(row[c]))) monthCols.add(c);
+                }
+                const schedule = {};
+                const year = new Date().getFullYear();
+                for (const monthCol of monthCols) {
+                    const markers = [];
+                    for (let r = 0; r < grid.length; r++) {
+                        const match = grid[r][monthCol].match(/^(\d{1,2})\s*월$/);
+                        if (match) markers.push({ row: r, month: Number(match[1]) });
+                    }
+                    markers.forEach((marker, index) => {
+                        const endRow = markers[index + 1]?.row ?? grid.length;
+                        for (let r = marker.row; r < endRow; r++) {
+                            for (let c = monthCol + 1; c <= monthCol + 5 && c < colCount; c++) {
+                                const dayMatch = grid[r][c].match(/^(\d{1,2})\s*일$/);
+                                if (!dayMatch) continue;
+                                const day = Number(dayMatch[1]);
+                                const month = marker.month;
+                                const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                const teacher = (grid[r + 1]?.[c] || '').trim();
+                                if (teacher && !/^(추석|한글날|대체공휴일|중간고사|중간고사전|—|-)$/.test(teacher)) {
+                                    schedule[date] = teacher.replace(/\s*선생님\s*$/, '').trim();
+                                }
+                            }
                         }
-                        supervisorSheetValues = data.values;
-                        supervisorSheetError = '';
-                        renderSupervisorDutyRoster();
-                        return supervisorSheetValues;
-                    })
-                    .catch(error => {
-                        supervisorSheetError = error?.message || String(error);
-                        console.error('구글 스프레드시트 감독표 불러오기 오류:', error);
-                        supervisorSheetLoadPromise = null;
-                        renderSupervisorDutyRoster();
-                        return null;
                     });
-            }
-            return supervisorSheetLoadPromise;
-        }
-
-        function getBaseSupervisorDuty(date) {
-            if (!Array.isArray(supervisorSheetValues)) return {};
-            const [year, month, day] = date.split('-').map(Number);
-            const values = supervisorSheetValues;
-            const monthLabel = `${month}월`;
-            const result = {};
-
-            // 요청한 달의 감독표인지 확인합니다.
-            const titleMatchesMonth = values.some(row =>
-                (row || []).some(cell => String(cell || '').includes(monthLabel) && String(cell || '').includes('감독'))
-            );
-            if (!titleMatchesMonth) return result;
-
-            // 날짜 행은 B~H열(배열 인덱스 1~7)에 숫자 날짜가 있는 행입니다.
-            const dateRowIndexes = [];
-            for (let r = 0; r < values.length; r++) {
-                const row = values[r] || [];
-                const hasDay = row.slice(1, 8).some(cell => {
-                    const raw = String(cell ?? '').trim();
-                    const n = Number(raw);
-                    return raw !== '' && Number.isInteger(n) && n >= 1 && n <= 31;
-                });
-                if (hasDay) dateRowIndexes.push(r);
-            }
-
-            const weekday = new Date(year, month - 1, day).getDay(); // 일=0, 월=1, ... 토=6
-            // 평일은 B~F열(인덱스 1~5), 토요일은 G열(인덱스 6)에 날짜가 있습니다.
-            const expectedDateColumn = weekday >= 1 && weekday <= 5 ? weekday : (weekday === 6 ? 6 : -1);
-            if (expectedDateColumn < 0) return result; // 일요일은 감독표의 날짜 열에 없음
-
-            for (const r of dateRowIndexes) {
-                const row = values[r] || [];
-                const rawDay = String(row[expectedDateColumn] ?? '').trim();
-                if (Number(rawDay) !== day) continue;
-
-                const nextDateRow = dateRowIndexes.find(idx => idx > r);
-                const blockEnd = nextDateRow === undefined ? values.length : nextDateRow;
-                // 토요일은 G열이 오전, H열이 오후로 분리되어 있습니다.
-                const dutyColumn = weekday === 6 ? 7 : expectedDateColumn;
-                const candidates = [];
-                for (let rr = r + 1; rr < blockEnd; rr++) {
-                    const cell = String((values[rr] || [])[dutyColumn] ?? '').trim();
-                    if (!cell) continue;
-                    if (['오전', '오후', '야간', '날짜', '요일'].includes(cell)) continue;
-                    if (/정기고사|사기간|대체휴일/.test(cell)) continue;
-                    if (/^\d{1,2}$/.test(cell)) continue;
-                    candidates.push(cell.replace(/\s*선생님\s*$/, '').trim());
                 }
-
-                // 평일 표의 교사 이름은 오후 2명 다음 야간 3명 순서입니다.
-                if (weekday >= 1 && weekday <= 5) {
-                    ['오후1', '오후2'].forEach((slot, i) => {
-                        if (candidates[i]) result[slot] = candidates[i];
-                    });
-                    ['야자1', '야자2', '야자3'].forEach((slot, i) => {
-                        if (candidates[i + 2]) result[slot] = candidates[i + 2];
-                    });
-                } else if (weekday === 6) {
-                    // 토요일 오후 감독은 H열에 배정된 교사를 오후1로 표시합니다.
-                    if (candidates[0]) result['오후1'] = candidates[0];
-                }
-                break;
+                cheongunScheduleByDate = schedule;
+                cheongunScheduleLoaded = true;
+                renderSupervisorDutyRoster();
+            } catch (error) {
+                console.warn('청운관감독표를 불러오지 못했습니다. 시트가 웹에 공개되어 있는지 확인해 주세요.', error);
             }
-            return result;
         }
 
         function renderSupervisorDutyRoster() {
             const target = document.getElementById('supervisorDutyRoster');
             if (!target) return;
-            if (!supervisorSheetValues && !supervisorSheetLoadPromise) loadSupervisorSheet();
-
-            const base = getBaseSupervisorDuty(selectedCalendarDate);
             const records = (window.cloudDataStore && window.getCurrentUser && window.getCurrentUser())
                 ? window.cloudDataStore.getSupervisorDuties().filter(item => item.date === selectedCalendarDate)
                 : [];
-            const bySlot = new Map();
-            Object.entries(base).forEach(([slot, teacherName]) => bySlot.set(slot, { slot, teacherName, source: 'sheet' }));
-            // Firebase에 저장된 변경 사항이 기본 스프레드시트 배정보다 우선합니다.
-            records.forEach(item => bySlot.set(item.slot, { ...item, source: 'firebase' }));
-
-            if (!supervisorSheetValues && supervisorSheetError) {
-                target.innerHTML = `<p class="text-sm text-red-600">기본 감독표를 불러오지 못했습니다. 연결 및 배포 권한을 확인해 주세요. (${escapeHTML(supervisorSheetError)})</p>`;
+            const bySlot = new Map(records.map(item => [item.slot, item]));
+            const selectedDate = selectedCalendarDate ? new Date(`${selectedCalendarDate}T12:00:00`) : null;
+            const isSaturday = selectedDate?.getDay() === 6;
+            if (isSaturday) {
+                const groups = [
+                    { title: '토요일 감독', slots: ['오전1', '오전2', '오후1'], section: 'bg-amber-50 border-amber-200', row: 'bg-white border-amber-100', text: 'text-amber-800' }
+                ];
+                const card = (slot, group) => {
+                    const item = bySlot.get(slot);
+                    const teacher = item?.teacherName ? `${String(item.teacherName).replace(/\s*선생님\s*$/, '').trim()} 선생님` : '—';
+                    return `<div class="flex flex-col items-start justify-center gap-1 border rounded-lg px-3 py-3 min-h-[64px] ${group.row}"><span class="font-bold text-sm ${group.text}">${slot}</span><span class="text-sm font-medium ${item ? 'text-gray-800' : 'text-gray-400'}">${teacher}</span></div>`;
+                };
+                target.className = 'grid grid-cols-1 gap-3';
+                target.style.width = '66.6667%';
+                target.style.maxWidth = '100%';
+                target.innerHTML = groups.map(group => `<section class="space-y-2 border rounded-xl p-3 ${group.section}"><div class="text-xs font-bold ${group.text}">${group.title}</div><div class="grid grid-cols-1 sm:grid-cols-3 gap-2">${group.slots.map(slot => card(slot, group)).join('')}</div></section>`).join('');
                 return;
             }
-
+            // 스프레드시트 배정은 기본값으로 표시하되, 시스템에서 직접 수정한 배정이 있으면 그 값을 우선합니다.
+            if (!bySlot.has('청운관 감독') && cheongunScheduleByDate[selectedCalendarDate]) {
+                bySlot.set('청운관 감독', { slot: '청운관 감독', teacherName: cheongunScheduleByDate[selectedCalendarDate], source: 'spreadsheet' });
+            }
             const groups = [
-                { title: '오후 감독', slots: ['오후1', '오후2'], sectionStyle: 'background-color:#ffedd5;border-color:#fdba74;', rowStyle: 'background-color:#fff7ed;border-color:#fdba74;', textStyle: 'color:#9a3412;' },
-                { title: '야자 감독', slots: ['야자1', '야자2', '야자3'], sectionStyle: 'background-color:#ede9fe;border-color:#a78bfa;', rowStyle: 'background-color:#f5f3ff;border-color:#c4b5fd;', textStyle: 'color:#5b21b6;' },
-                { title: '청운관 감독', slots: ['청운관 감독'], sectionStyle: 'background-color:#cffafe;border-color:#67e8f9;', rowStyle: 'background-color:#ecfeff;border-color:#67e8f9;', textStyle: 'color:#155e75;' }
+                { title: '오후 감독', slots: ['오후1', '오후2'], section: 'bg-amber-50 border-amber-200', row: 'bg-white border-amber-100', text: 'text-amber-800' },
+                { title: '야자 감독', slots: ['야자1', '야자2', '야자3'], section: 'bg-indigo-50 border-indigo-200', row: 'bg-white border-indigo-100', text: 'text-indigo-800' },
+                { title: '청운관 감독', slots: ['청운관 감독'], section: 'bg-emerald-50 border-emerald-200', row: 'bg-white border-emerald-100', text: 'text-emerald-800' }
             ];
             const card = (slot, group) => {
                 const item = bySlot.get(slot);
                 const teacher = item?.teacherName
                     ? `${String(item.teacherName).replace(/\s*선생님\s*$/, '').trim()} 선생님`
                     : '—';
-                const changed = item?.source === 'firebase';
-                return `<div class="flex flex-row items-center gap-4 border rounded-lg px-4 py-3 min-h-[64px] " style="${group.rowStyle}">
-                    <span class="font-bold text-sm flex-shrink-0 " style="${group.textStyle}">${slot}${changed ? ' · 변경' : ''}</span>
-                    <span class="text-lg font-extrabold ${item ? 'text-gray-900' : 'text-gray-400'}" style="letter-spacing:0.01em;">${escapeHTML(teacher)}</span>
+                return `<div class="flex flex-col items-start justify-center gap-1 border rounded-lg px-3 py-3 min-h-[64px] ${group.row}">
+                    <span class="font-bold text-sm ${group.text}">${slot}</span>
+                    <span class="text-sm font-medium ${item ? 'text-gray-800' : 'text-gray-400'}">${teacher}</span>
                 </div>`;
             };
             target.className = 'grid grid-cols-1 md:grid-cols-3 gap-3';
-            target.style.width = '100%';
+            target.style.width = '66.6667%';
             target.style.maxWidth = '100%';
             target.innerHTML = groups.map(group => `
-                <section class="space-y-2 border rounded-xl p-3 " style="${group.sectionStyle}">
-                    <div class="text-xs font-bold " style="${group.textStyle}">${group.title}</div>
-                    <div class="space-y-2">
-                        ${group.slots.map(slot => card(slot, group)).join('')}
-                    </div>
+                <section class="space-y-2 border rounded-xl p-3 ${group.section}">
+                    <div class="text-xs font-bold ${group.text}">${group.title}</div>
+                    <div class="space-y-2">${group.slots.map(slot => card(slot, group)).join('')}</div>
                 </section>
             `).join('');
         }
+        loadCheongunSchedule();
         document.getElementById('supervisorDutyForm')?.addEventListener('submit', async (event) => {
             event.preventDefault();
             if (!requireCloudEditor()) return;
@@ -1494,17 +1351,9 @@ window.saveInterviewDate = saveInterviewDate;
                         const kStd = headers.findIndex(h=>h.includes('국어표점')), kPtc = headers.findIndex(h=>h.includes('국어백분위')), kGrd = headers.findIndex(h=>h.includes('국어등급'));
                         const mStd = headers.findIndex(h=>h.includes('수학표점')), mPtc = headers.findIndex(h=>h.includes('수학백분위')), mGrd = headers.findIndex(h=>h.includes('수학등급'));
                         const eGrd = headers.findIndex(h=>h.includes('영어등급')), hGrd = headers.findIndex(h=>h.includes('한국사등급'));
-                        // 원본 성적 시트의 R열(18번째 열), V열(22번째 열)이 각각 제1·제2 선택과목
-                        // CSV 배열은 0부터 시작하므로 R=17, V=21로 직접 참조합니다.
-                        const i1Sub = 17;
-                        const i2Sub = 21;
-                        // 원본 성적 시트 H열과 L열은 각각 국어 과목, 수학 과목입니다.
-                        // CSV 배열은 0부터 시작하므로 H=7, L=11입니다.
-                        const korSubjectIdx = 7;
-                        const mathSubjectIdx = 11;
                         const i1Std = headers.findIndex(h=>h.includes('탐구1표점')), i1Ptc = headers.findIndex(h=>h.includes('탐구1백분위')), i1Grd = headers.findIndex(h=>h.includes('탐구1등급'));
                         const i2Std = headers.findIndex(h=>h.includes('탐구2표점')), i2Ptc = headers.findIndex(h=>h.includes('탐구2백분위')), i2Grd = headers.findIndex(h=>h.includes('탐구2등급'));
-                        const aIdx = headers.findIndex(h=>h.includes('국수탐백분위') || h.includes('국수탐평균') || h.includes('국수탐백분위평균'));
+                        const aIdx = headers.findIndex(h=>h.includes('국수탐백분위'));
 
                         for (let i = headerIndex + 1; i < data.length; i++) {
                             const r = data[i];
@@ -1513,15 +1362,11 @@ window.saveInterviewDate = saveInterviewDate;
                             if(sid && sname) {
                                 if(!studentMap.has(sid)) studentMap.set(sid, { name: sname, records: [] });
                                 studentMap.get(sid).records.push({
-                                    title: r[titleIdx]||'', avg: aIdx >= 0 ? (r[aIdx] ?? '') : '',
-                                    korSubject: korSubjectIdx < r.length && String(r[korSubjectIdx] ?? '').trim() ? String(r[korSubjectIdx]).trim() : '-',
-                                    mathSubject: mathSubjectIdx < r.length && String(r[mathSubjectIdx] ?? '').trim() ? String(r[mathSubjectIdx]).trim() : '-',
+                                    title: r[titleIdx]||'', avg: parseFloat(r[aIdx])||null,
                                     korStd: r[kStd]||'-', korPtc: parseFloat(r[kPtc])||null, korGrd: r[kGrd]||'-',
                                     mathStd: r[mStd]||'-', mathPtc: parseFloat(r[mPtc])||null, mathGrd: r[mGrd]||'-',
                                     engGrd: r[eGrd]||'-', histGrd: r[hGrd]||'-',
-                                    inq1Sub: i1Sub < r.length && String(r[i1Sub] ?? '').trim() ? String(r[i1Sub]).trim() : '-',
                                     inq1Std: r[i1Std]||'-', inq1Ptc: r[i1Ptc]||'-', inq1Grd: r[i1Grd]||'-',
-                                    inq2Sub: i2Sub < r.length && String(r[i2Sub] ?? '').trim() ? String(r[i2Sub]).trim() : '-',
                                     inq2Std: r[i2Std]||'-', inq2Ptc: r[i2Ptc]||'-', inq2Grd: r[i2Grd]||'-'
                                 });
                             }
@@ -1607,13 +1452,11 @@ window.saveInterviewDate = saveInterviewDate;
             tbody.innerHTML = '';
             [...recs].reverse().forEach(r => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${r.title}</td>
-                <td class="text-emerald-700 font-bold bg-emerald-50/40">${r.avg !== '' && r.avg !== null && r.avg !== undefined ? r.avg : '-'}</td>
-                <td>${r.korSubject}</td><td>${r.korStd}</td><td>${r.korPtc ?? '-'}</td><td class="text-red-600 font-bold">${r.korGrd}</td>
-                <td>${r.mathSubject}</td><td>${r.mathStd}</td><td>${r.mathPtc ?? '-'}</td><td class="text-blue-600 font-bold">${r.mathGrd}</td>
+                tr.innerHTML = `<td>${r.title}</td><td>${r.korStd}</td><td>${r.korPtc}</td><td class="text-red-600 font-bold">${r.korGrd}</td>
+                <td>${r.mathStd}</td><td>${r.mathPtc}</td><td class="text-blue-600 font-bold">${r.mathGrd}</td>
                 <td class="font-bold">${r.engGrd}</td><td class="font-bold">${r.histGrd}</td>
-                <td>${r.inq1Sub}</td><td>${r.inq1Std}</td><td>${r.inq1Ptc}</td><td class="text-emerald-600 font-bold">${r.inq1Grd}</td>
-                <td>${r.inq2Sub}</td><td>${r.inq2Std}</td><td>${r.inq2Ptc}</td><td class="text-purple-600 font-bold">${r.inq2Grd}</td>`;
+                <td>${r.inq1Std}</td><td>${r.inq1Ptc}</td><td class="text-emerald-600 font-bold">${r.inq1Grd}</td>
+                <td>${r.inq2Std}</td><td>${r.inq2Ptc}</td><td class="text-purple-600 font-bold">${r.inq2Grd}</td>`;
                 tbody.appendChild(tr);
             });
         }
@@ -2588,40 +2431,5 @@ window.renderSusiResultTable = renderSusiResultTable;;
 
     
     </script>
-
-<div id="noticeEditorOverlay" aria-hidden="true">
-  <section id="noticeEditorPanel" role="dialog" aria-modal="true" aria-labelledby="noticeEditorHeading">
-    <div class="flex items-center justify-between gap-3 px-5 py-4 border-b bg-gray-50">
-      <h2 id="noticeEditorHeading" class="text-lg font-bold text-gray-800">전달 사항 작성</h2>
-      <button type="button" onclick="closeNoticeEditor()" class="text-2xl text-gray-500 hover:text-gray-800" aria-label="닫기">×</button>
-    </div>
-    <div class="p-5 overflow-y-auto">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-        <label class="text-sm font-semibold text-gray-700">날짜<input id="noticeEditorDate" type="date" class="mt-1 w-full border rounded-lg p-2 font-normal"></label>
-        <label class="text-sm font-semibold text-gray-700">제목<input id="noticeEditorTitle" type="text" class="mt-1 w-full border rounded-lg p-2 font-normal" placeholder="전달 사항 제목"></label>
-      </div>
-      <div class="flex flex-wrap gap-2 p-2 bg-gray-100 border rounded-t-lg" aria-label="글 서식 도구">
-        <select id="noticeEditorFont" class="border rounded p-1 text-sm" aria-label="글꼴" onchange="applyNoticeFont(this.value)"><option value="Noto Sans KR">Noto Sans KR</option><option value="Arial">Arial</option><option value="Malgun Gothic">맑은 고딕</option><option value="Batang">바탕</option><option value="Gulim">굴림</option><option value="Gungsuh">궁서</option></select>
-        <select id="noticeEditorSize" class="border rounded p-1 text-sm" aria-label="글자 크기" onchange="applyNoticeSize(this.value)"><option value="12px">12px</option><option value="14px" selected>14px</option><option value="16px">16px</option><option value="18px">18px</option><option value="20px">20px</option><option value="24px">24px</option><option value="28px">28px</option><option value="32px">32px</option></select>
-        <label class="notice-tool inline-flex items-center gap-1" title="글자 색상">글자색 <input type="color" value="#333333" aria-label="글자 색상" onmousedown="saveNoticeSelection()" onchange="applyNoticeColor('text', this.value)" class="w-7 h-7 p-0 border-0 bg-transparent cursor-pointer"></label>
-        <label class="notice-tool inline-flex items-center gap-1" title="글자 배경색">형광색 <input type="color" value="#fff176" aria-label="글자 배경색" onmousedown="saveNoticeSelection()" onchange="applyNoticeColor('highlight', this.value)" class="w-7 h-7 p-0 border-0 bg-transparent cursor-pointer"></label>
-        <button type="button" class="notice-tool font-bold" onmousedown="event.preventDefault()" onclick="formatNotice('bold')" title="굵게">B</button>
-        <button type="button" class="notice-tool underline" onmousedown="event.preventDefault()" onclick="formatNotice('underline')" title="밑줄">U</button>
-        <button type="button" class="notice-tool italic" onmousedown="event.preventDefault()" onclick="formatNotice('italic')" title="기울임">I</button>
-        <button type="button" class="notice-tool" onmousedown="event.preventDefault()" onclick="formatNotice('justifyLeft')" title="왼쪽 정렬">≡←</button>
-        <button type="button" class="notice-tool" onmousedown="event.preventDefault()" onclick="formatNotice('justifyCenter')" title="가운데 정렬">≡↔</button>
-        <button type="button" class="notice-tool" onmousedown="event.preventDefault()" onclick="formatNotice('justifyRight')" title="오른쪽 정렬">→≡</button>
-        <button type="button" class="notice-tool" onmousedown="event.preventDefault()" onclick="formatNotice('insertUnorderedList')" title="글머리 기호">• 목록</button>
-        <button type="button" class="notice-tool" onmousedown="event.preventDefault()" onclick="formatNotice('removeFormat')" title="서식 지우기">서식 지우기</button>
-      </div>
-      <div id="noticeEditorContent" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="전달 사항 내용을 입력하세요. 글자를 선택한 뒤 서식을 적용할 수 있습니다." onmouseup="saveNoticeSelection()" onkeyup="saveNoticeSelection()" class="border border-t-0 rounded-b-lg bg-white"></div>
-    </div>
-    <div class="flex justify-end gap-2 px-5 py-4 border-t bg-gray-50">
-      <button type="button" onclick="closeNoticeEditor()" class="px-4 py-2 rounded-lg border bg-white hover:bg-gray-100">취소</button>
-      <button type="button" onclick="saveNoticeEditor()" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold">저장</button>
-    </div>
-  </section>
-</div>
-
 </body>
 </html>
