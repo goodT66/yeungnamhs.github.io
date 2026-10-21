@@ -715,13 +715,22 @@ function startInterviewDateSync() {
             
 currentUser = user;
 
-// Firebase에 저장된 전달 사항·일정·면접 지도 날짜 실시간 동기화 시작
-startInterviewDateSync();
-startCloudDataSync();
-
-loginBtn.classList.add('hidden');
-userInfo.classList.remove('hidden');
+// 인증 상태를 먼저 화면에 반영합니다. 데이터 동기화 오류가 로그인 UI에 영향을 주지 않도록 분리합니다.
+loginBtn?.classList.add('hidden');
+userInfo?.classList.remove('hidden');
 document.getElementById('userEmail').innerText = user.email;
+
+// Firebase 데이터 실시간 동기화 시작 (동기화 오류가 발생해도 로그인 상태는 유지)
+try {
+    startInterviewDateSync();
+} catch (error) {
+    console.error("면접 날짜 동기화 시작 오류:", error);
+}
+try {
+    startCloudDataSync();
+} catch (error) {
+    console.error("클라우드 데이터 동기화 시작 오류:", error);
+}
 
 
             document.getElementById('authRequiredMock')?.classList.add('hidden');
@@ -764,8 +773,8 @@ if (unsubscribeInterviewDates) {
 }
 
 interviewDateCache = {};
-            loginBtn.classList.remove('hidden');
-            userInfo.classList.add('hidden');
+            loginBtn?.classList.remove('hidden');
+            userInfo?.classList.add('hidden');
 
             document.getElementById('authRequiredMock')?.classList.remove('hidden');
             document.getElementById('mockContent')?.classList.add('hidden');
