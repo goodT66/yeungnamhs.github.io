@@ -96,10 +96,10 @@
 
         <!-- 메인 헤더 바로 아래 메뉴: 버튼별 테두리와 배경색으로 구분 -->
         <nav aria-label="주요 메뉴" class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 pl-0 mb-5 ml-0 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-2">
-            <button type="button" onclick="openAdmissions2028()" class="justify-self-start w-max min-w-0 min-h-[76px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-left text-base xl:text-lg font-extrabold shadow-sm hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-sky-300 transition duration-150" style="background-color:#0f766e !important; color:#ffffff !important; border-color:#115e59 !important;" title="2028 대입 전형 자료">
+            <button type="button" id="admissions2028Button" class="hidden" onclick="openAdmissions2028()" class="justify-self-start w-max min-w-0 min-h-[76px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-left text-base xl:text-lg font-extrabold shadow-sm hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-sky-300 transition duration-150" style="background-color:#0f766e !important; color:#ffffff !important; border-color:#115e59 !important;" title="2028 대입 전형 자료">
                 <span class="shrink-0 text-xl leading-none" aria-hidden="true">🎯</span><span class="min-w-0 leading-snug whitespace-nowrap" style="display:inline-block !important; color:#ffffff !important; visibility:visible !important; opacity:1 !important;">2028 대입</span>
             </button>
-            <button type="button" id="studentLookupButton" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 text-left text-lg xl:text-xl font-extrabold shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-150" title="학생 개별 조회">
+            <button type="button" id="studentLookupButton" class="hidden min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 text-left text-lg xl:text-xl font-extrabold shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-150" title="학생 개별 조회">
                 <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">🧑‍🎓</span><span class="min-w-0 leading-snug">학생 개별 조회</span>
             </button>
             <button type="button" onclick="openClassView()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-left text-lg xl:text-xl font-extrabold shadow-sm hover:bg-emerald-100 hover:border-emerald-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition duration-150">
@@ -749,6 +749,10 @@ function startInterviewDateSync() {
             
 currentUser = user;
 
+// 로그인된 허용 교사에게만 보호 메뉴 표시
+document.getElementById('studentLookupButton')?.classList.remove('hidden');
+document.getElementById('admissions2028Button')?.classList.remove('hidden');
+
 // Firebase에 저장된 전달 사항·일정·면접 지도 날짜 실시간 동기화 시작
 startInterviewDateSync();
 startCloudDataSync();
@@ -790,6 +794,11 @@ document.getElementById('userEmail').innerText = user.email;
             }
         } else {
             currentUser = null;
+            // 로그아웃 시 보호 메뉴를 숨기고 보호 화면을 닫습니다.
+            document.getElementById('studentLookupButton')?.classList.add('hidden');
+            document.getElementById('admissions2028Button')?.classList.add('hidden');
+            ['studentLookupView','admissions2028View'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+            document.getElementById('mainDashboard')?.classList.remove('hidden');
             // 로그아웃 시 실시간 구독 해제
 stopCloudDataSync();
 if (unsubscribeInterviewDates) {
@@ -1099,6 +1108,7 @@ function filterAdmissions2028() {
 }
 function resetAdmissionsFilters(){["admFilterUniversity","admFilterUnit","admFilterType","admFilterName","admFilterCsat"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});filterAdmissions2028();}
 function openAdmissions2028(){
+  if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) { alert("이 메뉴는 허용된 교사 계정으로 로그인한 뒤 이용할 수 있습니다."); return; }
   ["mainDashboard","classView","interviewView","mockView","gradView","susiResultView","studentLookupView","admissions2028View"].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add("hidden");});
   const view=document.getElementById("admissions2028View");if(view)view.classList.remove("hidden");
   loadAdmissions2028();
@@ -3143,6 +3153,8 @@ async function loadStudentInfoRows(force=false){
   return studentInfoLoadPromise;
 }
 async function openStudentLookup(){
+  const user = window.getCurrentUser && window.getCurrentUser();
+  if (!user) { alert("학생 개별 조회는 교사 Google 로그인 후 이용할 수 있습니다."); return; }
   hideAllContentViews();
   document.getElementById('studentLookupView').classList.remove('hidden');
   try{await loadStudentInfoRows();updateLookupGrades();}catch(e){
