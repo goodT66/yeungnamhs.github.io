@@ -3207,7 +3207,7 @@ async function loadStudentInfoRows(force=false){
     let start=0;
     const first=(rows[0]||[]).map(clean).join('');
     if(/학년|반|번호|이름/.test(first)) start=1;
-    studentLookupRows=rows.slice(start).map((r,i)=>{const rankParts=clean(r[4]).split('/');return {grade:clean(r[0]),cls:clean(r[1]),no:clean(r[2]),name:clean(r[3]),grade5:clean(rankParts[0]),grade9:clean(rankParts.slice(1).join('/')),photo:clean(r[5]),rowIndex:i+start+1};})
+    studentLookupRows=rows.slice(start).map((r,i)=>{const rawGrade=clean(r[0]).replace(/학년/g,'');const rankValue=clean(r[4]);const rankParts=rankValue.split('/');const isThirdGrade=rawGrade==='3';return {grade:clean(r[0]),cls:clean(r[1]),no:clean(r[2]),name:clean(r[3]),grade5:isThirdGrade?'':clean(rankParts[0]),grade9:isThirdGrade?rankValue:clean(rankParts.slice(1).join('/')),photo:clean(r[5]),rowIndex:i+start+1};})
       .filter(s=>s.grade&&s.cls&&s.no&&s.name&&/^\d+$/.test(s.grade.replace(/학년/g,'')))
       .map(s=>({...s,grade:s.grade.replace(/학년/g,''),cls:s.cls.replace(/반/g,''),no:s.no.replace(/번/g,'')}));
     if(!studentLookupRows.length) throw new Error('A~D열에서 학생 정보를 찾지 못했습니다.');
