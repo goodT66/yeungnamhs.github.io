@@ -201,6 +201,7 @@
                         <label for="supervisorDutyType" class="block text-sm font-semibold text-gray-700 mb-1">3. 감독 종류</label>
                         <select id="supervisorDutyType" required class="w-full border border-gray-300 rounded-lg p-2" onchange="updateSupervisorDutySlots()">
                             <option value="">선택하세요</option>
+                            <option value="morning">오전 감독</option>
                             <option value="afternoon">오후 감독</option>
                             <option value="night">야자</option>
                             <option value="cheongun">청운관 감독</option>
@@ -1455,6 +1456,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         function editSupervisorDutyFromCard(slot, teacherName) {
             if (!requireCloudEditor()) return;
             const type = slot === '청운관 감독' ? 'cheongun'
+                : slot.startsWith('오전') ? 'morning'
                 : slot.startsWith('오후') ? 'afternoon' : 'night';
             document.getElementById('supervisorModalTitle').textContent = '감독 근무 변경';
             document.getElementById('supervisorDutyDate').value = selectedCalendarDate || todayISO();
@@ -1471,14 +1473,16 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const type = document.getElementById('supervisorDutyType').value;
             const wrap = document.getElementById('supervisorDutySlotWrap');
             const slot = document.getElementById('supervisorDutySlot');
-            const options = type === 'afternoon'
-                ? ['오후1', '오후2']
-                : type === 'night'
-                    ? ['야자1', '야자2', '야자3']
-                    : type === 'cheongun' ? ['청운관 감독'] : [];
+            const options = type === 'morning'
+                ? ['오전1', '오전2']
+                : type === 'afternoon'
+                    ? (new Date((document.getElementById('supervisorDutyDate').value || selectedCalendarDate || todayISO()) + 'T00:00:00').getDay() === 6 ? ['오후1'] : ['오후1', '오후2'])
+                    : type === 'night'
+                        ? ['야자1', '야자2', '야자3']
+                        : type === 'cheongun' ? ['청운관 감독'] : [];
             slot.innerHTML = '<option value="">선택하세요</option>' + options.map(v => `<option value="${v}">${v}</option>`).join('');
             wrap.classList.toggle('hidden', type === '' || type === 'cheongun');
-            slot.required = type === 'afternoon' || type === 'night';
+            slot.required = type === 'morning' || type === 'afternoon' || type === 'night';
         }
         const SUPERVISOR_SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxsT3h1Qt9OYcsY6EL8E2-mQIT-zf2i_3fGQKbVo6bOlcM2II_QrGQL3_frC03r9-Jm/exec';
         const CHEONGUN_SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('청운관감독표')}`;
@@ -1631,20 +1635,21 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
 
                 const nextDateRow = dateRowIndexes.find(idx => idx > r);
                 const blockEnd = nextDateRow === undefined ? values.length : nextDateRow;
-                // 토요일은 G열이 오전, H열이 오후로 분리되어 있습니다.
-                const dutyColumn = weekday === 6 ? 7 : expectedDateColumn;
-                const candidates = [];
-                for (let rr = r + 1; rr < blockEnd; rr++) {
-                    const cell = String((values[rr] || [])[dutyColumn] ?? '').trim();
-                    if (!cell) continue;
-                    if (['오전', '오후', '야간', '날짜', '요일'].includes(cell)) continue;
-                    if (/정기고사|사기간|대체휴일/.test(cell)) continue;
-                    if (/^\d{1,2}$/.test(cell)) continue;
-                    candidates.push(cell.replace(/\s*선생님\s*$/, '').trim());
-                }
-
-                // 평일 표의 교사 이름은 오후 2명 다음 야간 3명 순서입니다.
+                // 토요일은 G열에 오전 감독, H열에 오후 감독이 각각 배정됩니다.
+                const readColumnTeachers = (column) => {
+                    const names = [];
+                    for (let rr = r + 1; rr < blockEnd; rr++) {
+                        const cell = String((values[rr] || [])[column] ?? '').trim();
+                        if (!cell) continue;
+                        if (['오전', '오후', '야간', '날짜', '요일'].includes(cell)) continue;
+                        if (/정기고사|사기간|대체휴일/.test(cell)) continue;
+                        if (/^\d{1,2}$/.test(cell)) continue;
+                        names.push(cell.replace(/\s*선생님\s*$/, '').trim());
+                    }
+                    return names;
+                };
                 if (weekday >= 1 && weekday <= 5) {
+                    const candidates = readColumnTeachers(expectedDateColumn);
                     ['오후1', '오후2'].forEach((slot, i) => {
                         if (candidates[i]) result[slot] = candidates[i];
                     });
@@ -1652,8 +1657,12 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                         if (candidates[i + 2]) result[slot] = candidates[i + 2];
                     });
                 } else if (weekday === 6) {
-                    // 토요일 오후 감독은 H열에 배정된 교사를 오후1로 표시합니다.
-                    if (candidates[0]) result['오후1'] = candidates[0];
+                    const morning = readColumnTeachers(6);
+                    const afternoon = readColumnTeachers(7);
+                    ['오전1', '오전2'].forEach((slot, i) => {
+                        if (morning[i]) result[slot] = morning[i];
+                    });
+                    if (afternoon[0]) result['오후1'] = afternoon[0];
                 }
                 break;
             }
@@ -1682,7 +1691,14 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 return;
             }
 
-            const groups = [
+            const dateParts = String(selectedCalendarDate || '').split('-').map(Number);
+            const isSaturday = dateParts.length === 3 && dateParts.every(Number.isFinite)
+                ? new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2])).getUTCDay() === 6
+                : false;
+            const groups = isSaturday ? [
+                { title: '오전 감독', slots: ['오전1', '오전2'], sectionStyle: 'background-color:#dbeafe;border-color:#93c5fd;', rowStyle: 'background-color:#eff6ff;border-color:#93c5fd;', textStyle: 'color:#1d4ed8;' },
+                { title: '오후 감독', slots: ['오후1'], sectionStyle: 'background-color:#ffedd5;border-color:#fdba74;', rowStyle: 'background-color:#fff7ed;border-color:#fdba74;', textStyle: 'color:#9a3412;' }
+            ] : [
                 { title: '오후 감독', slots: ['오후1', '오후2'], sectionStyle: 'background-color:#ffedd5;border-color:#fdba74;', rowStyle: 'background-color:#fff7ed;border-color:#fdba74;', textStyle: 'color:#9a3412;' },
                 { title: '야자 감독', slots: ['야자1', '야자2', '야자3'], sectionStyle: 'background-color:#ede9fe;border-color:#a78bfa;', rowStyle: 'background-color:#f5f3ff;border-color:#c4b5fd;', textStyle: 'color:#5b21b6;' },
                 { title: '청운관 감독', slots: ['청운관 감독'], sectionStyle: 'background-color:#cffafe;border-color:#67e8f9;', rowStyle: 'background-color:#ecfeff;border-color:#67e8f9;', textStyle: 'color:#155e75;' }
@@ -1699,7 +1715,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     <span class="text-lg font-extrabold ${item ? 'text-gray-900' : 'text-gray-400'}" style="letter-spacing:0.01em;">${escapeHTML(teacher)}</span>
                 </button>`;
             };
-            target.className = 'grid grid-cols-1 md:grid-cols-3 gap-3';
+            target.className = isSaturday ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'grid grid-cols-1 md:grid-cols-3 gap-3';
             target.style.width = '100%';
             target.style.maxWidth = '100%';
             target.innerHTML = groups.map(group => `
