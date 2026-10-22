@@ -21,6 +21,9 @@
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .break-keep { word-break: keep-all; }
+        @media (min-width: 1280px) {
+            nav[aria-label="주요 메뉴"] { grid-template-columns: max-content repeat(6, minmax(0, 1fr)) !important; }
+        }
         .bg-school { background-color: #094b83; }
         .text-school { color: #094b83; }
         .border-school { border-color: #094b83; }
@@ -92,7 +95,7 @@
         </header>
 
         <!-- 메인 헤더 바로 아래 메뉴: 버튼별 테두리와 배경색으로 구분 -->
-        <nav aria-label="주요 메뉴" class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 mb-5 ml-3 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-2">
+        <nav aria-label="주요 메뉴" class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 pl-0 mb-5 ml-0 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-2">
             <button type="button" onclick="openAdmissions2028()" class="justify-self-start w-max min-w-0 min-h-[76px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-left text-base xl:text-lg font-extrabold shadow-sm hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-sky-300 transition duration-150" style="background-color:#0f766e !important; color:#ffffff !important; border-color:#115e59 !important;" title="2028 대입 전형 자료">
                 <span class="shrink-0 text-xl leading-none" aria-hidden="true">🎯</span><span class="min-w-0 leading-snug whitespace-nowrap" style="display:inline-block !important; color:#ffffff !important; visibility:visible !important; opacity:1 !important;">2028 대입</span>
             </button>
@@ -117,7 +120,7 @@
         </nav>
 
         <!-- [화면 1] 메인 메뉴 대시보드 -->
-        <div id="mainDashboard" class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 lg:p-6 bg-transparent min-h-screen items-start">
+        <div id="mainDashboard" class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-0 bg-transparent min-h-screen items-start">
             <!-- 모니터 기준 왼쪽: 전달 사항 -->
             <div class="flex flex-col gap-6 min-w-0 order-2 lg:order-1">
                 <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
