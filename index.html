@@ -884,6 +884,7 @@ window.saveInterviewDate = saveInterviewDate;
     <script>
         const SHEET_ID = '1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM';
         const MOCK_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
+        const STUDENT_INFO_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=750853389`;
         const GRAD_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=졸업생`;
         const SUSI_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026수시`; 
         const INTERVIEW_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026면접`; 
@@ -2736,7 +2737,7 @@ window.renderSusiResultTable = renderSusiResultTable;;
             <select id="lookupStudent" onchange="renderStudentLookupCard()" disabled class="mt-1 block w-full border border-slate-300 rounded-lg p-3 bg-white text-base disabled:bg-slate-100"><option value="">번호-이름 선택</option></select>
           </label>
         </div>
-        <p class="text-xs text-slate-500 mt-3">※ 현재는 화면 디자인 확인용 예시 데이터입니다. 실제 학생 명단 및 상담 내용 시트는 아직 연결되지 않았습니다.</p>
+        <p id="lookupStudentLoadStatus" class="text-xs text-slate-500 mt-3" role="status">학생정보 시트에서 학생 명단을 불러옵니다.</p>
       </div>
       <div id="studentLookupEmpty" class="bg-white rounded-xl border-2 border-dashed border-slate-300 p-10 text-center text-slate-500">
         <div class="text-5xl mb-3">📋</div><p class="text-lg font-bold text-slate-700">학생을 선택해 주세요.</p><p class="text-sm mt-1">선택한 학생의 대학 진학 상담 카드가 이곳에 표시됩니다.</p>
@@ -2746,7 +2747,7 @@ window.renderSusiResultTable = renderSusiResultTable;;
         <div class="grid grid-cols-1 xl:grid-cols-12 gap-5 mb-5">
           <div class="xl:col-span-5 grid grid-cols-1 sm:grid-cols-5 gap-4 items-start">
             <div class="sm:col-span-2 flex flex-col items-center">
-              <div class="w-36 h-48 border border-slate-200 bg-slate-100 flex flex-col items-center justify-center text-slate-400 rounded-sm"><span class="text-5xl">👤</span><span class="text-xs mt-2">학생 사진</span></div>
+              <div id="lookupStudentPhoto" class="w-36 h-48 border border-slate-200 bg-slate-100 flex flex-col items-center justify-center text-slate-400 rounded-sm overflow-hidden"><span class="text-5xl">👤</span><span class="text-xs mt-2">학생 사진</span></div>
               <button type="button" class="mt-2 border border-blue-300 text-blue-700 rounded-lg px-3 py-2 text-sm font-bold hover:bg-blue-50" onclick="alert('사진 업로드 기능은 시트 연결 단계에서 추가합니다.')">📷 사진 변경/업로드</button>
             </div>
             <div class="sm:col-span-3">
@@ -2792,32 +2793,63 @@ window.renderSusiResultTable = renderSusiResultTable;;
 </div>
 
 <script>
-const studentLookupDemo = {
-  '1': { '1': [{no:1,name:'김민서'},{no:2,name:'이준호'},{no:3,name:'박서연'}], '2': [{no:1,name:'최도윤'},{no:2,name:'정하은'}] },
-  '2': { '1': [{no:1,name:'김지우'},{no:2,name:'박준서'}], '2': [{no:1,name:'이서윤'},{no:2,name:'최현우'}] },
-  '3': { '12': [{no:1,name:'이예준'},{no:2,name:'김병준'},{no:3,name:'박지민'}], '1': [{no:1,name:'정민재'},{no:2,name:'윤서아'}] }
-};
-function openStudentLookup(){
-  // 다른 조회 화면과 동일하게, 새 창/모달이 아닌 메인 콘텐츠 영역에서 표시합니다.
+let studentLookupRows = [];
+let studentInfoLoadPromise = null;
+async function loadStudentInfoRows(force=false){
+  if(studentInfoLoadPromise && !force) return studentInfoLoadPromise;
+  studentInfoLoadPromise=fetch(STUDENT_INFO_CSV_URL,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('학생정보 시트 응답 오류');return r.text();}).then(csv=>{
+    const rows=Papa.parse(csv,{skipEmptyLines:true}).data;
+    if(!rows.length) throw new Error('학생정보 시트가 비어 있습니다.');
+    const clean=v=>String(v??'').trim();
+    let start=0;
+    const first=(rows[0]||[]).map(clean).join('');
+    if(/학년|반|번호|이름/.test(first)) start=1;
+    studentLookupRows=rows.slice(start).map((r,i)=>({grade:clean(r[0]),cls:clean(r[1]),no:clean(r[2]),name:clean(r[3]),rank:clean(r[4]),photo:clean(r[5]),rowIndex:i+start+1}))
+      .filter(s=>s.grade&&s.cls&&s.no&&s.name&&/^\d+$/.test(s.grade.replace(/학년/g,'')))
+      .map(s=>({...s,grade:s.grade.replace(/학년/g,''),cls:s.cls.replace(/반/g,''),no:s.no.replace(/번/g,'')}));
+    if(!studentLookupRows.length) throw new Error('A~D열에서 학생 정보를 찾지 못했습니다.');
+    document.getElementById('lookupStudentLoadStatus').textContent=`학생정보 시트에서 ${studentLookupRows.length}명의 학생 정보를 불러왔습니다.`;
+    return studentLookupRows;
+  }).catch(e=>{studentInfoLoadPromise=null;console.error(e);document.getElementById('lookupStudentLoadStatus').textContent='학생 명단을 불러오지 못했습니다. 학생정보 시트의 공유 권한을 확인해 주세요.';throw e;});
+  return studentInfoLoadPromise;
+}
+async function openStudentLookup(){
   hideAllContentViews();
   document.getElementById('studentLookupView').classList.remove('hidden');
+  try{await loadStudentInfoRows();updateLookupGrades();}catch(e){
+    const grade=document.getElementById('lookupGrade');grade.innerHTML='<option value="">학생 명단을 불러오지 못했습니다</option>';grade.disabled=true;
+  }
 }
-function closeStudentLookup(){
-  showMainDashboard();
+function closeStudentLookup(){showMainDashboard();}
+function updateLookupGrades(){
+  const grade=document.getElementById('lookupGrade'),cls=document.getElementById('lookupClass'),student=document.getElementById('lookupStudent');
+  const selected=grade.value;grade.innerHTML='<option value="">학년 선택</option>';
+  [...new Set(studentLookupRows.map(s=>s.grade))].sort((a,b)=>Number(a)-Number(b)).forEach(g=>grade.add(new Option(g+'학년',g)));
+  if(selected && [...grade.options].some(o=>o.value===selected)) grade.value=selected;
+  grade.disabled=false;cls.innerHTML='<option value="">반 선택</option>';cls.disabled=true;student.innerHTML='<option value="">번호-이름 선택</option>';student.disabled=true;
 }
 function updateLookupClasses(){
-  const grade=document.getElementById('lookupGrade').value, cls=document.getElementById('lookupClass'), student=document.getElementById('lookupStudent');
-  cls.innerHTML='<option value="">반 선택</option>'; student.innerHTML='<option value="">번호-이름 선택</option>'; student.disabled=true;
-  const classes=grade?Object.keys(studentLookupDemo[grade]||{}).sort((a,b)=>Number(a)-Number(b)):[];
-  classes.forEach(c=>cls.add(new Option(c+'반',c))); cls.disabled=!grade;
-  document.getElementById('studentLookupCard').classList.add('hidden'); document.getElementById('studentLookupEmpty').classList.remove('hidden');
+  const grade=document.getElementById('lookupGrade').value,cls=document.getElementById('lookupClass'),student=document.getElementById('lookupStudent');
+  cls.innerHTML='<option value="">반 선택</option>';student.innerHTML='<option value="">번호-이름 선택</option>';student.disabled=true;
+  [...new Set(studentLookupRows.filter(s=>s.grade===grade).map(s=>s.cls))].sort((a,b)=>Number(a)-Number(b)).forEach(c=>cls.add(new Option(c+'반',c)));
+  cls.disabled=!grade;document.getElementById('studentLookupCard').classList.add('hidden');document.getElementById('studentLookupEmpty').classList.remove('hidden');
 }
 function updateLookupStudents(){
-  const grade=document.getElementById('lookupGrade').value, cls=document.getElementById('lookupClass').value, student=document.getElementById('lookupStudent');
+  const grade=document.getElementById('lookupGrade').value,cls=document.getElementById('lookupClass').value,student=document.getElementById('lookupStudent');
   student.innerHTML='<option value="">번호-이름 선택</option>';
-  (studentLookupDemo[grade]?.[cls]||[]).forEach(s=>student.add(new Option(`${s.no}번 - ${s.name}`,`${s.no}|${s.name}`)));
-  student.disabled=!(grade&&cls);
-  document.getElementById('studentLookupCard').classList.add('hidden'); document.getElementById('studentLookupEmpty').classList.remove('hidden');
+  studentLookupRows.filter(s=>s.grade===grade&&s.cls===cls).sort((a,b)=>Number(a.no)-Number(b.no)).forEach(s=>student.add(new Option(`${s.no}번 - ${s.name}`,`${s.no}|${s.name}`)));
+  student.disabled=!(grade&&cls);document.getElementById('studentLookupCard').classList.add('hidden');document.getElementById('studentLookupEmpty').classList.remove('hidden');
+}
+function getLookupSelectedStudent(){
+  const grade=document.getElementById('lookupGrade').value,cls=document.getElementById('lookupClass').value,val=document.getElementById('lookupStudent').value;
+  if(!grade||!cls||!val)return null;const [no,name]=val.split('|');
+  return studentLookupRows.find(s=>s.grade===grade&&s.cls===cls&&s.no===no&&s.name===name)||null;
+}
+function setLookupPhoto(photo){
+  const box=document.getElementById('lookupStudentPhoto');if(!box)return;box.innerHTML='';
+  if(photo){let url=photo;const m=photo.match(/drive\.google\.com\/file\/d\/([^/]+)/);if(m)url=`https://drive.google.com/uc?export=view&id=${m[1]}`;
+    const img=document.createElement('img');img.src=url;img.alt='학생 사진';img.className='w-full h-full object-cover';img.onerror=()=>{box.innerHTML='<span class="text-5xl">👤</span><span class="text-xs mt-2">사진을 표시할 수 없습니다</span>';};box.appendChild(img);
+  }else box.innerHTML='<span class="text-5xl">👤</span><span class="text-xs mt-2">학생 사진 없음</span>';
 }
 let lookupMockRows = [];
 let lookupMockLoadPromise = null;
@@ -2835,9 +2867,9 @@ function loadLookupMockRows(){
   }).catch(e=>{console.error(e);lookupMockLoadPromise=null;throw e;}); return lookupMockLoadPromise;
 }
 function lookupCurrentMockRows(){
- const grade=document.getElementById('lookupGrade').value,cls=document.getElementById('lookupClass').value,val=document.getElementById('lookupStudent').value;if(!grade||!cls||!val)return [];
- const [no,name]=val.split('|'); const target=[grade,String(cls).padStart(2,'0'),String(no).padStart(2,'0')].join('');
- return lookupMockRows.filter(r=>{if(r.name.trim()!==name.trim())return false;const id=String(r.id).replace(/\D/g,'');return id===target||id===`${grade}${cls}${no}`||(id.startsWith(grade)&&id.endsWith(String(no).padStart(2,'0'))&&id.includes(String(cls)));});
+ const s=getLookupSelectedStudent();if(!s)return [];
+ const targets=new Set([`${s.grade}${String(s.cls).padStart(2,'0')}${String(s.no).padStart(2,'0')}`,`${s.grade}${s.cls}${s.no}`,`${s.grade}${String(s.cls).padStart(2,'0')}${s.no}`]);
+ return lookupMockRows.filter(r=>{if(r.name.trim()!==s.name.trim())return false;const id=String(r.id).replace(/\D/g,'');return targets.has(id)||(id.startsWith(s.grade)&&id.endsWith(String(s.no).padStart(2,'0'))&&id.includes(String(s.cls)));});
 }
 function lookupSet(id,val){const el=document.getElementById(id);if(el)el.textContent=(val===undefined||val===null||String(val).trim()==='')?'-':String(val);}
 function renderLookupMockScore(){
@@ -2852,9 +2884,11 @@ async function refreshLookupMockExams(){
  try{await loadLookupMockRows();const exams=[...new Set(lookupCurrentMockRows().map(r=>r.exam).filter(Boolean))];sel.innerHTML='<option value="">모의고사 선택</option>';exams.forEach(e=>sel.add(new Option(e,e)));sel.disabled=!exams.length;if(!exams.length){status.textContent='선택한 학생의 성적을 찾지 못했습니다. 학번과 이름 형식을 확인해 주세요.';return;}sel.value=exams[0];renderLookupMockScore();}catch(e){sel.innerHTML='<option value="">성적 자료를 불러오지 못했습니다</option>';status.textContent='모의고사 시트를 읽지 못했습니다. 시트 공유 권한을 확인해 주세요.';}
 }
 function renderStudentLookupCard(){
- const grade=document.getElementById('lookupGrade').value,cls=document.getElementById('lookupClass').value,value=document.getElementById('lookupStudent').value;
- if(!grade||!cls||!value){document.getElementById('studentLookupCard').classList.add('hidden');document.getElementById('studentLookupEmpty').classList.remove('hidden');return;}
- const [no,name]=value.split('|');document.querySelector('[data-info="grade"]').textContent=grade+'학년';document.querySelector('[data-info="classNo"]').textContent=cls+' / '+no;document.querySelector('[data-info="name"]').textContent=name;document.getElementById('studentLookupEmpty').classList.add('hidden');document.getElementById('studentLookupCard').classList.remove('hidden');refreshLookupMockExams();
+ const s=getLookupSelectedStudent();
+ if(!s){document.getElementById('studentLookupCard').classList.add('hidden');document.getElementById('studentLookupEmpty').classList.remove('hidden');return;}
+ document.querySelector('[data-info="grade"]').textContent=s.grade+'학년';document.querySelector('[data-info="classNo"]').textContent=s.cls+' / '+s.no;document.querySelector('[data-info="name"]').textContent=s.name;
+ setLookupPhoto(s.photo);
+ document.getElementById('studentLookupEmpty').classList.add('hidden');document.getElementById('studentLookupCard').classList.remove('hidden');refreshLookupMockExams();
 }
 
 </script>
