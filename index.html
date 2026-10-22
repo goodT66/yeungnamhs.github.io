@@ -1225,9 +1225,89 @@ window.saveInterviewDate = saveInterviewDate;
             slot.required = type === 'afternoon' || type === 'night';
         }
         const SUPERVISOR_SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxsT3h1Qt9OYcsY6EL8E2-mQIT-zf2i_3fGQKbVo6bOlcM2II_QrGQL3_frC03r9-Jm/exec';
+        const CHEONGUN_SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('청운관감독표')}`;
         let supervisorSheetValues = null;
         let supervisorSheetLoadPromise = null;
         let supervisorSheetError = '';
+        let cheongunSheetValues = null;
+        let cheongunSheetLoadPromise = null;
+        let cheongunSheetError = '';
+
+        function parseSupervisorCsv(csvText) {
+            const rows = [];
+            let row = [], cell = '', quoted = false;
+            for (let i = 0; i < csvText.length; i++) {
+                const ch = csvText[i];
+                if (ch === '"') {
+                    if (quoted && csvText[i + 1] === '"') { cell += '"'; i++; }
+                    else quoted = !quoted;
+                } else if (ch === ',' && !quoted) {
+                    row.push(cell); cell = '';
+                } else if ((ch === '\n' || ch === '\r') && !quoted) {
+                    if (ch === '\r' && csvText[i + 1] === '\n') i++;
+                    row.push(cell); rows.push(row); row = []; cell = '';
+                } else cell += ch;
+            }
+            if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+            return rows;
+        }
+
+        async function loadCheongunSupervisorSheet() {
+            if (cheongunSheetValues) return cheongunSheetValues;
+            if (!cheongunSheetLoadPromise) {
+                cheongunSheetLoadPromise = fetch(CHEONGUN_SHEET_CSV_URL, { cache: 'no-store' })
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        return response.text();
+                    })
+                    .then(csv => {
+                        const values = parseSupervisorCsv(csv);
+                        if (!values.length || !values.some(row => row.some(cell => String(cell || '').includes('월')))) {
+                            throw new Error('청운관감독표 시트 데이터를 확인할 수 없습니다. 시트 공유 권한을 확인해 주세요.');
+                        }
+                        cheongunSheetValues = values;
+                        cheongunSheetError = '';
+                        renderSupervisorDutyRoster();
+                        return values;
+                    })
+                    .catch(error => {
+                        cheongunSheetError = error?.message || String(error);
+                        console.error('청운관 감독표 불러오기 오류:', error);
+                        cheongunSheetLoadPromise = null;
+                        renderSupervisorDutyRoster();
+                        return null;
+                    });
+            }
+            return cheongunSheetLoadPromise;
+        }
+
+        function getBaseCheongunDuty(date) {
+            if (!Array.isArray(cheongunSheetValues)) return {};
+            const month = Number(date.slice(5, 7));
+            const day = Number(date.slice(8, 10));
+            const values = cheongunSheetValues;
+            // 청운관 표는 여러 달의 표가 가로로 배치되어 있으며, 각 날짜 바로 아래 행에 감독 교사가 있습니다.
+            const blockStarts = [0, 7, 14];
+            for (const blockStart of blockStarts) {
+                let activeMonth = null;
+                for (let r = 0; r < values.length; r++) {
+                    const row = values[r] || [];
+                    const monthCell = String(row[blockStart] ?? '').trim();
+                    const monthMatch = monthCell.match(/^(\d{1,2})월$/);
+                    if (monthMatch) activeMonth = Number(monthMatch[1]);
+                    if (activeMonth !== month) continue;
+                    for (let c = blockStart + 1; c < blockStart + 6; c++) {
+                        const rawDay = String(row[c] ?? '').trim();
+                        if (Number(rawDay) !== day || !/^\d{1,2}일?$/.test(rawDay)) continue;
+                        const teacher = String((values[r + 1] || [])[c] ?? '').trim();
+                        if (teacher && !/^\d{1,2}일?$/.test(teacher) && !/중간고사|기말고사|대체공휴일|한글날|추석/.test(teacher)) {
+                            return { '청운관 감독': teacher.replace(/\s*선생님\s*$/, '').trim() };
+                        }
+                    }
+                }
+            }
+            return {};
+        }
 
         async function loadSupervisorSheet() {
             if (supervisorSheetValues) return supervisorSheetValues;
@@ -1329,6 +1409,8 @@ window.saveInterviewDate = saveInterviewDate;
             if (!supervisorSheetValues && !supervisorSheetLoadPromise) loadSupervisorSheet();
 
             const base = getBaseSupervisorDuty(selectedCalendarDate);
+            Object.assign(base, getBaseCheongunDuty(selectedCalendarDate));
+            if (!cheongunSheetValues && !cheongunSheetLoadPromise) loadCheongunSupervisorSheet();
             const records = (window.cloudDataStore && window.getCurrentUser && window.getCurrentUser())
                 ? window.cloudDataStore.getSupervisorDuties().filter(item => item.date === selectedCalendarDate)
                 : [];
@@ -1337,8 +1419,9 @@ window.saveInterviewDate = saveInterviewDate;
             // Firebase에 저장된 변경 사항이 기본 스프레드시트 배정보다 우선합니다.
             records.forEach(item => bySlot.set(item.slot, { ...item, source: 'firebase' }));
 
-            if (!supervisorSheetValues && supervisorSheetError) {
-                target.innerHTML = `<p class="text-sm text-red-600">기본 감독표를 불러오지 못했습니다. 연결 및 배포 권한을 확인해 주세요. (${escapeHTML(supervisorSheetError)})</p>`;
+            if ((!supervisorSheetValues && supervisorSheetError) || (!cheongunSheetValues && cheongunSheetError)) {
+                const errors = [supervisorSheetError, cheongunSheetError].filter(Boolean).join(' / ');
+                target.innerHTML = `<p class="text-sm text-red-600">기본 감독표를 불러오지 못했습니다. 연결 및 시트 공유 권한을 확인해 주세요. (${escapeHTML(errors)})</p>`;
                 return;
             }
 
