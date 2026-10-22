@@ -1694,6 +1694,14 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     bySlot.set(item.slot, { ...item, source: 'firebase' });
                 }
             });
+            // 2026-10-24 토요일 감독표: 스프레드시트의 G열은 오전1/오전2,
+            // H열은 오후1 배정입니다. 기존에 잘못 저장된 Firebase 값이 이 날짜의
+            // 기본 배정을 덮어쓰지 않도록 해당 날짜의 세 슬롯을 바로잡습니다.
+            if (selectedCalendarDate === '2026-10-24') {
+                bySlot.set('오전1', { slot: '오전1', teacherName: '문광섭', source: 'sheet' });
+                bySlot.set('오전2', { slot: '오전2', teacherName: '박준형', source: 'sheet' });
+                bySlot.set('오후1', { slot: '오후1', teacherName: '박한솔', source: 'sheet' });
+            }
 
             if ((!supervisorSheetValues && supervisorSheetError) || (!cheongunSheetValues && cheongunSheetError)) {
                 const errors = [supervisorSheetError, cheongunSheetError].filter(Boolean).join(' / ');
