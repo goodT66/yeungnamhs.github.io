@@ -1769,9 +1769,12 @@ window.saveInterviewDate = saveInterviewDate;
                             display: config.format === 'percentile',
                             align: 'top',
                             anchor: 'end',
-                            offset: 4,
+                            // 인접한 월별 데이터 라벨이 겹치지 않도록 3단계로 높이를 분산
+                            offset: (context) => 6 + (context.dataIndex % 3) * 18,
+                            clamp: false,
+                            clip: false,
                             color: config.color,
-                            font: { size: 13, weight: 'bold' },
+                            font: { size: 12, weight: 'bold' },
                             formatter: (value, context) => {
                                 if (value === null || value === undefined) return '';
                                 if (config.format === 'percentile' && config.subjectKey) {
