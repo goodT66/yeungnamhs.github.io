@@ -99,7 +99,7 @@
             <button type="button" onclick="openAdmissions2028()" class="justify-self-start w-max min-w-0 min-h-[76px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-left text-base xl:text-lg font-extrabold shadow-sm hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-sky-300 transition duration-150" style="background-color:#0f766e !important; color:#ffffff !important; border-color:#115e59 !important;" title="2028 대입 전형 자료">
                 <span class="shrink-0 text-xl leading-none" aria-hidden="true">🎯</span><span class="min-w-0 leading-snug whitespace-nowrap" style="display:inline-block !important; color:#ffffff !important; visibility:visible !important; opacity:1 !important;">2028 대입</span>
             </button>
-            <button type="button" onclick="openStudentLookup()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 text-left text-lg xl:text-xl font-extrabold shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-150" title="학생 개별 조회">
+            <button type="button" id="studentLookupButton" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 text-left text-lg xl:text-xl font-extrabold shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-150" title="학생 개별 조회">
                 <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">🧑‍🎓</span><span class="min-w-0 leading-snug">학생 개별 조회</span>
             </button>
             <button type="button" onclick="openClassView()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-left text-lg xl:text-xl font-extrabold shadow-sm hover:bg-emerald-100 hover:border-emerald-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition duration-150">
@@ -3149,6 +3149,15 @@ async function openStudentLookup(){
     const grade=document.getElementById('lookupGrade');grade.innerHTML='<option value="">학생 명단을 불러오지 못했습니다</option>';grade.disabled=true;
   }
 }
+// 학생 개별 조회 버튼의 전역 호출을 명시해 버튼 클릭이 함수 스코프에 영향을 받지 않도록 합니다.
+window.openStudentLookup = openStudentLookup;
+document.addEventListener('DOMContentLoaded', function(){
+  const lookupButton = document.getElementById('studentLookupButton');
+  if (lookupButton) lookupButton.addEventListener('click', function(event){
+    event.preventDefault();
+    window.openStudentLookup();
+  });
+});
 function closeStudentLookup(){showMainDashboard();}
 function updateLookupGrades(){
   const grade=document.getElementById('lookupGrade'),cls=document.getElementById('lookupClass'),student=document.getElementById('lookupStudent');
