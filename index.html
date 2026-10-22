@@ -240,6 +240,7 @@
                 <div class="sticky top-0 z-50 bg-white pt-4 pb-4 border-b border-gray-200 w-full mb-10 shadow-sm" style="height: 500px;">
                     <canvas id="scoreChart"></canvas>
                 </div>
+                <p class="mt-5 mb-2 text-base font-bold text-gray-700">*과목별 성적 추이 버튼을 클릭하시면 과목별 성적 변화를 그래프로 보실 수 있습니다.</p>
                 <div id="subjectTrendButtons" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 my-5 w-full">
                     <button type="button" onclick="renderSubjectTrend('kor')" style="background:#fee2e2;color:#991b1b;border-color:#f87171" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">국어 월별 성적 추이</button>
                     <button type="button" onclick="renderSubjectTrend('math')" style="background:#dbeafe;color:#1e40af;border-color:#60a5fa" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">수학 월별 성적 추이</button>
@@ -1727,12 +1728,12 @@ window.saveInterviewDate = saveInterviewDate;
             if (!sid || !studentMap.has(sid)) return;
             const info = studentMap.get(sid);
             const configs = {
-                kor: { label: '국어 백분위', key: 'korPtc', color: '#ef4444', format: 'percentile' },
-                math: { label: '수학 백분위', key: 'mathPtc', color: '#3b82f6', format: 'percentile' },
+                kor: { label: '국어 백분위', key: 'korPtc', subjectKey: 'korSubject', color: '#ef4444', format: 'percentile' },
+                math: { label: '수학 백분위', key: 'mathPtc', subjectKey: 'mathSubject', color: '#3b82f6', format: 'percentile' },
                 eng: { label: '영어 등급', key: 'engGrd', color: '#8b5cf6', format: 'grade' },
                 hist: { label: '한국사 등급', key: 'histGrd', color: '#f59e0b', format: 'grade' },
-                inq1: { label: '탐구1 백분위', key: 'inq1Ptc', color: '#10b981', format: 'percentile' },
-                inq2: { label: '탐구2 백분위', key: 'inq2Ptc', color: '#a855f7', format: 'percentile' }
+                inq1: { label: '탐구1 백분위', key: 'inq1Ptc', subjectKey: 'inq1Sub', color: '#10b981', format: 'percentile' },
+                inq2: { label: '탐구2 백분위', key: 'inq2Ptc', subjectKey: 'inq2Sub', color: '#a855f7', format: 'percentile' }
             };
             const config = configs[subject];
             if (!config) return;
@@ -1771,7 +1772,15 @@ window.saveInterviewDate = saveInterviewDate;
                             offset: 4,
                             color: config.color,
                             font: { size: 13, weight: 'bold' },
-                            formatter: value => value === null || value === undefined ? '' : value
+                            formatter: (value, context) => {
+                                if (value === null || value === undefined) return '';
+                                if (config.format === 'percentile' && config.subjectKey) {
+                                    const record = info.records[context.dataIndex];
+                                    const subjectName = record && record[config.subjectKey] && record[config.subjectKey] !== '-' ? record[config.subjectKey] : '';
+                                    return subjectName ? [subjectName, value] : [value];
+                                }
+                                return value;
+                            }
                         }
                     },
                     scales: config.format === 'grade' ? { y: { reverse: true, min: 1, max: 9, ticks: { stepSize: 1 } } } : { y: { min: 0, max: 100 } }
