@@ -244,6 +244,20 @@
                     <select id="classSelect" onchange="onClassChange()" class="border border-gray-300 rounded-lg p-2 w-32 bg-white"><option value="">반 선택</option></select>
                     <select id="studentSelect" onchange="renderMockData()" class="border border-gray-300 rounded-lg p-2 w-64 bg-white"><option value="">학생 선택</option></select>
                 </div>
+                <div class="flex flex-col lg:flex-row lg:items-center gap-4 mb-4 p-4 rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-sm">
+                    <div class="flex flex-wrap items-center gap-3 lg:flex-1">
+                        <span class="text-sm font-extrabold text-slate-700">📘 내신 등급</span>
+                        <div class="rounded-xl border-2 border-blue-300 bg-white px-5 py-3 text-center shadow-sm min-w-[125px]">
+                            <div class="text-xs font-extrabold text-blue-700 mb-1">5등급제</div>
+                            <div id="mockGrade5Value" class="text-2xl font-black text-blue-800">-</div>
+                        </div>
+                        <div class="rounded-xl border-2 border-violet-300 bg-white px-5 py-3 text-center shadow-sm min-w-[125px]">
+                            <div class="text-xs font-extrabold text-violet-700 mb-1">9등급제</div>
+                            <div id="mockGrade9Value" class="text-2xl font-black text-violet-800">-</div>
+                        </div>
+                    </div>
+                    <h3 id="mockSelectedStudentTitle" class="text-lg lg:text-xl font-black text-slate-800 lg:text-right">학생을 선택하면 성적 추이가 표시됩니다.</h3>
+                </div>
                 <div class="sticky top-0 z-50 bg-white pt-4 pb-4 border-b border-gray-200 w-full mb-10 shadow-sm" style="height: 500px;">
                     <canvas id="scoreChart"></canvas>
                 </div>
@@ -1963,6 +1977,18 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const sid = document.getElementById('studentSelect').value;
             if (!sid || !studentMap.has(sid)) return;
             const info = studentMap.get(sid), recs = info.records;
+            const studentTitle = document.getElementById('mockSelectedStudentTitle');
+            if (studentTitle) studentTitle.textContent = `${sid} ${info.name} 학생 성적 추이`;
+            const grade5El = document.getElementById('mockGrade5Value');
+            const grade9El = document.getElementById('mockGrade9Value');
+            if (grade5El) grade5El.textContent = '-';
+            if (grade9El) grade9El.textContent = '-';
+            loadStudentInfoRows().then(rows => {
+                const cleanId = v => String(v ?? '').replace(/학년|반|번/g, '').trim();
+                const student = rows.find(s => cleanId(s.grade) === sid.charAt(0) && cleanId(s.cls).padStart(2, '0') === sid.substring(1, 3) && cleanId(s.no).padStart(2, '0') === sid.substring(3, 5) && String(s.name).trim() === String(info.name).trim());
+                if (grade5El) grade5El.textContent = student && student.grade5 ? student.grade5 : '-';
+                if (grade9El) grade9El.textContent = student && student.grade9 ? student.grade9 : '-';
+            }).catch(() => { if (grade5El) grade5El.textContent = '-'; if (grade9El) grade9El.textContent = '-'; });
             const ctx = document.getElementById('scoreChart').getContext('2d');
             if (chartInstance) chartInstance.destroy();
 
@@ -1984,7 +2010,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 options: { 
                     maintainAspectRatio: false, 
                     plugins: { 
-                        title: { display: true, text: `${sid} ${info.name} 학생 성적 추이`, font: {size: 20} },
+                        title: { display: false },
                         datalabels: {
                             display: function(context) { return context.dataset.label === '국수탐 평균'; },
                             align: 'top', anchor: 'end', color: '#10b981', font: { weight: '900', size: 14 },
