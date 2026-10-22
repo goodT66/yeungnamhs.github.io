@@ -2760,14 +2760,18 @@ window.renderSusiResultTable = renderSusiResultTable;;
             </div>
           </div>
           <div class="xl:col-span-7 min-w-0">
-            <h3 class="text-center text-lg font-extrabold mb-2">2027학년도 대학수학능력시험 6월 모의 평가 성적표</h3>
+            <div class="flex flex-col sm:flex-row sm:justify-center sm:items-center gap-2 mb-2">
+              <h3 id="lookupMockTitle" class="text-center text-lg font-extrabold">모의고사 성적표</h3>
+              <select id="lookupMockExam" onchange="renderLookupMockScore()" class="border border-slate-300 rounded-md px-3 py-2 text-sm font-bold bg-white max-w-full" aria-label="모의고사 종류 선택" disabled><option value="">모의고사 종류 불러오는 중...</option></select>
+            </div>
+            <p id="lookupMockStatus" class="text-xs text-slate-500 text-center mb-2" role="status"></p>
             <div class="overflow-x-auto"><table class="score-table w-full text-sm"><thead><tr><th>영역</th><th>국어</th><th>수학</th><th>영어</th><th>한국사</th><th>탐구1</th><th>탐구2</th></tr></thead><tbody>
-              <tr><th>과목명</th><td>화법과 작문</td><td>확률과통계</td><td>공통</td><td>필수</td><td>생명과학Ⅰ</td><td>한국지리</td></tr>
-              <tr><th>표준점수</th><td data-score="standard-ko">102</td><td>106</td><td>-</td><td>-</td><td>56</td><td>51</td></tr>
-              <tr><th>백분위</th><td>48</td><td>53</td><td>-</td><td>-</td><td>70</td><td>59</td></tr>
-              <tr><th>등급</th><td class="text-red-600 font-extrabold">5</td><td class="text-red-600 font-extrabold">5</td><td class="text-red-600 font-extrabold">3</td><td class="text-red-600 font-extrabold">1</td><td class="text-red-600 font-extrabold">4</td><td class="text-red-600 font-extrabold">4</td></tr>
+              <tr><th>과목명</th><td id="lookupMockKorSubject">-</td><td id="lookupMockMathSubject">-</td><td>공통</td><td>필수</td><td id="lookupMockInq1Subject">-</td><td id="lookupMockInq2Subject">-</td></tr>
+              <tr><th>표준점수</th><td id="lookupMockKorStd">-</td><td id="lookupMockMathStd">-</td><td>-</td><td>-</td><td id="lookupMockInq1Std">-</td><td id="lookupMockInq2Std">-</td></tr>
+              <tr><th>백분위</th><td id="lookupMockKorPtc">-</td><td id="lookupMockMathPtc">-</td><td>-</td><td>-</td><td id="lookupMockInq1Ptc">-</td><td id="lookupMockInq2Ptc">-</td></tr>
+              <tr><th>등급</th><td id="lookupMockKorGrd" class="text-red-600 font-extrabold">-</td><td id="lookupMockMathGrd" class="text-red-600 font-extrabold">-</td><td id="lookupMockEngGrd" class="text-red-600 font-extrabold">-</td><td id="lookupMockHistGrd" class="text-red-600 font-extrabold">-</td><td id="lookupMockInq1Grd" class="text-red-600 font-extrabold">-</td><td id="lookupMockInq2Grd" class="text-red-600 font-extrabold">-</td></tr>
             </tbody></table></div>
-            <p class="text-right text-sm mt-2">[국수탐 요약] 백분위 평균: <strong class="text-red-600">55.17</strong> | 등급 평균: <strong class="text-red-600">4.67</strong> | 백분위 합: <strong class="text-red-600">230.0</strong></p>
+            <p class="text-right text-sm mt-2">[국수탐 요약] 백분위 평균: <strong id="lookupMockAvg" class="text-red-600">-</strong> | 등급 평균: <strong id="lookupMockGradeAvg" class="text-red-600">-</strong> | 백분위 합: <strong id="lookupMockSum" class="text-red-600">-</strong></p>
           </div>
         </div>
         <section>
@@ -2815,14 +2819,42 @@ function updateLookupStudents(){
   student.disabled=!(grade&&cls);
   document.getElementById('studentLookupCard').classList.add('hidden'); document.getElementById('studentLookupEmpty').classList.remove('hidden');
 }
+let lookupMockRows = [];
+let lookupMockLoadPromise = null;
+function loadLookupMockRows(){
+  if(lookupMockLoadPromise) return lookupMockLoadPromise;
+  lookupMockLoadPromise=fetch(MOCK_CSV_URL,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('시트 응답 오류');return r.text();}).then(csv=>{
+    const data=Papa.parse(csv,{skipEmptyLines:true}).data; let hi=-1;
+    for(let i=0;i<Math.min(8,data.length);i++){const line=(data[i]||[]).map(v=>String(v||'').trim()).join('');if(line.includes('이름')&&line.includes('국어')){hi=i;break;}}
+    if(hi<0)throw new Error('헤더 행 없음');
+    const headers=(data[hi]||[]).map(v=>String(v||'').replace(/\s+/g,''));
+    const find=(...keys)=>headers.findIndex(h=>keys.some(k=>h.includes(k)));
+    const ix={id:find('Number','학번'),name:find('이름'),exam:1,korSub:7,korStd:find('국어표점'),korPtc:find('국어백분위'),korGrd:find('국어등급'),mathSub:11,mathStd:find('수학표점'),mathPtc:find('수학백분위'),mathGrd:find('수학등급'),engGrd:find('영어등급'),histGrd:find('한국사등급'),i1Sub:17,i1Std:find('탐구1표점'),i1Ptc:find('탐구1백분위'),i1Grd:find('탐구1등급'),i2Sub:21,i2Std:find('탐구2표점'),i2Ptc:find('탐구2백분위'),i2Grd:find('탐구2등급'),avg:find('국수탐백분위','국수탐평균','국수탐백분위평균')};
+    const v=(r,k)=>ix[k]>=0?String(r[ix[k]]??'').trim():'';
+    lookupMockRows=data.slice(hi+1).filter(r=>ix.id>=0&&ix.name>=0&&v(r,'id')&&v(r,'name')).map(r=>({id:v(r,'id'),name:v(r,'name'),exam:String(r[1]??'').trim(),korSubject:v(r,'korSub')||'-',korStd:v(r,'korStd')||'-',korPtc:v(r,'korPtc')||'-',korGrd:v(r,'korGrd')||'-',mathSubject:v(r,'mathSub')||'-',mathStd:v(r,'mathStd')||'-',mathPtc:v(r,'mathPtc')||'-',mathGrd:v(r,'mathGrd')||'-',engGrd:v(r,'engGrd')||'-',histGrd:v(r,'histGrd')||'-',i1Subject:v(r,'i1Sub')||'-',i1Std:v(r,'i1Std')||'-',i1Ptc:v(r,'i1Ptc')||'-',i1Grd:v(r,'i1Grd')||'-',i2Subject:v(r,'i2Sub')||'-',i2Std:v(r,'i2Std')||'-',i2Ptc:v(r,'i2Ptc')||'-',i2Grd:v(r,'i2Grd')||'-',avg:v(r,'avg')||'-'})); return lookupMockRows;
+  }).catch(e=>{console.error(e);lookupMockLoadPromise=null;throw e;}); return lookupMockLoadPromise;
+}
+function lookupCurrentMockRows(){
+ const grade=document.getElementById('lookupGrade').value,cls=document.getElementById('lookupClass').value,val=document.getElementById('lookupStudent').value;if(!grade||!cls||!val)return [];
+ const [no,name]=val.split('|'); const target=[grade,String(cls).padStart(2,'0'),String(no).padStart(2,'0')].join('');
+ return lookupMockRows.filter(r=>{if(r.name.trim()!==name.trim())return false;const id=String(r.id).replace(/\D/g,'');return id===target||id===`${grade}${cls}${no}`||(id.startsWith(grade)&&id.endsWith(String(no).padStart(2,'0'))&&id.includes(String(cls)));});
+}
+function lookupSet(id,val){const el=document.getElementById(id);if(el)el.textContent=(val===undefined||val===null||String(val).trim()==='')?'-':String(val);}
+function renderLookupMockScore(){
+ const sel=document.getElementById('lookupMockExam'),exam=sel.value,row=lookupCurrentMockRows().find(r=>r.exam===exam),status=document.getElementById('lookupMockStatus');
+ if(!row){status.textContent=exam?'선택한 모의고사의 성적 자료를 찾지 못했습니다.':'모의고사를 선택해 주세요.';return;}
+ document.getElementById('lookupMockTitle').textContent=row.exam+' 성적표';
+ const map={lookupMockKorSubject:row.korSubject,lookupMockKorStd:row.korStd,lookupMockKorPtc:row.korPtc,lookupMockKorGrd:row.korGrd,lookupMockMathSubject:row.mathSubject,lookupMockMathStd:row.mathStd,lookupMockMathPtc:row.mathPtc,lookupMockMathGrd:row.mathGrd,lookupMockEngGrd:row.engGrd,lookupMockHistGrd:row.histGrd,lookupMockInq1Subject:row.i1Subject,lookupMockInq1Std:row.i1Std,lookupMockInq1Ptc:row.i1Ptc,lookupMockInq1Grd:row.i1Grd,lookupMockInq2Subject:row.i2Subject,lookupMockInq2Std:row.i2Std,lookupMockInq2Ptc:row.i2Ptc,lookupMockInq2Grd:row.i2Grd,lookupMockAvg:row.avg};Object.entries(map).forEach(([id,v])=>lookupSet(id,v));
+ const pct=[row.korPtc,row.mathPtc,row.i1Ptc,row.i2Ptc].map(Number).filter(Number.isFinite),gr=[row.korGrd,row.mathGrd,row.engGrd,row.histGrd,row.i1Grd,row.i2Grd].map(Number).filter(Number.isFinite);lookupSet('lookupMockSum',pct.length===4?pct.reduce((a,b)=>a+b,0).toFixed(1):'-');lookupSet('lookupMockGradeAvg',gr.length?(gr.reduce((a,b)=>a+b,0)/gr.length).toFixed(2):'-');status.textContent='모의고사 시트에서 불러온 성적입니다.';
+}
+async function refreshLookupMockExams(){
+ const sel=document.getElementById('lookupMockExam'),status=document.getElementById('lookupMockStatus');sel.disabled=true;sel.innerHTML='<option value="">모의고사 종류 불러오는 중...</option>';
+ try{await loadLookupMockRows();const exams=[...new Set(lookupCurrentMockRows().map(r=>r.exam).filter(Boolean))];sel.innerHTML='<option value="">모의고사 선택</option>';exams.forEach(e=>sel.add(new Option(e,e)));sel.disabled=!exams.length;if(!exams.length){status.textContent='선택한 학생의 성적을 찾지 못했습니다. 학번과 이름 형식을 확인해 주세요.';return;}sel.value=exams[0];renderLookupMockScore();}catch(e){sel.innerHTML='<option value="">성적 자료를 불러오지 못했습니다</option>';status.textContent='모의고사 시트를 읽지 못했습니다. 시트 공유 권한을 확인해 주세요.';}
+}
 function renderStudentLookupCard(){
-  const grade=document.getElementById('lookupGrade').value, cls=document.getElementById('lookupClass').value, value=document.getElementById('lookupStudent').value;
-  if(!grade||!cls||!value){document.getElementById('studentLookupCard').classList.add('hidden');document.getElementById('studentLookupEmpty').classList.remove('hidden');return;}
-  const [no,name]=value.split('|');
-  document.querySelector('[data-info="grade"]').textContent=grade+'학년';
-  document.querySelector('[data-info="classNo"]').textContent=cls+' / '+no;
-  document.querySelector('[data-info="name"]').textContent=name;
-  document.getElementById('studentLookupEmpty').classList.add('hidden'); document.getElementById('studentLookupCard').classList.remove('hidden');
+ const grade=document.getElementById('lookupGrade').value,cls=document.getElementById('lookupClass').value,value=document.getElementById('lookupStudent').value;
+ if(!grade||!cls||!value){document.getElementById('studentLookupCard').classList.add('hidden');document.getElementById('studentLookupEmpty').classList.remove('hidden');return;}
+ const [no,name]=value.split('|');document.querySelector('[data-info="grade"]').textContent=grade+'학년';document.querySelector('[data-info="classNo"]').textContent=cls+' / '+no;document.querySelector('[data-info="name"]').textContent=name;document.getElementById('studentLookupEmpty').classList.add('hidden');document.getElementById('studentLookupCard').classList.remove('hidden');refreshLookupMockExams();
 }
 
 </script>
