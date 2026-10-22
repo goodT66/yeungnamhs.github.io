@@ -715,22 +715,13 @@ function startInterviewDateSync() {
             
 currentUser = user;
 
-// 인증 상태를 먼저 화면에 반영합니다. 데이터 동기화 오류가 로그인 UI에 영향을 주지 않도록 분리합니다.
-loginBtn?.classList.add('hidden');
-userInfo?.classList.remove('hidden');
-document.getElementById('userEmail').innerText = user.email;
+// Firebase에 저장된 전달 사항·일정·면접 지도 날짜 실시간 동기화 시작
+startInterviewDateSync();
+startCloudDataSync();
 
-// Firebase 데이터 실시간 동기화 시작 (동기화 오류가 발생해도 로그인 상태는 유지)
-try {
-    startInterviewDateSync();
-} catch (error) {
-    console.error("면접 날짜 동기화 시작 오류:", error);
-}
-try {
-    startCloudDataSync();
-} catch (error) {
-    console.error("클라우드 데이터 동기화 시작 오류:", error);
-}
+loginBtn.classList.add('hidden');
+userInfo.classList.remove('hidden');
+document.getElementById('userEmail').innerText = user.email;
 
 
             document.getElementById('authRequiredMock')?.classList.add('hidden');
@@ -773,8 +764,8 @@ if (unsubscribeInterviewDates) {
 }
 
 interviewDateCache = {};
-            loginBtn?.classList.remove('hidden');
-            userInfo?.classList.add('hidden');
+            loginBtn.classList.remove('hidden');
+            userInfo.classList.add('hidden');
 
             document.getElementById('authRequiredMock')?.classList.remove('hidden');
             document.getElementById('mockContent')?.classList.add('hidden');
@@ -999,32 +990,41 @@ window.saveInterviewDate = saveInterviewDate;
 
 
         function renderNoticeContent(value) {
-            const textarea = document.createElement('textarea');
-            textarea.innerHTML = String(value ?? '');
-            const decoded = textarea.value;
+            const box = document.createElement('textarea');
+            box.innerHTML = String(value ?? '');
+            const decoded = box.value;
             const parsed = new DOMParser().parseFromString(decoded, 'text/html');
-            const allowedTags = new Set(['DIV','P','BR','SPAN','FONT','B','STRONG','I','EM','U','UL','OL','LI','BLOCKQUOTE']);
-            const walk = (node) => {
+            const allowed = new Set(['DIV','P','BR','SPAN','FONT','B','STRONG','I','EM','U','UL','OL','LI','BLOCKQUOTE']);
+            const clean = (node) => {
                 [...node.childNodes].forEach(child => {
                     if (child.nodeType === Node.ELEMENT_NODE) {
-                        walk(child);
-                        if (!allowedTags.has(child.tagName)) {
+                        clean(child);
+                        if (!allowed.has(child.tagName)) {
                             child.replaceWith(document.createTextNode(child.textContent || ''));
-                        } else {
-                            [...child.attributes].forEach(attr => {
-                                if (child.tagName === 'FONT' && ['face','size','color'].includes(attr.name.toLowerCase())) return;
-                                if (attr.name.toLowerCase() === 'style') {
-                                    const safeStyle = attr.value.split(';').filter(rule => /^(color|font-weight|font-style|text-decoration|text-align|line-height)\s*:/i.test(rule.trim())).join(';');
-                                    if (safeStyle) child.setAttribute('style', safeStyle);
-                                    else child.removeAttribute('style');
-                                } else child.removeAttribute(attr.name);
-                            });
+                            return;
                         }
-                    } else if (child.nodeType !== Node.TEXT_NODE) child.remove();
+                        [...child.attributes].forEach(attr => {
+                            const name = attr.name.toLowerCase();
+                            if (child.tagName === 'FONT' && ['face','size','color'].includes(name)) return;
+                            if (name === 'style') {
+                                const safe = attr.value.split(';').filter(rule =>
+                                    /^(font-weight|font-style|text-decoration|text-align|line-height|color)\s*:/i.test(rule.trim())
+                                ).join(';');
+                                if (safe) child.setAttribute('style', safe);
+                                else child.removeAttribute('style');
+                            } else {
+                                child.removeAttribute(attr.name);
+                            }
+                        });
+                    } else if (child.nodeType !== Node.TEXT_NODE) {
+                        child.remove();
+                    }
                 });
             };
-            walk(parsed.body);
-            return parsed.body.innerHTML.replace(/<div><br><\/div>/gi, '<br>').replace(/<\/div>\s*<div>/gi, '<br>');
+            clean(parsed.body);
+            return parsed.body.innerHTML
+                .replace(/<\/div>\s*<div>/gi, '<br>')
+                .replace(/<\/p>\s*<p[^>]*>/gi, '<br>');
         }
 
         function renderAllNotices() {
@@ -1044,7 +1044,7 @@ window.saveInterviewDate = saveInterviewDate;
                 return;
             }
             listEl.innerHTML = selected.map(n => `<li class="rounded-lg border border-gray-100 bg-gray-50 p-3">
-                <div class="flex justify-between items-start gap-3"><div class="min-w-0 flex-1"><div class="font-bold text-gray-800 break-words">${escapeHTML(n.title)}</div><p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap break-words">${renderNoticeContent(n.content)}</p><p class="text-xs text-gray-400 mt-2">등록일: ${escapeHTML(n.date)}</p></div>
+                <div class="flex justify-between items-start gap-3"><div class="min-w-0 flex-1"><div class="font-bold text-gray-800 break-words">${escapeHTML(n.title)}</div><p class="text-sm text-gray-600 mt-1 break-words">${renderNoticeContent(n.content)}</p><p class="text-xs text-gray-400 mt-2">등록일: ${escapeHTML(n.date)}</p></div>
                 <div class="flex gap-1 shrink-0"><button onclick="editNotice('${n.id}')" class="text-xs px-2 py-1 rounded bg-white border hover:bg-blue-50">수정</button><button onclick="deleteNotice('${n.id}')" class="text-xs px-2 py-1 rounded bg-white border text-red-600 hover:bg-red-50">삭제</button></div></div>
             </li>`).join('');
         }
