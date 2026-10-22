@@ -56,7 +56,19 @@
         #studentLookupOverlay .student-lookup-body { background:#f8fafc; padding:16px; }
         @media (min-width:640px) { #studentLookupOverlay { padding:24px; } #studentLookupOverlay .student-lookup-body { padding:28px; } }
 
-    </style>
+    
+        @media print {
+          body * { visibility: hidden !important; }
+          #studentLookupCard, #studentLookupCard * { visibility: visible !important; }
+          #studentLookupCard { display:block !important; position:absolute !important; left:0 !important; top:0 !important; width:100% !important; margin:0 !important; padding:8mm !important; box-sizing:border-box !important; border:0 !important; box-shadow:none !important; background:#fff !important; }
+          #studentLookupCard button, #studentLookupCard select, #studentLookupCard input, #studentLookupCard textarea, #lookupSusiSaveStatus, #lookupSusiSaveButton, #lookupSusiPrintButton { display:none !important; }
+          #studentLookupCard .overflow-x-auto { overflow:visible !important; }
+          #studentLookupCard table { width:100% !important; min-width:0 !important; font-size:9pt !important; border-collapse:collapse !important; }
+          #studentLookupCard th, #studentLookupCard td { border:1px solid #555 !important; padding:4px !important; color:#111 !important; }
+          #studentLookupCard * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+          @page { size:A4 portrait; margin:10mm; }
+        }
+</style>
 </head>
 <body class="min-h-screen flex flex-col items-center pt-10 pb-20 px-4 relative overflow-x-hidden">
 
@@ -3213,7 +3225,7 @@ window.renderSusiResultTable = renderSusiResultTable;;
         <section>
           <div class="flex flex-wrap justify-between items-center gap-2 border-l-4 border-emerald-500 pl-3 mb-3"><h3 class="font-extrabold text-lg text-school">수시 지원 희망 (1~6지망)</h3><span class="text-xs sm:text-sm font-bold text-red-500">※ 상담 내용은 디자인 확인용 예시입니다.</span></div>
           <div class="overflow-x-auto"><table class="w-full text-xs sm:text-sm border-collapse min-w-[1100px]"><thead><tr class="bg-slate-50"><th class="border border-slate-300 p-2">지망</th><th class="border border-slate-300 p-2">대학교</th><th class="border border-slate-300 p-2">전형유형</th><th class="border border-slate-300 p-2">세부전형</th><th class="border border-slate-300 p-2">모집단위</th><th class="border border-slate-300 p-2">모집인원</th><th class="border border-slate-300 p-2">최저학력기준</th><th class="border border-slate-300 p-2">면접/논술 일자</th></tr></thead><tbody id="lookupSusiRows"></tbody></table></div>
-          <div class="flex flex-wrap items-center justify-end gap-3 mt-3"><span id="lookupSusiSaveStatus" class="text-sm text-slate-500" role="status"></span><button type="button" id="lookupSusiSaveButton" onclick="saveLookupSusiPlan()" class="rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-extrabold px-5 py-2.5 shadow-sm">💾 저장하기</button></div>
+          <div class="flex flex-wrap items-center justify-end gap-3 mt-3"><span id="lookupSusiSaveStatus" class="text-sm text-slate-500" role="status"></span><button type="button" id="lookupSusiSaveButton" onclick="saveLookupSusiPlan()" class="rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-extrabold px-5 py-2.5 shadow-sm">💾 저장하기</button><button type="button" id="lookupSusiPrintButton" onclick="printLookupStudentCard()" class="rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold px-5 py-2.5 shadow-sm">🖨️ 인쇄하기</button></div>
           <p class="text-xs text-red-500 text-right mt-3">※ 모집 인원과 수능 최저, 면접/논술 일자 등은 실제 지원하기 전에 학생 스스로 한 번 더 확인해야 합니다.</p>
         </section>
       </div>
@@ -3353,6 +3365,12 @@ async function loadLookupSusiPlan(){
     if(status)status.textContent=saved?'저장된 지원 희망 내용을 불러왔습니다.':'아직 저장된 내용이 없습니다.';
   }catch(e){console.error('지원 희망 불러오기 실패:',e);renderLookupSusiRows([]);if(status)status.textContent='저장된 내용을 불러오지 못했습니다. 입력 후 저장을 시도해 주세요.';}
 }
+function printLookupStudentCard(){
+  const card=document.getElementById('studentLookupCard');
+  if(!card || card.classList.contains('hidden')){alert('먼저 학생을 선택해 대학 진학 상담 카드를 표시해 주세요.');return;}
+  window.print();
+}
+
 async function saveLookupSusiPlan(){
   const s=getLookupSelectedStudent();if(!s){alert('먼저 학생을 선택해 주세요.');return;}
   const user=window.getCurrentUser&&window.getCurrentUser();if(!user){alert('저장하려면 교사 Google 로그인이 필요합니다.');return;}
