@@ -1600,69 +1600,71 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
 
         function getBaseSupervisorDuty(date) {
             if (!Array.isArray(supervisorSheetValues)) return {};
-            const [year, month, day] = date.split('-').map(Number);
+            const [, month, day] = date.split('-').map(Number);
             const values = supervisorSheetValues;
             const monthLabel = `${month}월`;
             const result = {};
 
-            // 요청한 달의 감독표인지 확인합니다.
             const titleMatchesMonth = values.some(row =>
                 (row || []).some(cell => String(cell || '').includes(monthLabel) && String(cell || '').includes('감독'))
             );
             if (!titleMatchesMonth) return result;
 
-            // 날짜 행은 B~H열(배열 인덱스 1~7)에 숫자 날짜가 있는 행입니다.
-            const dateRowIndexes = [];
+            const weekday = new Date(...date.split('-').map(Number).map((v, i) => i === 1 ? v - 1 : v)).getDay();
+            if (weekday === 0) return result; // 일요일은 감독표의 날짜 열에 없음
+
+            const isSaturday = weekday === 6;
+
+            // 평일 날짜는 B~F열, 토요일 날짜는 날짜가 실제로 적힌 셀을 기준으로 찾습니다.
+            // 토요일 G열은 오전/오후 구분, H열은 감독 교사 이름이므로 날짜 열로 취급하지 않습니다.
+            const dateColumns = isSaturday ? [0, 1, 2, 3, 4, 5] : [weekday];
+            const isDayCell = value => {
+                const raw = String(value ?? '').trim();
+                return /^\d{1,2}$/.test(raw) && Number(raw) >= 1 && Number(raw) <= 31;
+            };
+            const rowHasDate = row => dateColumns.some(col => isDayCell((row || [])[col]));
+
+            const matchingRows = [];
             for (let r = 0; r < values.length; r++) {
                 const row = values[r] || [];
-                const hasDay = row.slice(1, 8).some(cell => {
-                    const raw = String(cell ?? '').trim();
-                    const n = Number(raw);
-                    return raw !== '' && Number.isInteger(n) && n >= 1 && n <= 31;
-                });
-                if (hasDay) dateRowIndexes.push(r);
+                const dayMatches = dateColumns.some(col => isDayCell(row[col]) && Number(String(row[col]).trim()) === day);
+                if (dayMatches) matchingRows.push(r);
             }
 
-            const weekday = new Date(year, month - 1, day).getDay(); // 일=0, 월=1, ... 토=6
-            // 평일은 B~F열(인덱스 1~5), 토요일은 G열(인덱스 6)에 날짜가 있습니다.
-            const expectedDateColumn = weekday >= 1 && weekday <= 5 ? weekday : (weekday === 6 ? 6 : -1);
-            if (expectedDateColumn < 0) return result; // 일요일은 감독표의 날짜 열에 없음
+            for (const r of matchingRows) {
+                const nextDateRow = values.findIndex((row, idx) => idx > r && rowHasDate(row));
+                const blockEnd = nextDateRow === -1 ? values.length : nextDateRow;
 
-            for (const r of dateRowIndexes) {
-                const row = values[r] || [];
-                const rawDay = String(row[expectedDateColumn] ?? '').trim();
-                if (Number(rawDay) !== day) continue;
-
-                const nextDateRow = dateRowIndexes.find(idx => idx > r);
-                const blockEnd = nextDateRow === undefined ? values.length : nextDateRow;
-                // 토요일은 G열에 오전 감독, H열에 오후 감독이 각각 배정됩니다.
-                const readColumnTeachers = (column) => {
-                    const names = [];
+                if (isSaturday) {
                     for (let rr = r + 1; rr < blockEnd; rr++) {
-                        const cell = String((values[rr] || [])[column] ?? '').trim();
-                        if (!cell) continue;
-                        if (['오전', '오후', '야간', '날짜', '요일'].includes(cell)) continue;
-                        if (/정기고사|사기간|대체휴일/.test(cell)) continue;
-                        if (/^\d{1,2}$/.test(cell)) continue;
-                        names.push(cell.replace(/\s*선생님\s*$/, '').trim());
+                        const row = values[rr] || [];
+                        const period = String(row[6] ?? '').trim(); // G열: 오전/오후 구분
+                        const teacher = String(row[7] ?? '').replace(/\s*선생님\s*$/, '').trim(); // H열: 감독 이름
+                        if (!teacher) continue;
+                        if (period.includes('오전')) {
+                            if (!result['오전1']) result['오전1'] = teacher;
+                            else if (!result['오전2'] && result['오전1'] !== teacher) result['오전2'] = teacher;
+                        } else if (period.includes('오후')) {
+                            if (!result['오후1']) result['오후1'] = teacher;
+                            else if (!result['오후2'] && result['오후1'] !== teacher) result['오후2'] = teacher;
+                        }
                     }
-                    return names;
-                };
-                if (weekday >= 1 && weekday <= 5) {
-                    const candidates = readColumnTeachers(expectedDateColumn);
+                } else {
+                    const candidates = [];
+                    for (let rr = r + 1; rr < blockEnd; rr++) {
+                        const cell = String((values[rr] || [])[weekday] ?? '').trim();
+                        if (!cell || ['오전', '오후', '야간', '날짜', '요일'].includes(cell)) continue;
+                        if (/정기고사|사기간|대체휴일/.test(cell)) continue;
+                        if (/^\d{1,2}\s*일?$/.test(cell)) continue;
+                        if (/^(월|화|수|목|금|토|일)(요일)?$/.test(cell)) continue;
+                        candidates.push(cell.replace(/\s*선생님\s*$/, '').trim());
+                    }
                     ['오후1', '오후2'].forEach((slot, i) => {
                         if (candidates[i]) result[slot] = candidates[i];
                     });
                     ['야자1', '야자2', '야자3'].forEach((slot, i) => {
                         if (candidates[i + 2]) result[slot] = candidates[i + 2];
                     });
-                } else if (weekday === 6) {
-                    const morning = readColumnTeachers(6);
-                    const afternoon = readColumnTeachers(7);
-                    ['오전1', '오전2'].forEach((slot, i) => {
-                        if (morning[i]) result[slot] = morning[i];
-                    });
-                    if (afternoon[0]) result['오후1'] = afternoon[0];
                 }
                 break;
             }
@@ -1682,26 +1684,24 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 : [];
             const bySlot = new Map();
             Object.entries(base).forEach(([slot, teacherName]) => bySlot.set(slot, { slot, teacherName, source: 'sheet' }));
-            // Firebase에 저장된 변경 사항이 기본 스프레드시트 배정보다 우선합니다.
-            // 단, 토요일 오전 감독 교사가 과거 잘못된 슬롯(오후1/오후2)에 저장된 경우
-            // 해당 오래된 잘못된 매핑은 무시하고 스프레드시트의 G열(오전), H열(오후)을 따릅니다.
+            // Firebase에 저장된 변경 사항은 기본 배정보다 우선합니다.
+            // 다만 스프레드시트에서 오전1/오전2로 읽힌 교사가 예전 데이터에
+            // 오후 슬롯으로 중복 저장된 경우에만 그 잘못된 중복 기록을 무시합니다.
             const isSelectedSaturday = new Date(selectedCalendarDate + 'T00:00:00').getDay() === 6;
+            const baseMorningTeachers = new Set(
+                ['오전1', '오전2']
+                    .map(slot => String(base[slot] || '').replace(/\s*선생님\s*$/, '').trim())
+                    .filter(Boolean)
+            );
             records.forEach(item => {
                 const teacher = String(item.teacherName || '').replace(/\s*선생님\s*$/, '').trim();
-                const isKnownMisassignedSaturdayRecord = isSelectedSaturday &&
-                    ['문광섭', '박준형'].includes(teacher) && ['오후1', '오후2'].includes(item.slot);
-                if (!isKnownMisassignedSaturdayRecord) {
+                const isDuplicateOldSaturdayMorningMapping = isSelectedSaturday &&
+                    ['오후1', '오후2'].includes(item.slot) &&
+                    baseMorningTeachers.has(teacher);
+                if (!isDuplicateOldSaturdayMorningMapping) {
                     bySlot.set(item.slot, { ...item, source: 'firebase' });
                 }
             });
-            // 2026-10-24 토요일 감독표: 스프레드시트의 G열은 오전1/오전2,
-            // H열은 오후1 배정입니다. 기존에 잘못 저장된 Firebase 값이 이 날짜의
-            // 기본 배정을 덮어쓰지 않도록 해당 날짜의 세 슬롯을 바로잡습니다.
-            if (selectedCalendarDate === '2026-10-24') {
-                bySlot.set('오전1', { slot: '오전1', teacherName: '문광섭', source: 'sheet' });
-                bySlot.set('오전2', { slot: '오전2', teacherName: '박준형', source: 'sheet' });
-                bySlot.set('오후1', { slot: '오후1', teacherName: '박한솔', source: 'sheet' });
-            }
 
             if ((!supervisorSheetValues && supervisorSheetError) || (!cheongunSheetValues && cheongunSheetError)) {
                 const errors = [supervisorSheetError, cheongunSheetError].filter(Boolean).join(' / ');
