@@ -1039,6 +1039,26 @@ function populateAdmissionsFilters() {
   const fill = (id, key, label) => { const el=document.getElementById(id); if(!el)return; const current=el.value; const values=[...new Set(admissions2028Rows.map(r=>r[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ko")); el.innerHTML=`<option value="">${label}</option>`+values.map(v=>`<option value="${escapeAdmHtml(v)}">${escapeAdmHtml(v)}</option>`).join(""); if(values.includes(current))el.value=current; };
   fill("admFilterUniversity","university","전체 대학"); fill("admFilterUnit","unit","전체 모집단위");
 }
+function formatAdmissionsCsat(r) {
+  const text = String(r.csat || "");
+  if (r.university !== "경북대학교") return escapeAdmHtml(text);
+  const departments = [
+    "IT대학", "경상대학·사범대학·간호대학·행정학부·자율전공학부",
+    "공과대학·첨단기술융합대학·공학첨단자율학부",
+    "인문대학·사회과학대학·자연과학대학·농업생명과학대학·생활과학대학",
+    "생태환경대학·과학기술대학·자율미래인재학부", "생태환경대학·과학기술대학",
+    "의약학·수의학계열", "의예과·치의예과", "의예과", "치의예과", "수의예과", "약학과",
+    "전자공학부(모바일공학전공)", "지역인재 기초생활수급자 등 대상자전형 간호학과"
+  ];
+  let formatted = escapeAdmHtml(text);
+  // 학과/모집단위 기준이 한 문장 안에 이어진 경북대 일반학과 기준은 항목별로 분리합니다.
+  formatted = formatted.replace(/\. /g, ".<br>").replace(/; /g, ";<br>");
+  departments.sort((a,b)=>b.length-a.length).forEach(dep => {
+    const escaped = escapeAdmHtml(dep);
+    formatted = formatted.split(escaped).join(`<strong>${escaped}</strong>`);
+  });
+  return formatted;
+}
 function filterAdmissions2028() {
   const university=document.getElementById("admFilterUniversity")?.value||"";
   const unit=document.getElementById("admFilterUnit")?.value||"";
@@ -1047,7 +1067,7 @@ function filterAdmissions2028() {
   const csat=(document.getElementById("admFilterCsat")?.value||"").trim().toLowerCase();
   const rows=admissions2028Rows.filter(r=>(!university||r.university===university)&&(!unit||r.unit===unit)&&(!type||r.type===type)&&(!name||String(r.name||"").toLowerCase().includes(name))&&(!csat||String(r.csat||"").toLowerCase().includes(csat)));
   const body=document.getElementById("admTableBody"); if(!body)return;
-  body.innerHTML=rows.length?rows.map(r=>`<tr class="hover:bg-indigo-50 align-top"><td class="border border-gray-200 p-3 font-bold whitespace-nowrap">${escapeAdmHtml(r.university)}</td><td class="border border-gray-200 p-3 whitespace-nowrap">${escapeAdmHtml(r.unit)}</td><td class="border border-gray-200 p-3 whitespace-nowrap">${escapeAdmHtml(r.type)}</td><td class="border border-gray-200 p-3 font-semibold">${escapeAdmHtml(r.name)}</td><td class="border border-gray-200 p-3 whitespace-normal min-w-[280px] leading-6">${escapeAdmHtml(r.evaluation)}</td><td class="border border-gray-200 p-3 whitespace-normal min-w-[300px] leading-6">${escapeAdmHtml(r.csat)}</td></tr>`).join(""):`<tr><td colspan="6" class="p-8 text-center text-gray-500">조건에 맞는 자료가 없습니다.</td></tr>`;
+  body.innerHTML=rows.length?rows.map(r=>`<tr class="hover:bg-indigo-50 align-top"><td class="border border-gray-200 p-3 font-bold whitespace-nowrap">${escapeAdmHtml(r.university)}</td><td class="border border-gray-200 p-3 whitespace-nowrap">${escapeAdmHtml(r.unit)}</td><td class="border border-gray-200 p-3 whitespace-nowrap">${escapeAdmHtml(r.type)}</td><td class="border border-gray-200 p-3 font-semibold">${escapeAdmHtml(r.name)}</td><td class="border border-gray-200 p-3 whitespace-normal min-w-[280px] leading-6">${escapeAdmHtml(r.evaluation)}</td><td class="border border-gray-200 p-3 whitespace-normal min-w-[300px] leading-6">${formatAdmissionsCsat(r)}</td></tr>`).join(""):`<tr><td colspan="6" class="p-8 text-center text-gray-500">조건에 맞는 자료가 없습니다.</td></tr>`;
   const status=document.getElementById("admResultCount"); if(status && !(status.textContent||"").includes("Firebase 연결/권한 확인 필요"))status.textContent=`${rows.length}개 전형 표시 / 전체 ${admissions2028Rows.length}개`;
 }
 function resetAdmissionsFilters(){["admFilterUniversity","admFilterUnit","admFilterType","admFilterName","admFilterCsat"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});filterAdmissions2028();}
