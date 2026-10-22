@@ -1764,8 +1764,20 @@ window.saveInterviewDate = saveInterviewDate;
                     maintainAspectRatio: false,
                     plugins: {
                         title: { display: true, text: `${sid} ${info.name} 학생 ${config.label} 월별 성적 추이`, font: { size: 18, weight: 'bold' } },
-                        legend: { display: true },
-                        datalabels: { display: false }
+                        legend: { display: false },
+                        datalabels: {
+                            display: function(context) { return config.format === 'percentile' && context.dataset.data[context.dataIndex] !== null; },
+                            align: 'top',
+                            anchor: 'end',
+                            offset: 4,
+                            color: config.color,
+                            font: { weight: 'bold', size: 12 },
+                            formatter: function(value, context) {
+                                const record = info.records[context.dataIndex];
+                                const subjectName = config.subjectKey && record ? record[config.subjectKey] : '';
+                                return subjectName ? [subjectName, value] : value;
+                            }
+                        }
                     },
                     scales: config.format === 'grade' ? { y: { reverse: true, min: 1, max: 9, ticks: { stepSize: 1 } } } : { y: { min: 0, max: 100 } }
                 }
