@@ -561,8 +561,8 @@ let noticeCache = [];
 let calendarEventCache = [];
 let supervisorDutyCache = [];
 let unsubscribeSupervisorDuties = null;
-let cheongunScheduleByDate = {};
-let cheongunScheduleLoaded = false;
+window.cheongunScheduleByDate = {};
+window.cheongunScheduleLoaded = false;
 let unsubscribeNotices = null;
 let unsubscribeCalendarEvents = null;
 let noticesReady = false;
@@ -751,7 +751,7 @@ try {
             if (window.mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) {
                 window.populateGradeDropdown();
             }
-            if (window.rawGradData.length > 0) {
+            if (window.rawGradData && window.rawGradData.length > 0) {
                 window.applyGradFilter();
             }
             if (window.classSusiData && window.classSusiData.length > 0 && document.getElementById('classGradeSelect').options.length <= 1) {
