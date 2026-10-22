@@ -240,13 +240,13 @@
                 <div class="sticky top-0 z-50 bg-white pt-4 pb-4 border-b border-gray-200 w-full mb-10 shadow-sm" style="height: 500px;">
                     <canvas id="scoreChart"></canvas>
                 </div>
-                <div id="subjectTrendButtons" class="flex flex-wrap gap-2 my-5">
-                    <button type="button" onclick="renderSubjectTrend('kor')" class="subject-trend-btn px-4 py-2 rounded-lg border bg-white hover:bg-gray-100 font-semibold">국어 월별 성적 추이</button>
-                    <button type="button" onclick="renderSubjectTrend('math')" class="subject-trend-btn px-4 py-2 rounded-lg border bg-white hover:bg-gray-100 font-semibold">수학 월별 성적 추이</button>
-                    <button type="button" onclick="renderSubjectTrend('eng')" class="subject-trend-btn px-4 py-2 rounded-lg border bg-white hover:bg-gray-100 font-semibold">영어 월별 성적 추이</button>
-                    <button type="button" onclick="renderSubjectTrend('hist')" class="subject-trend-btn px-4 py-2 rounded-lg border bg-white hover:bg-gray-100 font-semibold">한국사 월별 성적 추이</button>
-                    <button type="button" onclick="renderSubjectTrend('inq1')" class="subject-trend-btn px-4 py-2 rounded-lg border bg-white hover:bg-gray-100 font-semibold">탐구1 월별 성적 추이</button>
-                    <button type="button" onclick="renderSubjectTrend('inq2')" class="subject-trend-btn px-4 py-2 rounded-lg border bg-white hover:bg-gray-100 font-semibold">탐구2 월별 성적 추이</button>
+                <div id="subjectTrendButtons" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 my-5 w-full">
+                    <button type="button" onclick="renderSubjectTrend('kor')" style="background:#fee2e2;color:#991b1b;border-color:#f87171" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">국어 월별 성적 추이</button>
+                    <button type="button" onclick="renderSubjectTrend('math')" style="background:#dbeafe;color:#1e40af;border-color:#60a5fa" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">수학 월별 성적 추이</button>
+                    <button type="button" onclick="renderSubjectTrend('eng')" style="background:#ede9fe;color:#5b21b6;border-color:#a78bfa" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">영어 월별 성적 추이</button>
+                    <button type="button" onclick="renderSubjectTrend('hist')" style="background:#fef3c7;color:#92400e;border-color:#fbbf24" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">한국사 월별 성적 추이</button>
+                    <button type="button" onclick="renderSubjectTrend('inq1')" style="background:#d1fae5;color:#065f46;border-color:#34d399" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">탐구1 월별 성적 추이</button>
+                    <button type="button" onclick="renderSubjectTrend('inq2')" style="background:#fae8ff;color:#86198f;border-color:#e879f9" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">탐구2 월별 성적 추이</button>
                 </div>
                 <div id="subjectTrendChartContainer" class="hidden w-full mb-8 bg-white border rounded-lg p-4" style="height:360px;">
                     <canvas id="subjectTrendChart"></canvas>
@@ -1762,8 +1762,17 @@ window.saveInterviewDate = saveInterviewDate;
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        title: { display: true, text: `${sid} ${info.name} 학생 ${config.label} 월별 성적 추이`, font: { size: 18 } },
-                        legend: { display: true }
+                        title: { display: true, text: `${sid} ${info.name} 학생 ${config.label} 월별 성적 추이`, font: { size: 18, weight: 'bold' } },
+                        legend: { display: true },
+                        datalabels: {
+                            display: config.format === 'percentile',
+                            align: 'top',
+                            anchor: 'end',
+                            offset: 4,
+                            color: config.color,
+                            font: { size: 13, weight: 'bold' },
+                            formatter: value => value === null || value === undefined ? '' : value
+                        }
                     },
                     scales: config.format === 'grade' ? { y: { reverse: true, min: 1, max: 9, ticks: { stepSize: 1 } } } : { y: { min: 0, max: 100 } }
                 }
