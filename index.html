@@ -46,6 +46,12 @@
         .notice-tool:hover { background:#eff6ff; border-color:#93c5fd; }
         #noticeEditorContent ul { list-style:disc; padding-left:1.5rem; }
         #noticeEditorContent ol { list-style:decimal; padding-left:1.5rem; }
+        /* 학생 개별 조회 모달은 Tailwind 유틸리티 로딩 순서와 관계없이 표시 */
+        #studentLookupOverlay { display:none; position:fixed; inset:0; z-index:20000; background:rgba(15,23,42,.62); align-items:flex-start; justify-content:center; padding:12px; overflow-y:auto; box-sizing:border-box; }
+        #studentLookupOverlay.is-open { display:flex !important; }
+        #studentLookupOverlay .student-lookup-panel { width:100%; max-width:1500px; margin:8px auto; background:#fff; border:2px solid #094b83; border-radius:16px; box-shadow:0 24px 70px rgba(0,0,0,.3); overflow:hidden; }
+        #studentLookupOverlay .student-lookup-body { background:#f8fafc; padding:16px; }
+        @media (min-width:640px) { #studentLookupOverlay { padding:24px; } #studentLookupOverlay .student-lookup-body { padding:28px; } }
 
     </style>
 </head>
@@ -2710,13 +2716,13 @@ window.renderSusiResultTable = renderSusiResultTable;;
 
 
 <!-- 학생 개별 조회: 디자인 시안(현재는 예시 데이터 표시) -->
-<div id="studentLookupOverlay" class="hidden fixed inset-0 z-[200] bg-slate-900/60 items-start justify-center p-3 sm:p-6 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="studentLookupTitle">
-  <section class="bg-white w-full max-w-7xl rounded-2xl shadow-2xl border-2 border-school overflow-hidden my-2 sm:my-4">
+<div id="studentLookupOverlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="studentLookupTitle">
+  <section class="student-lookup-panel">
     <div class="bg-school text-white px-5 py-4 flex items-center justify-between gap-3">
       <div><h2 id="studentLookupTitle" class="text-xl sm:text-2xl font-black">🧑‍🎓 학생 개별 조회</h2><p class="text-blue-100 text-sm mt-1">학년, 반, 번호-이름을 선택하면 해당 학생의 대학 진학 상담 카드가 표시됩니다.</p></div>
       <button type="button" onclick="closeStudentLookup()" class="text-white text-3xl leading-none hover:text-blue-200" aria-label="닫기">×</button>
     </div>
-    <div class="p-4 sm:p-7 bg-slate-50">
+    <div class="student-lookup-body">
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-5">
         <div class="flex items-center gap-2 mb-3"><span class="w-1.5 h-6 rounded-full bg-blue-700"></span><h3 class="font-extrabold text-slate-800">조회할 학생 선택</h3></div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -2790,12 +2796,12 @@ const studentLookupDemo = {
 };
 function openStudentLookup(){
   const overlay=document.getElementById('studentLookupOverlay');
-  overlay.classList.remove('hidden'); overlay.classList.add('flex');
+  overlay.classList.remove('hidden'); overlay.classList.add('is-open');
   document.body.style.overflow='hidden';
 }
 function closeStudentLookup(){
   const overlay=document.getElementById('studentLookupOverlay');
-  overlay.classList.add('hidden'); overlay.classList.remove('flex');
+  overlay.classList.remove('is-open'); overlay.classList.add('hidden');
   document.body.style.overflow='';
 }
 function updateLookupClasses(){
@@ -2821,7 +2827,7 @@ function renderStudentLookupCard(){
   document.querySelector('[data-info="name"]').textContent=name;
   document.getElementById('studentLookupEmpty').classList.add('hidden'); document.getElementById('studentLookupCard').classList.remove('hidden');
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('studentLookupOverlay').classList.contains('hidden'))closeStudentLookup();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('studentLookupOverlay').classList.contains('is-open'))closeStudentLookup();});
 document.getElementById('studentLookupOverlay').addEventListener('click',e=>{if(e.target.id==='studentLookupOverlay')closeStudentLookup();});
 </script>
 
