@@ -61,7 +61,11 @@
           body * { visibility: hidden !important; }
           #studentLookupCard, #studentLookupCard * { visibility: visible !important; }
           #studentLookupCard { display:block !important; position:absolute !important; left:0 !important; top:0 !important; width:100% !important; margin:0 !important; padding:8mm !important; box-sizing:border-box !important; border:0 !important; box-shadow:none !important; background:#fff !important; }
-          #studentLookupCard button, #studentLookupCard select, #studentLookupCard input, #studentLookupCard textarea, #lookupSusiSaveStatus, #lookupSusiSaveButton, #lookupSusiPrintButton { display:none !important; }
+          #studentLookupCard button, #studentLookupCard select, #lookupSusiSaveStatus, #lookupSusiSaveButton, #lookupSusiPrintButton { display:none !important; }
+          #studentLookupCard input, #studentLookupCard textarea { display:block !important; visibility:visible !important; width:100% !important; min-width:0 !important; border:0 !important; box-shadow:none !important; background:transparent !important; color:#111 !important; padding:2px !important; resize:none !important; overflow:visible !important; font:inherit !important; -webkit-appearance:none !important; appearance:none !important; }
+          #studentLookupCard textarea { white-space:pre-wrap !important; }
+          #studentLookupCard input::placeholder, #studentLookupCard textarea::placeholder { color:transparent !important; }
+          #studentLookupCard th, #studentLookupCard td { overflow-wrap:anywhere !important; }
           #studentLookupCard .overflow-x-auto { overflow:visible !important; }
           #studentLookupCard table { width:100% !important; min-width:0 !important; font-size:9pt !important; border-collapse:collapse !important; }
           #studentLookupCard th, #studentLookupCard td { border:1px solid #555 !important; padding:4px !important; color:#111 !important; }
