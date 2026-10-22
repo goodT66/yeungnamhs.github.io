@@ -1765,26 +1765,7 @@ window.saveInterviewDate = saveInterviewDate;
                     plugins: {
                         title: { display: true, text: `${sid} ${info.name} 학생 ${config.label} 월별 성적 추이`, font: { size: 18, weight: 'bold' } },
                         legend: { display: true },
-                        datalabels: {
-                            display: config.format === 'percentile',
-                            align: 'top',
-                            anchor: 'end',
-                            // 인접한 월별 데이터 라벨이 겹치지 않도록 3단계로 높이를 분산
-                            offset: (context) => 6 + (context.dataIndex % 3) * 18,
-                            clamp: false,
-                            clip: false,
-                            color: config.color,
-                            font: { size: 12, weight: 'bold' },
-                            formatter: (value, context) => {
-                                if (value === null || value === undefined) return '';
-                                if (config.format === 'percentile' && config.subjectKey) {
-                                    const record = info.records[context.dataIndex];
-                                    const subjectName = record && record[config.subjectKey] && record[config.subjectKey] !== '-' ? record[config.subjectKey] : '';
-                                    return subjectName ? [subjectName, value] : [value];
-                                }
-                                return value;
-                            }
-                        }
+                        datalabels: { display: false }
                     },
                     scales: config.format === 'grade' ? { y: { reverse: true, min: 1, max: 9, ticks: { stepSize: 1 } } } : { y: { min: 0, max: 100 } }
                 }
