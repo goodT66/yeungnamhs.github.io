@@ -1441,11 +1441,27 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         }
         function openSupervisorModal() {
             if (!requireCloudEditor()) return;
+            document.getElementById('supervisorModalTitle').textContent = '감독 변경';
             document.getElementById('supervisorDutyDate').value = selectedCalendarDate || todayISO();
             document.getElementById('supervisorDutyTeacher').value = '';
             document.getElementById('supervisorDutyType').value = '';
             document.getElementById('supervisorDutySlot').innerHTML = '<option value="">선택하세요</option>';
             document.getElementById('supervisorDutySlotWrap').classList.add('hidden');
+            document.getElementById('supervisorModal').classList.remove('hidden');
+        }
+
+        // 감독 근무표의 교사 카드를 누르면 '+ 근무 변경'과 같은 입력 창을
+        // 현재 날짜·근무 구분·세부 근무·교사 이름이 미리 입력된 상태로 엽니다.
+        function editSupervisorDutyFromCard(slot, teacherName) {
+            if (!requireCloudEditor()) return;
+            const type = slot === '청운관 감독' ? 'cheongun'
+                : slot.startsWith('오후') ? 'afternoon' : 'night';
+            document.getElementById('supervisorModalTitle').textContent = '감독 근무 변경';
+            document.getElementById('supervisorDutyDate').value = selectedCalendarDate || todayISO();
+            document.getElementById('supervisorDutyTeacher').value = String(teacherName || '').replace(/\s*선생님\s*$/, '').trim();
+            document.getElementById('supervisorDutyType').value = type;
+            updateSupervisorDutySlots();
+            if (type !== 'cheongun') document.getElementById('supervisorDutySlot').value = slot;
             document.getElementById('supervisorModal').classList.remove('hidden');
         }
         function closeSupervisorModal() {
@@ -1677,10 +1693,11 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     ? `${String(item.teacherName).replace(/\s*선생님\s*$/, '').trim()} 선생님`
                     : '—';
                 const changed = item?.source === 'firebase';
-                return `<div class="flex flex-row items-center gap-4 border rounded-lg px-4 py-3 min-h-[64px] " style="${group.rowStyle}">
+                const rawTeacher = item?.teacherName ? String(item.teacherName).replace(/\s*선생님\s*$/, '').trim() : '';
+                return `<button type="button" onclick="editSupervisorDutyFromCard('${slot}', '${escapeHTML(rawTeacher).replace(/'/g, '&#39;')}')" aria-label="${slot} 근무 변경" title="눌러서 근무 변경" class="w-full text-left flex flex-row items-center gap-4 border rounded-lg px-4 py-3 min-h-[64px] cursor-pointer hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-indigo-400" style="${group.rowStyle}">
                     <span class="font-bold text-sm flex-shrink-0 " style="${group.textStyle}">${slot}${changed ? ' · 변경' : ''}</span>
                     <span class="text-lg font-extrabold ${item ? 'text-gray-900' : 'text-gray-400'}" style="letter-spacing:0.01em;">${escapeHTML(teacher)}</span>
-                </div>`;
+                </button>`;
             };
             target.className = 'grid grid-cols-1 md:grid-cols-3 gap-3';
             target.style.width = '100%';
@@ -1724,6 +1741,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             }
         });
         window.openSupervisorModal = openSupervisorModal;
+        window.editSupervisorDutyFromCard = editSupervisorDutyFromCard;
         window.closeSupervisorModal = closeSupervisorModal;
         window.updateSupervisorDutySlots = updateSupervisorDutySlots;
 
