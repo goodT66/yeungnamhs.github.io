@@ -891,7 +891,7 @@ window.saveInterviewDate = saveInterviewDate;
 
         // 화면 전환 시 메인 대시보드와 각 조회 화면 중 하나만 표시합니다.
         function hideAllContentViews() {
-            ['mainDashboard', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView']
+            ['mainDashboard', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView', 'studentLookupView']
                 .forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.classList.add('hidden');
@@ -2715,12 +2715,12 @@ window.renderSusiResultTable = renderSusiResultTable;;
 
 
 
-<!-- 학생 개별 조회: 디자인 시안(현재는 예시 데이터 표시) -->
-<div id="studentLookupOverlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="studentLookupTitle">
-  <section class="student-lookup-panel">
-    <div class="bg-school text-white px-5 py-4 flex items-center justify-between gap-3">
-      <div><h2 id="studentLookupTitle" class="text-xl sm:text-2xl font-black">🧑‍🎓 학생 개별 조회</h2><p class="text-blue-100 text-sm mt-1">학년, 반, 번호-이름을 선택하면 해당 학생의 대학 진학 상담 카드가 표시됩니다.</p></div>
-      <button type="button" onclick="closeStudentLookup()" class="text-white text-3xl leading-none hover:text-blue-200" aria-label="닫기">×</button>
+<!-- 학생 개별 조회: 반별 조회 화면과 같은 방식으로 본문 영역에 표시 -->
+<div id="studentLookupView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-blue-600">
+  <section>
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b gap-3">
+      <div><h2 id="studentLookupTitle" class="text-2xl font-bold text-gray-800">🧑‍🎓 학생 개별 조회</h2><p class="text-gray-600 text-sm mt-1">학년, 반, 번호-이름을 선택하면 해당 학생의 대학 진학 상담 카드가 표시됩니다.</p></div>
+      <button type="button" onclick="closeStudentLookup()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"><span>◀</span> 메인 화면으로</button>
     </div>
     <div class="student-lookup-body">
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-5">
@@ -2784,7 +2784,6 @@ window.renderSusiResultTable = renderSusiResultTable;;
         </section>
       </div>
     </div>
-    <div class="border-t bg-white px-5 py-3 flex justify-end"><button type="button" onclick="closeStudentLookup()" class="px-5 py-2 rounded-lg bg-school text-white font-bold hover:bg-blue-800">닫기</button></div>
   </section>
 </div>
 
@@ -2795,14 +2794,12 @@ const studentLookupDemo = {
   '3': { '12': [{no:1,name:'이예준'},{no:2,name:'김병준'},{no:3,name:'박지민'}], '1': [{no:1,name:'정민재'},{no:2,name:'윤서아'}] }
 };
 function openStudentLookup(){
-  const overlay=document.getElementById('studentLookupOverlay');
-  overlay.classList.remove('hidden'); overlay.classList.add('is-open');
-  document.body.style.overflow='hidden';
+  // 다른 조회 화면과 동일하게, 새 창/모달이 아닌 메인 콘텐츠 영역에서 표시합니다.
+  hideAllContentViews();
+  document.getElementById('studentLookupView').classList.remove('hidden');
 }
 function closeStudentLookup(){
-  const overlay=document.getElementById('studentLookupOverlay');
-  overlay.classList.remove('is-open'); overlay.classList.add('hidden');
-  document.body.style.overflow='';
+  showMainDashboard();
 }
 function updateLookupClasses(){
   const grade=document.getElementById('lookupGrade').value, cls=document.getElementById('lookupClass'), student=document.getElementById('lookupStudent');
@@ -2827,8 +2824,7 @@ function renderStudentLookupCard(){
   document.querySelector('[data-info="name"]').textContent=name;
   document.getElementById('studentLookupEmpty').classList.add('hidden'); document.getElementById('studentLookupCard').classList.remove('hidden');
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('studentLookupOverlay').classList.contains('is-open'))closeStudentLookup();});
-document.getElementById('studentLookupOverlay').addEventListener('click',e=>{if(e.target.id==='studentLookupOverlay')closeStudentLookup();});
+
 </script>
 
 </body>
