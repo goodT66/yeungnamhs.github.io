@@ -579,6 +579,7 @@ import {
     deleteDoc,
     onSnapshot,
     getDocs,
+    getDoc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -632,6 +633,11 @@ let noticesReady = false;
 let calendarEventsReady = false;
 window.getCurrentUser = () => currentUser;
 window.getInterviewDateCache = () => interviewDateCache;
+// 학생별 수시 지원 희망 자료의 Firestore 접근은 Firebase 모듈 범위에서 처리합니다.
+window.studentSusiPlanStore = {
+    load: async (studentId) => { const snap = await getDoc(doc(db, "studentSusiPlans", studentId)); return snap.exists() ? snap.data() : null; },
+    save: async (studentId, payload) => setDoc(doc(db, "studentSusiPlans", studentId), { ...payload, updatedAt: serverTimestamp() }, { merge: true })
+};
 
 // 전달 사항과 일정도 브라우저 로컬 저장소가 아닌 Firestore에 저장합니다.
 window.cloudDataStore = {
@@ -3206,14 +3212,8 @@ window.renderSusiResultTable = renderSusiResultTable;;
         </div>
         <section>
           <div class="flex flex-wrap justify-between items-center gap-2 border-l-4 border-emerald-500 pl-3 mb-3"><h3 class="font-extrabold text-lg text-school">수시 지원 희망 (1~6지망)</h3><span class="text-xs sm:text-sm font-bold text-red-500">※ 상담 내용은 디자인 확인용 예시입니다.</span></div>
-          <div class="overflow-x-auto"><table class="w-full text-xs sm:text-sm border-collapse min-w-[900px]"><thead><tr class="bg-slate-50"><th class="border border-slate-300 p-2">지망</th><th class="border border-slate-300 p-2">대학교</th><th class="border border-slate-300 p-2">전형유형</th><th class="border border-slate-300 p-2">세부전형</th><th class="border border-slate-300 p-2">모집단위</th><th class="border border-slate-300 p-2">모집인원</th><th class="border border-slate-300 p-2">최저학력기준</th><th class="border border-slate-300 p-2">면접/논술 일자</th></tr></thead><tbody id="lookupSusiRows">
-            <tr><td class="border border-slate-300 p-2">1</td><td class="border border-slate-300 p-2 font-bold">영남대학교(경산)</td><td class="border border-slate-300 p-2">학생부위주(교과)</td><td class="border border-slate-300 p-2">[학생부교과]기회균형전형(일반)</td><td class="border border-slate-300 p-2 font-bold">정보통신공학전공</td><td class="border border-slate-300 p-2 text-blue-600 font-bold">3</td><td class="border border-slate-300 p-2 text-left">국어, 수학, 영어, 사회/과학탐구 중 상위 2개 영역 등급 합이 9 이내</td><td class="border border-slate-300 p-2 text-red-600">-</td></tr>
-            <tr><td class="border border-slate-300 p-2">2</td><td class="border border-slate-300 p-2 font-bold">연세대학교(미래)</td><td class="border border-slate-300 p-2">학생부위주(교과)</td><td class="border border-slate-300 p-2">학생부교과(기회균형전형)</td><td class="border border-slate-300 p-2 font-bold">기후에너지시스템공학부</td><td class="border border-slate-300 p-2 text-blue-600 font-bold">5</td><td class="border border-slate-300 p-2 text-left">-</td><td class="border border-slate-300 p-2 text-red-600">-</td></tr>
-            <tr><td class="border border-slate-300 p-2">3</td><td class="border border-slate-300 p-2 font-bold">연세대학교(미래)</td><td class="border border-slate-300 p-2">학생부위주(종합)</td><td class="border border-slate-300 p-2">학생부종합(기초생활연세한마음전형)</td><td class="border border-slate-300 p-2 font-bold">소프트웨어학부</td><td class="border border-slate-300 p-2 text-blue-600 font-bold">3</td><td class="border border-slate-300 p-2 text-left">-</td><td class="border border-slate-300 p-2 text-red-600">-</td></tr>
-            <tr><td class="border border-slate-300 p-2">4</td><td class="border border-slate-300 p-2 font-bold">연세대학교(미래)</td><td class="border border-slate-300 p-2">학생부위주(종합)</td><td class="border border-slate-300 p-2">학생부종합(학교생활우수자)</td><td class="border border-slate-300 p-2 font-bold">소프트웨어학부</td><td class="border border-slate-300 p-2 text-blue-600 font-bold">7</td><td class="border border-slate-300 p-2 text-left">-</td><td class="border border-slate-300 p-2 text-red-600">-</td></tr>
-            <tr><td class="border border-slate-300 p-2">5</td><td class="border border-slate-300 p-2 font-bold">고려대학교(세종)</td><td class="border border-slate-300 p-2">학생부위주(종합)</td><td class="border border-slate-300 p-2">학생부종합(크림슨인재전형)</td><td class="border border-slate-300 p-2 font-bold">빅데이터사이언스학부</td><td class="border border-slate-300 p-2 text-blue-600 font-bold">14</td><td class="border border-slate-300 p-2 text-left">-</td><td class="border border-slate-300 p-2 text-red-600">-</td></tr>
-            <tr><td class="border border-slate-300 p-2">6</td><td class="border border-slate-300 p-2 font-bold">경북대학교(대구)</td><td class="border border-slate-300 p-2">학생부위주(종합)</td><td class="border border-slate-300 p-2">학생부종합(일반학생전형)</td><td class="border border-slate-300 p-2 font-bold">인공지능시스템학과</td><td class="border border-slate-300 p-2 text-blue-600 font-bold">11</td><td class="border border-slate-300 p-2 text-left">국어, 영어, 탐구영역 중 상위 1개 등급과 수학 영역 등급 합이 6 이내</td><td class="border border-slate-300 p-2 text-red-600">-</td></tr>
-          </tbody></table></div>
+          <div class="overflow-x-auto"><table class="w-full text-xs sm:text-sm border-collapse min-w-[1100px]"><thead><tr class="bg-slate-50"><th class="border border-slate-300 p-2">지망</th><th class="border border-slate-300 p-2">대학교</th><th class="border border-slate-300 p-2">전형유형</th><th class="border border-slate-300 p-2">세부전형</th><th class="border border-slate-300 p-2">모집단위</th><th class="border border-slate-300 p-2">모집인원</th><th class="border border-slate-300 p-2">최저학력기준</th><th class="border border-slate-300 p-2">면접/논술 일자</th></tr></thead><tbody id="lookupSusiRows"></tbody></table></div>
+          <div class="flex flex-wrap items-center justify-end gap-3 mt-3"><span id="lookupSusiSaveStatus" class="text-sm text-slate-500" role="status"></span><button type="button" id="lookupSusiSaveButton" onclick="saveLookupSusiPlan()" class="rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-extrabold px-5 py-2.5 shadow-sm">💾 저장하기</button></div>
           <p class="text-xs text-red-500 text-right mt-3">※ 모집 인원과 수능 최저, 면접/논술 일자 등은 실제 지원하기 전에 학생 스스로 한 번 더 확인해야 합니다.</p>
         </section>
       </div>
@@ -3323,6 +3323,48 @@ async function refreshLookupMockExams(){
  const sel=document.getElementById('lookupMockExam'),status=document.getElementById('lookupMockStatus');sel.disabled=true;sel.innerHTML='<option value="">모의고사 종류 불러오는 중...</option>';
  try{await loadLookupMockRows();const exams=[...new Set(lookupCurrentMockRows().map(r=>r.exam).filter(Boolean))];sel.innerHTML='<option value="">모의고사 선택</option>';exams.forEach(e=>sel.add(new Option(e,e)));sel.disabled=!exams.length;if(!exams.length){status.textContent='선택한 학생의 성적을 찾지 못했습니다. 학번과 이름 형식을 확인해 주세요.';return;}sel.value=exams[0];renderLookupMockScore();}catch(e){sel.innerHTML='<option value="">성적 자료를 불러오지 못했습니다</option>';status.textContent='모의고사 시트를 읽지 못했습니다. 시트 공유 권한을 확인해 주세요.';}
 }
+const LOOKUP_SUSI_FIELDS = [
+  ['university','대학교'],['type','전형 유형'],['detail','세부 전형'],['unit','모집 단위'],['recruitment','모집 인원'],['csat','최저학력기준'],['date','면접/논술 일자']
+];
+function lookupSusiDocId(s){return `${s.grade}_${String(s.cls).padStart(2,'0')}_${String(s.no).padStart(2,'0')}`;}
+function renderLookupSusiRows(values=[]){
+  const body=document.getElementById('lookupSusiRows'); if(!body)return; body.innerHTML='';
+  for(let i=0;i<6;i++){
+    const row=values[i]||{}; const tr=document.createElement('tr');
+    const n=document.createElement('td'); n.className='border border-slate-300 p-2 text-center font-bold'; n.textContent=String(i+1); tr.appendChild(n);
+    LOOKUP_SUSI_FIELDS.forEach(([key,label])=>{
+      const td=document.createElement('td');td.className='border border-slate-300 p-1';
+      const input=document.createElement(key==='csat'?'textarea':'input');
+      if(key==='csat'){input.rows=2;input.className='w-full min-w-[150px] border border-slate-200 rounded p-2 resize-y';}
+      else {input.type='text';input.className='w-full min-w-[90px] border border-slate-200 rounded p-2';}
+      input.dataset.susiField=key;input.dataset.susiRow=String(i);input.setAttribute('aria-label',`${i+1}지망 ${label}`);input.placeholder=label;input.value=String(row[key]??'');
+      td.appendChild(input);tr.appendChild(td);
+    });body.appendChild(tr);
+  }
+}
+async function loadLookupSusiPlan(){
+  const s=getLookupSelectedStudent();if(!s)return;
+  const status=document.getElementById('lookupSusiSaveStatus'); if(status)status.textContent='저장된 지원 희망 내용을 불러오는 중…';
+  renderLookupSusiRows([]);
+  try{
+    const saved=await window.studentSusiPlanStore.load(lookupSusiDocId(s));
+    if(getLookupSelectedStudent()!==s && lookupSusiDocId(getLookupSelectedStudent()||{})!==lookupSusiDocId(s))return;
+    renderLookupSusiRows(saved&&Array.isArray(saved.choices)?saved.choices:[]);
+    if(status)status.textContent=saved?'저장된 지원 희망 내용을 불러왔습니다.':'아직 저장된 내용이 없습니다.';
+  }catch(e){console.error('지원 희망 불러오기 실패:',e);renderLookupSusiRows([]);if(status)status.textContent='저장된 내용을 불러오지 못했습니다. 입력 후 저장을 시도해 주세요.';}
+}
+async function saveLookupSusiPlan(){
+  const s=getLookupSelectedStudent();if(!s){alert('먼저 학생을 선택해 주세요.');return;}
+  const user=window.getCurrentUser&&window.getCurrentUser();if(!user){alert('저장하려면 교사 Google 로그인이 필요합니다.');return;}
+  const btn=document.getElementById('lookupSusiSaveButton'),status=document.getElementById('lookupSusiSaveStatus');
+  const choices=Array.from({length:6},(_,i)=>{const item={};LOOKUP_SUSI_FIELDS.forEach(([key])=>{const el=document.querySelector(`[data-susi-row="${i}"][data-susi-field="${key}"]`);item[key]=el?el.value.trim():'';});return item;});
+  if(btn){btn.disabled=true;btn.textContent='저장 중…';}if(status)status.textContent='Firebase에 저장하는 중…';
+  try{await window.studentSusiPlanStore.save(lookupSusiDocId(s),{student:{grade:s.grade,cls:s.cls,no:s.no,name:s.name},choices,updatedBy:user.email||''});if(status)status.textContent='Firebase 저장 완료';alert(`${s.grade}학년 ${s.cls}반 ${s.no}번 ${s.name} 학생의 수시 지원 희망 내용을 저장했습니다.`);}
+  catch(e){console.error('지원 희망 Firebase 저장 실패:',e);if(status)status.textContent='저장 실패';alert(`Firebase 저장에 실패했습니다. Firestore 보안 규칙과 로그인 권한을 확인해 주세요.\n${e?.code||e?.message||''}`);}
+  finally{if(btn){btn.disabled=false;btn.textContent='💾 저장하기';}}
+}
+window.saveLookupSusiPlan=saveLookupSusiPlan;
+
 function renderStudentLookupCard(){
  const s=getLookupSelectedStudent();
  if(!s){document.getElementById('studentLookupCard').classList.add('hidden');document.getElementById('studentLookupEmpty').classList.remove('hidden');return;}
@@ -3330,7 +3372,7 @@ function renderStudentLookupCard(){
  document.querySelector('[data-info="grade5"]').textContent=s.grade5||'-';
  document.querySelector('[data-info="grade9"]').textContent=s.grade9||'-';
  setLookupPhoto(s.photo);
- document.getElementById('studentLookupEmpty').classList.add('hidden');document.getElementById('studentLookupCard').classList.remove('hidden');refreshLookupMockExams();
+ document.getElementById('studentLookupEmpty').classList.add('hidden');document.getElementById('studentLookupCard').classList.remove('hidden');refreshLookupMockExams();loadLookupSusiPlan();
 }
 
 </script>
