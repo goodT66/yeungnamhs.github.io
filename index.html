@@ -1683,7 +1683,17 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const bySlot = new Map();
             Object.entries(base).forEach(([slot, teacherName]) => bySlot.set(slot, { slot, teacherName, source: 'sheet' }));
             // Firebase에 저장된 변경 사항이 기본 스프레드시트 배정보다 우선합니다.
-            records.forEach(item => bySlot.set(item.slot, { ...item, source: 'firebase' }));
+            // 단, 토요일 오전 감독 교사가 과거 잘못된 슬롯(오후1/오후2)에 저장된 경우
+            // 해당 오래된 잘못된 매핑은 무시하고 스프레드시트의 G열(오전), H열(오후)을 따릅니다.
+            const isSelectedSaturday = new Date(selectedCalendarDate + 'T00:00:00').getDay() === 6;
+            records.forEach(item => {
+                const teacher = String(item.teacherName || '').replace(/\s*선생님\s*$/, '').trim();
+                const isKnownMisassignedSaturdayRecord = isSelectedSaturday &&
+                    ['문광섭', '박준형'].includes(teacher) && ['오후1', '오후2'].includes(item.slot);
+                if (!isKnownMisassignedSaturdayRecord) {
+                    bySlot.set(item.slot, { ...item, source: 'firebase' });
+                }
+            });
 
             if ((!supervisorSheetValues && supervisorSheetError) || (!cheongunSheetValues && cheongunSheetError)) {
                 const errors = [supervisorSheetError, cheongunSheetError].filter(Boolean).join(' / ');
