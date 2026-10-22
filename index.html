@@ -240,6 +240,17 @@
                 <div class="sticky top-0 z-50 bg-white pt-4 pb-4 border-b border-gray-200 w-full mb-10 shadow-sm" style="height: 500px;">
                     <canvas id="scoreChart"></canvas>
                 </div>
+                <div id="subjectTrendButtons" class="flex flex-wrap gap-2 my-5">
+                    <button type="button" onclick="renderSubjectTrend('kor')" class="subject-trend-btn px-4 py-2 rounded-lg border bg-white hover:bg-gray-100 font-semibold">국어 월별 성적 추이</button>
+                    <button type="button" onclick="renderSubjectTrend('math')" class="subject-trend-btn px-4 py-2 rounded-lg border bg-white hover:bg-gray-100 font-semibold">수학 월별 성적 추이</button>
+                    <button type="button" onclick="renderSubjectTrend('eng')" class="subject-trend-btn px-4 py-2 rounded-lg border bg-white hover:bg-gray-100 font-semibold">영어 월별 성적 추이</button>
+                    <button type="button" onclick="renderSubjectTrend('hist')" class="subject-trend-btn px-4 py-2 rounded-lg border bg-white hover:bg-gray-100 font-semibold">한국사 월별 성적 추이</button>
+                    <button type="button" onclick="renderSubjectTrend('inq1')" class="subject-trend-btn px-4 py-2 rounded-lg border bg-white hover:bg-gray-100 font-semibold">탐구1 월별 성적 추이</button>
+                    <button type="button" onclick="renderSubjectTrend('inq2')" class="subject-trend-btn px-4 py-2 rounded-lg border bg-white hover:bg-gray-100 font-semibold">탐구2 월별 성적 추이</button>
+                </div>
+                <div id="subjectTrendChartContainer" class="hidden w-full mb-8 bg-white border rounded-lg p-4" style="height:360px;">
+                    <canvas id="subjectTrendChart"></canvas>
+                </div>
                 <div id="tableContainer" class="hidden w-full overflow-x-auto pb-4">
                     <table class="score-table w-full text-sm">
                         <thead>
@@ -1709,6 +1720,62 @@ window.saveInterviewDate = saveInterviewDate;
             });
         }
         window.renderMockData = renderMockData;
+
+        let subjectTrendChartInstance = null;
+        function renderSubjectTrend(subject) {
+            const sid = document.getElementById('studentSelect').value;
+            if (!sid || !studentMap.has(sid)) return;
+            const info = studentMap.get(sid);
+            const configs = {
+                kor: { label: '국어 백분위', key: 'korPtc', color: '#ef4444', format: 'percentile' },
+                math: { label: '수학 백분위', key: 'mathPtc', color: '#3b82f6', format: 'percentile' },
+                eng: { label: '영어 등급', key: 'engGrd', color: '#8b5cf6', format: 'grade' },
+                hist: { label: '한국사 등급', key: 'histGrd', color: '#f59e0b', format: 'grade' },
+                inq1: { label: '탐구1 백분위', key: 'inq1Ptc', color: '#10b981', format: 'percentile' },
+                inq2: { label: '탐구2 백분위', key: 'inq2Ptc', color: '#a855f7', format: 'percentile' }
+            };
+            const config = configs[subject];
+            if (!config) return;
+            const values = info.records.map(r => {
+                const raw = r[config.key];
+                if (raw === null || raw === undefined || raw === '' || raw === '-') return null;
+                const value = parseFloat(raw);
+                return Number.isFinite(value) ? value : null;
+            });
+            document.getElementById('subjectTrendChartContainer').classList.remove('hidden');
+            if (subjectTrendChartInstance) subjectTrendChartInstance.destroy();
+            subjectTrendChartInstance = new Chart(document.getElementById('subjectTrendChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: info.records.map(r => r.title),
+                    datasets: [{
+                        label: config.label,
+                        data: values,
+                        borderColor: config.color,
+                        backgroundColor: config.color,
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        spanGaps: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: `${sid} ${info.name} 학생 ${config.label} 월별 성적 추이`, font: { size: 18 } },
+                        legend: { display: true }
+                    },
+                    scales: config.format === 'grade' ? { y: { reverse: true, min: 1, max: 9, ticks: { stepSize: 1 } } } : { y: { min: 0, max: 100 } }
+                }
+            });
+            document.querySelectorAll('.subject-trend-btn').forEach(button => {
+                button.classList.remove('bg-blue-600', 'text-white');
+                button.classList.add('bg-white');
+            });
+            const clicked = Array.from(document.querySelectorAll('.subject-trend-btn')).find(button => button.getAttribute('onclick') === `renderSubjectTrend('${subject}')`);
+            if (clicked) { clicked.classList.remove('bg-white'); clicked.classList.add('bg-blue-600', 'text-white'); }
+        }
+        window.renderSubjectTrend = renderSubjectTrend;
 
         // =====================================================================
         // [기능 2] 졸업생 수시 결과 스크립트
