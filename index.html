@@ -561,8 +561,8 @@ let noticeCache = [];
 let calendarEventCache = [];
 let supervisorDutyCache = [];
 let unsubscribeSupervisorDuties = null;
-window.cheongunScheduleByDate = {};
-window.cheongunScheduleLoaded = false;
+let cheongunScheduleByDate = {};
+let cheongunScheduleLoaded = false;
 let unsubscribeNotices = null;
 let unsubscribeCalendarEvents = null;
 let noticesReady = false;
@@ -742,7 +742,7 @@ document.getElementById('userEmail').innerText = user.email;
             if (window.mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) {
                 window.populateGradeDropdown();
             }
-            if (window.rawGradData && window.rawGradData.length > 0) {
+            if (window.rawGradData.length > 0) {
                 window.applyGradFilter();
             }
             if (window.classSusiData && window.classSusiData.length > 0 && document.getElementById('classGradeSelect').options.length <= 1) {
@@ -988,45 +988,6 @@ window.saveInterviewDate = saveInterviewDate;
             }
         };
 
-
-        function renderNoticeContent(value) {
-            const box = document.createElement('textarea');
-            box.innerHTML = String(value ?? '');
-            const decoded = box.value;
-            const parsed = new DOMParser().parseFromString(decoded, 'text/html');
-            const allowed = new Set(['DIV','P','BR','SPAN','FONT','B','STRONG','I','EM','U','UL','OL','LI','BLOCKQUOTE']);
-            const clean = (node) => {
-                [...node.childNodes].forEach(child => {
-                    if (child.nodeType === Node.ELEMENT_NODE) {
-                        clean(child);
-                        if (!allowed.has(child.tagName)) {
-                            child.replaceWith(document.createTextNode(child.textContent || ''));
-                            return;
-                        }
-                        [...child.attributes].forEach(attr => {
-                            const name = attr.name.toLowerCase();
-                            if (child.tagName === 'FONT' && ['face','size','color'].includes(name)) return;
-                            if (name === 'style') {
-                                const safe = attr.value.split(';').filter(rule =>
-                                    /^(font-weight|font-style|text-decoration|text-align|line-height|color)\s*:/i.test(rule.trim())
-                                ).join(';');
-                                if (safe) child.setAttribute('style', safe);
-                                else child.removeAttribute('style');
-                            } else {
-                                child.removeAttribute(attr.name);
-                            }
-                        });
-                    } else if (child.nodeType !== Node.TEXT_NODE) {
-                        child.remove();
-                    }
-                });
-            };
-            clean(parsed.body);
-            return parsed.body.innerHTML
-                .replace(/<\/div>\s*<div>/gi, '<br>')
-                .replace(/<\/p>\s*<p[^>]*>/gi, '<br>');
-        }
-
         function renderAllNotices() {
             ['grade3', 'dept'].forEach(renderNoticeCategory);
         }
@@ -1044,7 +1005,7 @@ window.saveInterviewDate = saveInterviewDate;
                 return;
             }
             listEl.innerHTML = selected.map(n => `<li class="rounded-lg border border-gray-100 bg-gray-50 p-3">
-                <div class="flex justify-between items-start gap-3"><div class="min-w-0 flex-1"><div class="font-bold text-gray-800 break-words">${escapeHTML(n.title)}</div><p class="text-sm text-gray-600 mt-1 break-words">${renderNoticeContent(n.content)}</p><p class="text-xs text-gray-400 mt-2">등록일: ${escapeHTML(n.date)}</p></div>
+                <div class="flex justify-between items-start gap-3"><div class="min-w-0 flex-1"><div class="font-bold text-gray-800 break-words">${escapeHTML(n.title)}</div><p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap break-words">${escapeHTML(n.content)}</p><p class="text-xs text-gray-400 mt-2">등록일: ${escapeHTML(n.date)}</p></div>
                 <div class="flex gap-1 shrink-0"><button onclick="editNotice('${n.id}')" class="text-xs px-2 py-1 rounded bg-white border hover:bg-blue-50">수정</button><button onclick="deleteNotice('${n.id}')" class="text-xs px-2 py-1 rounded bg-white border text-red-600 hover:bg-red-50">삭제</button></div></div>
             </li>`).join('');
         }
@@ -1162,7 +1123,7 @@ window.saveInterviewDate = saveInterviewDate;
 
         // 공개된 Google 스프레드시트의 '청운관감독표' 값을 읽어 날짜별 감독을 구성합니다.
         async function loadCheongunSchedule() {
-            if (window.cheongunScheduleLoaded) return;
+            if (cheongunScheduleLoaded) return;
             const spreadsheetId = '1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM';
             const sheetGid = '757003230';
             const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json&gid=${sheetGid}`;
@@ -1204,8 +1165,8 @@ window.saveInterviewDate = saveInterviewDate;
                         }
                     });
                 }
-                window.cheongunScheduleByDate = schedule;
-                window.cheongunScheduleLoaded = true;
+                cheongunScheduleByDate = schedule;
+                cheongunScheduleLoaded = true;
                 renderSupervisorDutyRoster();
             } catch (error) {
                 console.warn('청운관감독표를 불러오지 못했습니다. 시트가 웹에 공개되어 있는지 확인해 주세요.', error);
@@ -1237,8 +1198,8 @@ window.saveInterviewDate = saveInterviewDate;
                 return;
             }
             // 스프레드시트 배정은 기본값으로 표시하되, 시스템에서 직접 수정한 배정이 있으면 그 값을 우선합니다.
-            if (!bySlot.has('청운관 감독') && window.cheongunScheduleByDate[selectedCalendarDate]) {
-                bySlot.set('청운관 감독', { slot: '청운관 감독', teacherName: window.cheongunScheduleByDate[selectedCalendarDate], source: 'spreadsheet' });
+            if (!bySlot.has('청운관 감독') && cheongunScheduleByDate[selectedCalendarDate]) {
+                bySlot.set('청운관 감독', { slot: '청운관 감독', teacherName: cheongunScheduleByDate[selectedCalendarDate], source: 'spreadsheet' });
             }
             const groups = [
                 { title: '오후 감독', slots: ['오후1', '오후2'], section: 'bg-amber-50 border-amber-200', row: 'bg-white border-amber-100', text: 'text-amber-800' },
