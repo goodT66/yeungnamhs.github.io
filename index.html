@@ -88,7 +88,7 @@
                     🔑 교사 인증 (Google 로그인)
                 </button>
                 <div id="userInfo" class="hidden text-white text-sm">
-                    <span id="userEmail" class="font-bold mr-2"></span>
+                    <span id="userTeacherName" class="font-bold mr-1"></span><span id="userEmail" class="font-bold mr-2"></span>
                     <button onclick="logout()" class="text-xs bg-red-500 hover:bg-red-600 px-2 py-1 rounded">로그아웃</button>
                 </div>
             </div>
@@ -584,10 +584,23 @@ import {
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
 
+    const TEACHER_NAMES = {
+        "kcs7810@yeungnam.hs.kr": "김창식",
+        "blackr1@yeungnam.hs.kr": "노진석",
+        "hjh2555@yeungnam.hs.kr": "한지훈",
+        "moglry@yeungnam.hs.kr": "류승현",
+        "beta@yeungnam.hs.kr": "정선우",
+        "hbkim9799@yeungnam.hs.kr": "김화백",
+        "hyunho0701@yeungnam.hs.kr": "이현호",
+        "pyscom71@yeungnam.hs.kr": "박용수",
+        "iter86@yeungnam.hs.kr": "이현재",
+        "sergio@yeungnam.hs.kr": "정원길"
+    };
+
     const ALLOWED_EMAILS = [
         "jjoeun32@gmail.com",
         "jjoeun32@yeungnam.hs.kr",
-        "beta@yeungnam.hs.kr"
+        ...Object.keys(TEACHER_NAMES)
     ];
 
     
@@ -758,6 +771,8 @@ startCloudDataSync();
 
 loginBtn.classList.add('hidden');
 userInfo.classList.remove('hidden');
+document.getElementById('userTeacherName').innerText =
+    TEACHER_NAMES[user.email] ? `${TEACHER_NAMES[user.email]}선생님` : '';
 document.getElementById('userEmail').innerText = user.email;
 
 
