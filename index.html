@@ -1298,7 +1298,8 @@ window.saveInterviewDate = saveInterviewDate;
                     if (activeMonth !== month) continue;
                     for (let c = blockStart + 1; c < blockStart + 6; c++) {
                         const rawDay = String(row[c] ?? '').trim();
-                        if (Number(rawDay) !== day || !/^\d{1,2}일?$/.test(rawDay)) continue;
+                        const dayMatch = rawDay.match(/^(\d{1,2})\s*일?$/);
+                        if (!dayMatch || Number(dayMatch[1]) !== day) continue;
                         const teacher = String((values[r + 1] || [])[c] ?? '').trim();
                         if (teacher && !/^\d{1,2}일?$/.test(teacher) && !/중간고사|기말고사|대체공휴일|한글날|추석/.test(teacher)) {
                             return { '청운관 감독': teacher.replace(/\s*선생님\s*$/, '').trim() };
