@@ -1504,13 +1504,18 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const cells = [];
-            for (let i=0; i<firstDay; i++) cells.push('<div class="min-h-12"></div>');
+            for (let i=0; i<firstDay; i++) cells.push('<div class="min-h-20 sm:min-h-24"></div>');
             for (let day=1; day<=daysInMonth; day++) {
                 const date = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                const hasEvent = events.some(e => e.date === date);
+                const dayEvents = events.filter(e => e.date === date).sort((a,b) => (a.time || '').localeCompare(b.time || ''));
                 const isSelected = date === selectedCalendarDate;
                 const isToday = date === todayISO();
-                cells.push(`<button onclick="selectCalendarDate('${date}')" class="relative min-h-12 rounded-lg border text-sm flex flex-col items-center justify-center ${isSelected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-100 hover:bg-indigo-50'} ${isToday && !isSelected ? 'ring-2 ring-indigo-300' : ''}"><span>${day}</span>${hasEvent ? `<span class="mt-1 w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-indigo-500'}"></span>` : '<span class="mt-1 w-1.5 h-1.5"></span>'}</button>`);
+                const eventLabels = dayEvents.slice(0, 3).map(e => {
+                    const label = `${e.time ? e.time + ' ' : ''}${e.title || '일정'}`;
+                    return `<span title="${escapeHTML(label)}" class="block w-full truncate rounded px-1 py-0.5 text-left text-[9px] leading-tight sm:text-[10px] ${isSelected ? 'bg-indigo-500 text-white' : 'bg-indigo-50 text-indigo-700'}">${escapeHTML(label)}</span>`;
+                }).join('');
+                const moreLabel = dayEvents.length > 3 ? `<span class="block text-[9px] leading-tight ${isSelected ? 'text-indigo-100' : 'text-gray-500'}">+${dayEvents.length - 3}개 더</span>` : '';
+                cells.push(`<button onclick="selectCalendarDate('${date}')" class="min-w-0 min-h-20 sm:min-h-24 rounded-lg border text-sm flex flex-col items-stretch justify-start gap-1 p-1 ${isSelected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-100 hover:bg-indigo-50'} ${isToday && !isSelected ? 'ring-2 ring-indigo-300' : ''}"><span class="self-center">${day}</span><span class="flex w-full flex-col gap-0.5 overflow-hidden">${eventLabels}${moreLabel}</span></button>`);
             }
             grid.innerHTML = cells.join('');
             selectedLabel.textContent = `${selectedCalendarDate} 일정`;
