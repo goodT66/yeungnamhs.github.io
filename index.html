@@ -1503,7 +1503,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         }
 
         // 나이스 학사일정은 Firebase 사용자 일정과 별도로 읽기 전용으로 표시합니다.
-        const NEIS_SCHEDULE_API_URL = 'https://script.google.com/macros/s/AKfycbxSWnzlHVoizEpgKFhQPyVjP5VzVuCkKELCS-maAyVbAMY27esxXIoRPRHt4o1D04Bv/exec';
+        const NEIS_SCHEDULE_API_URL = 'https://script.google.com/macros/s/AKfycbyVjzkP1b94tAoR4khjTf-N3N_Gs6c3r-5rMqvJk_BWAY13NMaEtiXPNbBABWK7RncH-A/exec';
         const neisScheduleCache = new Map();
         const neisScheduleLoading = new Set();
         const neisScheduleErrors = new Map();
@@ -3566,7 +3566,7 @@ function renderStudentLookupCard(){
 
 <script>
 // 급식 메뉴 탭: 프록시의 action=meal JSONP 응답을 사용합니다.
-const NEIS_MEAL_PROXY_URL = 'https://script.google.com/macros/s/AKfycbxSWnzlHVoizEpgKFhQPyVjP5VzVuCkKELCS-maAyVbAMY27esxXIoRPRHt4o1D04Bv/exec';
+const NEIS_MEAL_PROXY_URL = 'https://script.google.com/macros/s/AKfycbyVjzkP1b94tAoR4khjTf-N3N_Gs6c3r-5rMqvJk_BWAY13NMaEtiXPNbBABWK7RncH-A/exec';
 let mealCurrentDate = new Date();
 let mealRequestSerial = 0;
 function mealISODate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
