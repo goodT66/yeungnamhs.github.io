@@ -1488,7 +1488,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         }
 
         // 나이스 학사일정은 Firebase 사용자 일정과 별도로 읽기 전용으로 표시합니다.
-        const NEIS_SCHEDULE_API_URL = 'https://script.google.com/macros/s/AKfycbxbnjN3BkFyqoLbV7k4req8PMHfxewoJ_nzeipt7-iE24SCOq_A8_kW63THtVAAnTojsg/exec';
+        const NEIS_SCHEDULE_API_URL = 'https://script.google.com/macros/s/AKfycbxGVDwcKQeCwPV9QQyAVq3Fd3dseyFa5X2BkJoha5xL4t6vmusWZNQnz6OEZBEdf9sadA/exec';
         const neisScheduleCache = new Map();
         const neisScheduleLoading = new Set();
         const neisScheduleErrors = new Map();
@@ -1502,23 +1502,53 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 ? `${text.slice(0, 4)}-${text.slice(4, 6)}-${text.slice(6, 8)}`
                 : text;
         }
+        function requestNeisScheduleJsonp(monthKey) {
+            return new Promise((resolve, reject) => {
+                const callbackName = `__neisCalendarCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+                const script = document.createElement('script');
+                let finished = false;
+                const cleanup = () => {
+                    if (finished) return;
+                    finished = true;
+                    clearTimeout(timeoutId);
+                    script.onerror = null;
+                    script.remove();
+                    try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+                };
+                const timeoutId = setTimeout(() => {
+                    cleanup();
+                    reject(new Error('나이스 웹 앱 응답 시간 초과'));
+                }, 15000);
+
+                window[callbackName] = (data) => {
+                    cleanup();
+                    resolve(data);
+                };
+                script.onerror = () => {
+                    cleanup();
+                    reject(new Error('나이스 웹 앱 스크립트를 불러오지 못했습니다. 배포 버전과 접근 권한을 확인해 주세요.'));
+                };
+                const requestMonth = `${monthKey.slice(0, 4)}-${monthKey.slice(4, 6)}`;
+                script.src = `${NEIS_SCHEDULE_API_URL}?month=${encodeURIComponent(requestMonth)}&callback=${encodeURIComponent(callbackName)}&t=${Date.now()}`;
+                document.head.appendChild(script);
+            });
+        }
+
         async function loadNeisCalendarMonth(year, monthIndex) {
             const monthKey = calendarMonthKey(year, monthIndex);
             if (neisScheduleCache.has(monthKey) || neisScheduleLoading.has(monthKey)) return;
             neisScheduleLoading.add(monthKey);
             neisScheduleErrors.delete(monthKey);
             try {
-                const url = `${NEIS_SCHEDULE_API_URL}?month=${monthKey}`;
-                const response = await fetch(url, { method: 'GET', redirect: 'follow', cache: 'no-store' });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-                if (!data || data.success !== true || !Array.isArray(data.events)) {
-                    throw new Error(data && data.message ? data.message : '학사일정 응답 형식이 올바르지 않습니다.');
+                // Apps Script의 브라우저 CORS 제한을 피하기 위해 JSONP 방식으로 조회합니다.
+                const data = await requestNeisScheduleJsonp(monthKey);
+                if (!data || data.ok !== true || !Array.isArray(data.events)) {
+                    throw new Error(data && (data.error || data.message) ? (data.error || data.message) : '학사일정 응답 형식이 올바르지 않습니다.');
                 }
                 const events = data.events.map((item, index) => ({
-                    id: `neis_${monthKey}_${item.date}_${index}`,
+                    id: item.id || `neis_${monthKey}_${item.date}_${index}`,
                     date: formatNeisDate(item.date),
-                    title: item.name || '학교 일정',
+                    title: item.title || item.name || '학교 일정',
                     time: '',
                     content: item.content || '',
                     type: item.type || '',
