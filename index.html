@@ -1567,7 +1567,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             try {
                 // Apps Script의 브라우저 CORS 제한을 피하기 위해 JSONP 방식으로 조회합니다.
                 const data = await requestNeisScheduleJsonp(monthKey);
-                if (!data || data.ok !== true || !Array.isArray(data.events)) {
+                if (!data || (data.ok !== true && data.success !== true) || !Array.isArray(data.events)) {
                     throw new Error(data && (data.error || data.message) ? (data.error || data.message) : '학사일정 응답 형식이 올바르지 않습니다.');
                 }
                 const events = data.events.map((item, index) => ({
