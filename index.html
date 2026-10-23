@@ -1487,6 +1487,65 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             }
         }
 
+        // 나이스 학사일정은 Firebase 사용자 일정과 별도로 읽기 전용으로 표시합니다.
+        const NEIS_SCHEDULE_API_URL = 'https://script.google.com/macros/s/AKfycbxbnjN3BkFyqoLbV7k4req8PMHfxewoJ_nzeipt7-iE24SCOq_A8_kW63THtVAAnTojsg/exec';
+        const neisScheduleCache = new Map();
+        const neisScheduleLoading = new Set();
+        const neisScheduleErrors = new Map();
+
+        function calendarMonthKey(year, monthIndex) {
+            return `${year}${String(monthIndex + 1).padStart(2, '0')}`;
+        }
+        function formatNeisDate(value) {
+            const text = String(value || '');
+            return /^\d{8}$/.test(text)
+                ? `${text.slice(0, 4)}-${text.slice(4, 6)}-${text.slice(6, 8)}`
+                : text;
+        }
+        async function loadNeisCalendarMonth(year, monthIndex) {
+            const monthKey = calendarMonthKey(year, monthIndex);
+            if (neisScheduleCache.has(monthKey) || neisScheduleLoading.has(monthKey)) return;
+            neisScheduleLoading.add(monthKey);
+            neisScheduleErrors.delete(monthKey);
+            try {
+                const url = `${NEIS_SCHEDULE_API_URL}?month=${monthKey}`;
+                const response = await fetch(url, { method: 'GET', redirect: 'follow', cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (!data || data.success !== true || !Array.isArray(data.events)) {
+                    throw new Error(data && data.message ? data.message : '학사일정 응답 형식이 올바르지 않습니다.');
+                }
+                const events = data.events.map((item, index) => ({
+                    id: `neis_${monthKey}_${item.date}_${index}`,
+                    date: formatNeisDate(item.date),
+                    title: item.name || '학교 일정',
+                    time: '',
+                    content: item.content || '',
+                    type: item.type || '',
+                    grade1: item.grade1 || '',
+                    grade2: item.grade2 || '',
+                    grade3: item.grade3 || '',
+                    source: 'neis'
+                }));
+                neisScheduleCache.set(monthKey, events);
+            } catch (error) {
+                console.error(`나이스 학사일정 ${monthKey} 조회 실패:`, error);
+                neisScheduleErrors.set(monthKey, error?.message || '알 수 없는 오류');
+            } finally {
+                neisScheduleLoading.delete(monthKey);
+                if (calendarMonthKey(calendarCursor.getFullYear(), calendarCursor.getMonth()) === monthKey) {
+                    renderCalendar();
+                }
+            }
+        }
+        function getCalendarEventsForMonth(year, monthIndex) {
+            const key = calendarMonthKey(year, monthIndex);
+            const localEvents = getCalendarEvents().map(event => ({ ...event, source: 'user' }));
+            const schoolEvents = neisScheduleCache.get(key) || [];
+            return [...localEvents.filter(e => String(e.date || '').startsWith(`${year}-${String(monthIndex + 1).padStart(2, '0')}-`)), ...schoolEvents]
+                .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.time || '').localeCompare(b.time || '') || (a.title || '').localeCompare(b.title || ''));
+        }
+
         function changeCalendarMonth(delta) {
             calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
             renderCalendar();
@@ -1499,28 +1558,43 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const list = document.getElementById('calendarEventList');
             if (!label || !grid || !selectedLabel || !list) return;
             const year = calendarCursor.getFullYear(), month = calendarCursor.getMonth();
+            const monthKey = calendarMonthKey(year, month);
             label.textContent = `${year}년 ${month + 1}월`;
-            const events = getCalendarEvents();
+            const events = getCalendarEventsForMonth(year, month);
+            if (!neisScheduleCache.has(monthKey) && !neisScheduleLoading.has(monthKey)) {
+                loadNeisCalendarMonth(year, month);
+            }
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const cells = [];
             for (let i=0; i<firstDay; i++) cells.push('<div class="min-h-20 sm:min-h-24"></div>');
             for (let day=1; day<=daysInMonth; day++) {
                 const date = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                const dayEvents = events.filter(e => e.date === date).sort((a,b) => (a.time || '').localeCompare(b.time || ''));
+                const dayEvents = events.filter(e => e.date === date);
                 const isSelected = date === selectedCalendarDate;
                 const isToday = date === todayISO();
                 const eventLabels = dayEvents.slice(0, 3).map(e => {
-                    const label = `${e.time ? e.time + ' ' : ''}${e.title || '일정'}`;
-                    return `<span title="${escapeHTML(label)}" class="block w-full truncate rounded px-1 py-0.5 text-left text-[8px] leading-tight font-bold sm:text-[9px] ${isSelected ? 'bg-indigo-500 text-white' : 'bg-indigo-50 text-indigo-700'}">${escapeHTML(label)}</span>`;
+                    const eventLabel = `${e.time ? e.time + ' ' : ''}${e.title || '일정'}`;
+                    const schoolClass = e.source === 'neis' ? (isSelected ? 'bg-teal-500 text-white' : 'bg-teal-50 text-teal-800') : (isSelected ? 'bg-indigo-500 text-white' : 'bg-indigo-50 text-indigo-700');
+                    return `<span title="${escapeHTML(eventLabel)}" class="block w-full truncate rounded px-1 py-0.5 text-left text-[8px] leading-tight font-bold sm:text-[9px] ${schoolClass}">${escapeHTML(eventLabel)}</span>`;
                 }).join('');
                 const moreLabel = dayEvents.length > 3 ? `<span class="block text-[8px] leading-tight font-bold ${isSelected ? 'text-indigo-100' : 'text-gray-500'}">+${dayEvents.length - 3}개 더</span>` : '';
                 cells.push(`<button onclick="selectCalendarDate('${date}')" class="min-w-0 min-h-20 sm:min-h-24 rounded-lg border text-sm flex flex-col items-stretch justify-start gap-1 p-1 ${isSelected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-100 hover:bg-indigo-50'} ${isToday && !isSelected ? 'ring-2 ring-indigo-300' : ''}"><span class="self-center">${day}</span><span class="flex w-full flex-col gap-0.5 overflow-hidden">${eventLabels}${moreLabel}</span></button>`);
             }
             grid.innerHTML = cells.join('');
             selectedLabel.textContent = `${selectedCalendarDate} 일정`;
-            const selectedEvents = events.filter(e => e.date === selectedCalendarDate).sort((a,b) => (a.time || '').localeCompare(b.time || ''));
-            list.innerHTML = selectedEvents.length ? selectedEvents.map(e => `<li class="border rounded-lg p-3 flex justify-between items-start gap-3"><div class="min-w-0"><p class="font-semibold text-sm text-gray-800">${e.time ? `<span class="text-indigo-700">${escapeHTML(e.time)}</span> ` : ''}${escapeHTML(e.title)}</p>${e.content ? `<p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap">${escapeHTML(e.content)}</p>` : ''}</div><div class="flex gap-1 shrink-0"><button onclick="editCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border hover:bg-indigo-50">수정</button><button onclick="deleteCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border text-red-600 hover:bg-red-50">삭제</button></div></li>`).join('') : '<li class="text-sm text-gray-400 py-3 text-center">선택한 날짜에 등록된 일정이 없습니다.</li>';
+            const selectedEvents = events.filter(e => e.date === selectedCalendarDate);
+            let statusNote = '';
+            if (neisScheduleLoading.has(monthKey)) statusNote = '<li class="text-xs text-gray-400 py-1 text-center">나이스 학사일정을 불러오는 중입니다…</li>';
+            else if (neisScheduleErrors.has(monthKey)) statusNote = `<li class="text-xs text-amber-700 py-1 text-center">나이스 학사일정을 불러오지 못했습니다. 웹 앱 배포 권한과 연결을 확인해 주세요.</li>`;
+            const eventItems = selectedEvents.map(e => {
+                const isNeis = e.source === 'neis';
+                const typeLabel = isNeis ? `<span class="inline-block mr-1 rounded bg-teal-50 text-teal-800 px-1.5 py-0.5 text-[10px] font-bold">나이스${e.type && e.type !== '해당없음' ? ` · ${escapeHTML(e.type)}` : ''}</span>` : '';
+                const gradeLabel = isNeis && e.grade3 === 'N' ? '<span class="text-[10px] text-gray-500 ml-1">(3학년 대상 아님)</span>' : '';
+                const actions = isNeis ? '' : `<div class="flex gap-1 shrink-0"><button onclick="editCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border hover:bg-indigo-50">수정</button><button onclick="deleteCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border text-red-600 hover:bg-red-50">삭제</button></div>`;
+                return `<li class="border rounded-lg p-3 flex justify-between items-start gap-3 ${isNeis ? 'border-teal-100 bg-teal-50/40' : ''}"><div class="min-w-0">${typeLabel}<p class="font-semibold text-sm text-gray-800 mt-1">${e.time ? `<span class="text-indigo-700">${escapeHTML(e.time)}</span> ` : ''}${escapeHTML(e.title || '일정')}${gradeLabel}</p>${e.content ? `<p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap">${escapeHTML(e.content)}</p>` : ''}</div>${actions}</li>`;
+            }).join('');
+            list.innerHTML = statusNote + (eventItems || (!statusNote ? '<li class="text-sm text-gray-400 py-3 text-center">선택한 날짜에 등록된 일정이 없습니다.</li>' : ''));
             renderSupervisorDutyRoster();
         }
         function openSupervisorModal() {
