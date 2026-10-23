@@ -1688,66 +1688,70 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             );
             if (!titleMatchesMonth) return result;
 
-            const weekday = new Date(...date.split('-').map(Number).map((v, i) => i === 1 ? v - 1 : v)).getDay();
+            const weekday = new Date(...date.split('-').map((v, i) => i === 1 ? v - 1 : v)).getDay();
             if (weekday === 0) return result; // 일요일은 감독표의 날짜 열에 없음
 
             const isSaturday = weekday === 6;
-
-            // 평일 날짜는 B~F열, 토요일 날짜는 날짜가 실제로 적힌 셀을 기준으로 찾습니다.
-            // 토요일 G열은 오전/오후 구분, H열은 감독 교사 이름이므로 날짜 열로 취급하지 않습니다.
-            const dateColumns = isSaturday ? [0, 1, 2, 3, 4, 5] : [weekday];
+            const dateColumns = isSaturday ? [6] : [weekday]; // 토요일 날짜는 G열에 있음
             const isDayCell = value => {
                 const raw = String(value ?? '').trim();
                 return /^\d{1,2}$/.test(raw) && Number(raw) >= 1 && Number(raw) <= 31;
             };
             const rowHasDate = row => dateColumns.some(col => isDayCell((row || [])[col]));
 
-            const matchingRows = [];
+            let matchingRow = -1;
             for (let r = 0; r < values.length; r++) {
                 const row = values[r] || [];
-                const dayMatches = dateColumns.some(col => isDayCell(row[col]) && Number(String(row[col]).trim()) === day);
-                if (dayMatches) matchingRows.push(r);
-            }
-
-            for (const r of matchingRows) {
-                const nextDateRow = values.findIndex((row, idx) => idx > r && rowHasDate(row));
-                const blockEnd = nextDateRow === -1 ? values.length : nextDateRow;
-
-                if (isSaturday) {
-                    for (let rr = r + 1; rr < blockEnd; rr++) {
-                        const row = values[rr] || [];
-                        const period = String(row[6] ?? '').trim(); // G열: 오전/오후 구분
-                        const teacher = String(row[7] ?? '').replace(/\s*선생님\s*$/, '').trim(); // H열: 감독 이름
-                        if (!teacher) continue;
-                        if (period.includes('오전')) {
-                            if (!result['오전1']) result['오전1'] = teacher;
-                            else if (!result['오전2'] && result['오전1'] !== teacher) result['오전2'] = teacher;
-                        } else if (period.includes('오후')) {
-                            if (!result['오후1']) result['오후1'] = teacher;
-                            else if (!result['오후2'] && result['오후1'] !== teacher) result['오후2'] = teacher;
-                        }
-                    }
-                } else {
-                    const candidates = [];
-                    for (let rr = r + 1; rr < blockEnd; rr++) {
-                        const cell = String((values[rr] || [])[weekday] ?? '').trim();
-                        if (!cell || ['오전', '오후', '야간', '날짜', '요일'].includes(cell)) continue;
-                        if (/정기고사|사기간|대체휴일/.test(cell)) continue;
-                        if (/^\d{1,2}\s*일?$/.test(cell)) continue;
-                        if (/^(월|화|수|목|금|토|일)(요일)?$/.test(cell)) continue;
-                        candidates.push(cell.replace(/\s*선생님\s*$/, '').trim());
-                    }
-                    ['오후1', '오후2'].forEach((slot, i) => {
-                        if (candidates[i]) result[slot] = candidates[i];
-                    });
-                    ['야자1', '야자2', '야자3'].forEach((slot, i) => {
-                        if (candidates[i + 2]) result[slot] = candidates[i + 2];
-                    });
+                if (dateColumns.some(col => isDayCell(row[col]) && Number(String(row[col]).trim()) === day)) {
+                    matchingRow = r;
+                    break;
                 }
-                break;
+            }
+            if (matchingRow < 0) return result;
+
+            const nextDateRow = values.findIndex((row, idx) => idx > matchingRow && rowHasDate(row));
+            const blockEnd = nextDateRow === -1 ? values.length : nextDateRow;
+
+            if (isSaturday) {
+                // 토요일은 G열에 오전/오후 구분, H열에 감독 교사가 있습니다.
+                // 병합 셀의 교사 이름이 줄바꿈으로 함께 들어오는 경우도 분리합니다.
+                for (let rr = matchingRow + 1; rr < blockEnd; rr++) {
+                    const row = values[rr] || [];
+                    const period = String(row[6] ?? '').trim();
+                    const rawTeacher = String(row[7] ?? '').trim();
+                    if (!period || !rawTeacher) continue;
+                    const teachers = rawTeacher
+                        .split(/[\r\n]+/)
+                        .map(name => name.replace(/\s*선생님\s*$/, '').trim())
+                        .filter(Boolean);
+
+                    if (period.includes('오전')) {
+                        if (!result['오전1'] && teachers[0]) result['오전1'] = teachers[0];
+                        if (!result['오전2'] && teachers[1]) result['오전2'] = teachers[1];
+                    } else if (period.includes('오후')) {
+                        if (!result['오후1'] && teachers[0]) result['오후1'] = teachers[0];
+                    }
+                }
+            } else {
+                const candidates = [];
+                for (let rr = matchingRow + 1; rr < blockEnd; rr++) {
+                    const cell = String((values[rr] || [])[weekday] ?? '').trim();
+                    if (!cell || ['오전', '오후', '야간', '날짜', '요일'].includes(cell)) continue;
+                    if (/정기고사|사기간|대체휴일/.test(cell)) continue;
+                    if (/^\d{1,2}\s*일?$/.test(cell)) continue;
+                    if (/^(월|화|수|목|금|토|일)(요일)?$/.test(cell)) continue;
+                    candidates.push(cell.replace(/\s*선생님\s*$/, '').trim());
+                }
+                ['오후1', '오후2'].forEach((slot, i) => {
+                    if (candidates[i]) result[slot] = candidates[i];
+                });
+                ['야자1', '야자2', '야자3'].forEach((slot, i) => {
+                    if (candidates[i + 2]) result[slot] = candidates[i + 2];
+                });
             }
             return result;
         }
+
 
         function renderSupervisorDutyRoster() {
             const target = document.getElementById('supervisorDutyRoster');
