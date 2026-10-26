@@ -693,6 +693,8 @@ window.cloudDataStore = {
     },
     deleteNotice: async (id) => {
         if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
+        // 삭제 후 컬렉션이 비어도 구버전 localStorage 자료가 다시 이전되지 않도록 표시합니다.
+        await setDoc(doc(db, "notices", "__legacy_migration_state__"), { _systemRecord: true, migrationComplete: true, updatedBy: currentUser.email, updatedAt: serverTimestamp() }, { merge: true });
         await deleteDoc(doc(db, "notices", String(id)));
     },
     saveCalendarEvent: async (item) => {
@@ -701,6 +703,8 @@ window.cloudDataStore = {
     },
     deleteCalendarEvent: async (id) => {
         if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
+        // 삭제 후 컬렉션이 비어도 구버전 localStorage 일정이 다시 이전되지 않도록 표시합니다.
+        await setDoc(doc(db, "calendarEvents", "__legacy_migration_state__"), { _systemRecord: true, migrationComplete: true, updatedBy: currentUser.email, updatedAt: serverTimestamp() }, { merge: true });
         await deleteDoc(doc(db, "calendarEvents", String(id)));
     },
     saveSupervisorDuty: async (item) => {
@@ -729,11 +733,15 @@ function stopCloudDataSync() {
 }
 
 async function migrateLegacyLocalDataIfCloudEmpty(collectionName, snapshot) {
-    // 이전 버전의 localStorage 자료는 해당 Firestore 컬렉션이 비어 있을 때만 한 번 옮깁니다.
+    // 삭제 후 구버전 localStorage 자료가 되살아나지 않도록 Firestore에 전역 완료 표시를 남깁니다.
+    const markerId = "__legacy_migration_state__";
+    if (snapshot.docs.some(d => d.id === markerId)) return;
     if (snapshot.size !== 0) return;
     try {
         const key = collectionName === "notices" ? "yeungnam_career_notices_v1" : "yeungnam_career_calendar_events_v1";
         const legacy = JSON.parse(localStorage.getItem(key) || "[]");
+        // 먼저 완료 표시를 기록해 빈 컬렉션의 후속 스냅샷이 이전을 반복하지 않게 합니다.
+        await setDoc(doc(db, collectionName, markerId), { _systemRecord: true, migrationComplete: true, updatedBy: currentUser?.email || "migration", updatedAt: serverTimestamp() }, { merge: true });
         if (!Array.isArray(legacy) || legacy.length === 0) return;
         for (const item of legacy) {
             if (!item || !item.id) continue;
@@ -747,7 +755,7 @@ async function migrateLegacyLocalDataIfCloudEmpty(collectionName, snapshot) {
 function startCloudDataSync() {
     stopCloudDataSync();
     unsubscribeNotices = onSnapshot(collection(db, "notices"), async (snapshot) => {
-        noticeCache = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
+        noticeCache = snapshot.docs.filter(d => d.id !== "__legacy_migration_state__").map(d => ({ ...d.data(), id: d.id }));
         noticesReady = true;
         notifyCloudDataChanged();
         await migrateLegacyLocalDataIfCloudEmpty("notices", snapshot);
@@ -756,7 +764,7 @@ function startCloudDataSync() {
         alert("전달 사항을 Firebase에서 불러오지 못했습니다. Firestore 보안 규칙과 인터넷 연결을 확인해 주세요.");
     });
     unsubscribeCalendarEvents = onSnapshot(collection(db, "calendarEvents"), async (snapshot) => {
-        calendarEventCache = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
+        calendarEventCache = snapshot.docs.filter(d => d.id !== "__legacy_migration_state__").map(d => ({ ...d.data(), id: d.id }));
         calendarEventsReady = true;
         notifyCloudDataChanged();
         await migrateLegacyLocalDataIfCloudEmpty("calendarEvents", snapshot);
