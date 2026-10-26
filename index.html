@@ -1753,18 +1753,18 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const susiMonthLabel = document.getElementById('susiScheduleMonthLabel');
             const susiTextList = document.getElementById('susiScheduleTextList');
             if (susiMonthLabel && susiTextList) {
-                susiMonthLabel.textContent = `${year}년 ${month + 1}월 발표 일정`;
+                susiMonthLabel.textContent = `${selectedCalendarDate} 발표 일정`;
                 if (susiScheduleLoading) {
                     susiTextList.innerHTML = '<p class="text-xs text-gray-400">수시 합격 발표 일정을 불러오는 중입니다…</p>';
                 } else if (susiScheduleError) {
                     susiTextList.innerHTML = `<p class="text-xs text-amber-700">수시 발표 일정을 불러오지 못했습니다. ${escapeHTML(susiScheduleError)}</p>`;
                 } else {
-                    const susiItems = getSusiScheduleForMonth(year, month).map(e => {
+                    const susiItems = (susiScheduleCache || []).filter(e => e.date === selectedCalendarDate).sort((a, b) => (a.time || '').localeCompare(b.time || '') || (a.university || '').localeCompare(b.university || '')).map(e => {
                         const dateText = `${e.date}${e.weekday ? `(${e.weekday})` : ''}`;
                         const details = [e.category, e.university, e.admissionType, e.time, e.note].filter(Boolean).map(escapeHTML);
                         return `<p class="py-0.5"><span class="font-semibold text-orange-800">${escapeHTML(dateText)}</span> — ${details.join(' · ') || '수시 합격 발표'}</p>`;
                     }).join('');
-                    susiTextList.innerHTML = susiItems || '<p class="text-sm text-gray-400">이번 달 수시 합격 발표 일정이 없습니다.</p>';
+                    susiTextList.innerHTML = susiItems || '<p class="text-sm text-gray-400">선택한 날짜의 수시 합격 발표 일정이 없습니다.</p>'; 
                 }
             }
             renderSupervisorDutyRoster();
