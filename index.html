@@ -1510,6 +1510,90 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         const neisScheduleLoading = new Set();
         const neisScheduleErrors = new Map();
 
+        // 구글 스프레드시트의 '수시일정' 시트를 읽기 전용으로 가져옵니다.
+        // A~G열: 발표일, 요일, 구분, 대학교, 전형, 시간, 비고 (1행은 제목행)
+        const SUSI_SHEET_ID = '1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM';
+        const SUSI_SHEET_GID = '1502883874';
+        let susiScheduleCache = null;
+        let susiScheduleLoading = false;
+        let susiScheduleLoaded = false;
+        let susiScheduleError = '';
+        function requestSusiScheduleJsonp() {
+            return new Promise((resolve, reject) => {
+                const callbackName = `__susiScheduleCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+                const script = document.createElement('script');
+                let finished = false;
+                const cleanup = () => {
+                    if (finished) return;
+                    finished = true;
+                    clearTimeout(timeoutId);
+                    script.onerror = null;
+                    script.remove();
+                    try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+                };
+                const timeoutId = setTimeout(() => { cleanup(); reject(new Error('수시 발표 일정을 불러오는 데 시간이 초과되었습니다. 시트 공유 설정을 확인해 주세요.')); }, 15000);
+                window[callbackName] = data => { cleanup(); resolve(data); };
+                script.onerror = () => { cleanup(); reject(new Error('수시일정 시트를 읽지 못했습니다. 링크가 있는 사용자가 볼 수 있도록 공유 설정을 확인해 주세요.')); };
+                script.onload = () => setTimeout(() => {
+                    if (!finished) { cleanup(); reject(new Error('수시일정 시트에서 데이터를 받지 못했습니다. 시트 공유 권한을 확인해 주세요.')); }
+                }, 0);
+                const tqx = `out:json;responseHandler:${callbackName}`;
+                script.src = `https://docs.google.com/spreadsheets/d/${SUSI_SHEET_ID}/gviz/tq?gid=${SUSI_SHEET_GID}&tqx=${encodeURIComponent(tqx)}&t=${Date.now()}`;
+                document.head.appendChild(script);
+            });
+        }
+        function susiCellValue(cell) {
+            if (!cell) return '';
+            if (cell.f !== undefined && cell.f !== null && String(cell.f).trim() !== '') return String(cell.f).trim();
+            return cell.v === undefined || cell.v === null ? '' : String(cell.v).trim();
+        }
+        function parseSusiDate(cell) {
+            if (!cell) return '';
+            const raw = String(cell.v ?? '').trim();
+            let m = raw.match(/^Date\((\d{4}),(\d{1,2}),(\d{1,2})\)$/);
+            if (m) return `${m[1]}-${String(Number(m[2])+1).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+            if (/^\d+(\.\d+)?$/.test(raw)) {
+                const serial = Number(raw);
+                if (serial > 20000 && serial < 80000) {
+                    const d = new Date(Date.UTC(1899, 11, 30) + serial * 86400000);
+                    return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+                }
+            }
+            const text = `${cell.f || ''} ${raw}`;
+            m = text.match(/(20\d{2})\s*[.\-/년 ]\s*(\d{1,2})\s*[.\-/월 ]\s*(\d{1,2})/);
+            if (m) return `${m[1]}-${String(Number(m[2])).padStart(2,'0')}-${String(Number(m[3])).padStart(2,'0')}`;
+            return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : '';
+        }
+        async function loadSusiSchedule() {
+            if (susiScheduleCache || susiScheduleLoading) return;
+            susiScheduleLoading = true;
+            susiScheduleError = '';
+            try {
+                const data = await requestSusiScheduleJsonp();
+                if (!data || !data.table || !Array.isArray(data.table.rows)) throw new Error('수시일정 시트의 데이터 형식이 올바르지 않습니다.');
+                susiScheduleCache = data.table.rows.map((row, index) => {
+                    const c = row.c || [];
+                    const date = parseSusiDate(c[0]);
+                    const weekday = susiCellValue(c[1]);
+                    const category = susiCellValue(c[2]);
+                    const university = susiCellValue(c[3]);
+                    const admissionType = susiCellValue(c[4]);
+                    const time = susiCellValue(c[5]);
+                    const note = susiCellValue(c[6]);
+                    if (!date || (!category && !university && !admissionType && !time && !note)) return null;
+                    const details = [category ? `구분: ${category}` : '', weekday ? `요일: ${weekday}` : '', time ? `발표 시간: ${time}` : '', note ? `비고: ${note}` : ''].filter(Boolean).join('\n');
+                    return { id: `susi_${date}_${index}`, date, title: [category, university].filter(Boolean).join(' · ') || '수시 합격 발표', university, admissionType, time, content: [admissionType ? `전형: ${admissionType}` : '', details].filter(Boolean).join('\n'), source: 'susi' };
+                }).filter(Boolean);
+            } catch (error) {
+                susiScheduleError = error?.message || '수시 발표 일정을 불러오지 못했습니다.';
+                console.error('수시 발표 일정 조회 실패:', error);
+            } finally {
+                susiScheduleLoading = false;
+                susiScheduleLoaded = true;
+                renderCalendar();
+            }
+        }
+
         function calendarMonthKey(year, monthIndex) {
             return `${year}${String(monthIndex + 1).padStart(2, '0')}`;
         }
@@ -1599,7 +1683,8 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const key = calendarMonthKey(year, monthIndex);
             const localEvents = getCalendarEvents().map(event => ({ ...event, source: 'user' }));
             const schoolEvents = neisScheduleCache.get(key) || [];
-            return [...localEvents.filter(e => String(e.date || '').startsWith(`${year}-${String(monthIndex + 1).padStart(2, '0')}-`)), ...schoolEvents]
+            const susiEvents = (susiScheduleCache || []).filter(e => String(e.date || '').startsWith(`${year}-${String(monthIndex + 1).padStart(2, '0')}-`));
+            return [...localEvents.filter(e => String(e.date || '').startsWith(`${year}-${String(monthIndex + 1).padStart(2, '0')}-`)), ...schoolEvents, ...susiEvents]
                 .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.time || '').localeCompare(b.time || '') || (a.title || '').localeCompare(b.title || ''));
         }
 
@@ -1621,6 +1706,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             if (!neisScheduleCache.has(monthKey) && !neisScheduleLoading.has(monthKey)) {
                 loadNeisCalendarMonth(year, month);
             }
+            if (!susiScheduleLoaded && !susiScheduleLoading) loadSusiSchedule();
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const cells = [];
@@ -1631,8 +1717,12 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 const isSelected = date === selectedCalendarDate;
                 const isToday = date === todayISO();
                 const eventLabels = dayEvents.slice(0, 3).map(e => {
-                    const eventLabel = `${e.time ? e.time + ' ' : ''}${e.title || '일정'}`;
-                    const schoolClass = e.source === 'neis' ? (isSelected ? 'bg-teal-500 text-white' : 'bg-teal-50 text-teal-800') : (isSelected ? 'bg-indigo-500 text-white' : 'bg-indigo-50 text-indigo-700');
+                    const eventLabel = e.source === 'susi' ? `수시 ${e.university || e.title || '합격 발표'}` : `${e.time ? e.time + ' ' : ''}${e.title || '일정'}`;
+                    const schoolClass = e.source === 'susi'
+                        ? (isSelected ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-800')
+                        : e.source === 'neis'
+                            ? (isSelected ? 'bg-teal-500 text-white' : 'bg-teal-50 text-teal-800')
+                            : (isSelected ? 'bg-indigo-500 text-white' : 'bg-indigo-50 text-indigo-700');
                     return `<span title="${escapeHTML(eventLabel)}" class="block w-full truncate rounded px-1 py-0.5 text-left text-[8px] leading-tight font-bold sm:text-[9px] ${schoolClass}">${escapeHTML(eventLabel)}</span>`;
                 }).join('');
                 const moreLabel = dayEvents.length > 3 ? `<span class="block text-[8px] leading-tight font-bold ${isSelected ? 'text-indigo-100' : 'text-gray-500'}">+${dayEvents.length - 3}개 더</span>` : '';
@@ -1644,12 +1734,17 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             let statusNote = '';
             if (neisScheduleLoading.has(monthKey)) statusNote = '<li class="text-xs text-gray-400 py-1 text-center">나이스 학사일정을 불러오는 중입니다…</li>';
             else if (neisScheduleErrors.has(monthKey)) statusNote = `<li class="text-xs text-amber-700 py-1 text-center" title="${escapeHTML(neisScheduleErrors.get(monthKey))}">나이스 학사일정을 불러오지 못했습니다. ${escapeHTML(neisScheduleErrors.get(monthKey))}</li>`;
+            if (susiScheduleLoading) statusNote += '<li class="text-xs text-gray-400 py-1 text-center">수시 합격 발표 일정을 불러오는 중입니다…</li>';
+            else if (susiScheduleError) statusNote += `<li class="text-xs text-amber-700 py-1 text-center" title="${escapeHTML(susiScheduleError)}">수시 발표 일정을 불러오지 못했습니다. ${escapeHTML(susiScheduleError)}</li>`;
             const eventItems = selectedEvents.map(e => {
                 const isNeis = e.source === 'neis';
-                const typeLabel = isNeis ? `<span class="inline-block mr-1 rounded bg-teal-50 text-teal-800 px-1.5 py-0.5 text-[10px] font-bold">나이스${e.type && e.type !== '해당없음' ? ` · ${escapeHTML(e.type)}` : ''}</span>` : '';
+                const isSusi = e.source === 'susi';
+                const typeLabel = isSusi
+                    ? '<span class="inline-block mr-1 rounded bg-orange-100 text-orange-800 px-1.5 py-0.5 text-[10px] font-bold">수시 합격 발표</span>'
+                    : isNeis ? `<span class="inline-block mr-1 rounded bg-teal-50 text-teal-800 px-1.5 py-0.5 text-[10px] font-bold">나이스${e.type && e.type !== '해당없음' ? ` · ${escapeHTML(e.type)}` : ''}</span>` : '';
                 const gradeLabel = isNeis && e.grade3 === 'N' ? '<span class="text-[10px] text-gray-500 ml-1">(3학년 대상 아님)</span>' : '';
-                const actions = isNeis ? '' : `<div class="flex gap-1 shrink-0"><button onclick="editCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border hover:bg-indigo-50">수정</button><button onclick="deleteCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border text-red-600 hover:bg-red-50">삭제</button></div>`;
-                return `<li class="border rounded-lg p-3 flex justify-between items-start gap-3 ${isNeis ? 'border-teal-100 bg-teal-50/40' : ''}"><div class="min-w-0">${typeLabel}<p class="font-semibold text-sm text-gray-800 mt-1">${e.time ? `<span class="text-indigo-700">${escapeHTML(e.time)}</span> ` : ''}${escapeHTML(e.title || '일정')}${gradeLabel}</p>${e.content ? `<p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap">${escapeHTML(e.content)}</p>` : ''}</div>${actions}</li>`;
+                const actions = (isNeis || isSusi) ? '' : `<div class="flex gap-1 shrink-0"><button onclick="editCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border hover:bg-indigo-50">수정</button><button onclick="deleteCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border text-red-600 hover:bg-red-50">삭제</button></div>`;
+                return `<li class="border rounded-lg p-3 flex justify-between items-start gap-3 ${isSusi ? 'border-orange-200 bg-orange-50/50' : isNeis ? 'border-teal-100 bg-teal-50/40' : ''}"><div class="min-w-0">${typeLabel}<p class="font-semibold text-sm text-gray-800 mt-1">${e.time && !isSusi ? `<span class="text-indigo-700">${escapeHTML(e.time)}</span> ` : ''}${escapeHTML(e.title || '일정')}${gradeLabel}</p>${e.content ? `<p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap">${escapeHTML(e.content)}</p>` : ''}${isSusi && e.time ? `<p class="text-sm font-semibold text-orange-800 mt-1">발표 시간: ${escapeHTML(e.time)}</p>` : ''}</div>${actions}</li>`;
             }).join('');
             list.innerHTML = statusNote + (eventItems || (!statusNote ? '<li class="text-sm text-gray-400 py-3 text-center">선택한 날짜에 등록된 일정이 없습니다.</li>' : ''));
             renderSupervisorDutyRoster();
