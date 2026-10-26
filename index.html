@@ -210,7 +210,7 @@
                                 <span id="susiScheduleMonthLabel" class="text-sm font-semibold text-gray-600"></span>
                                 <h3 class="font-bold text-orange-800">수시 합격 발표 일정</h3>
                             </div>
-                            <div id="susiScheduleTextList" class="text-sm text-gray-700 leading-relaxed space-y-2"></div>
+                            <div id="susiScheduleTextList" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700 leading-relaxed"></div>
                         </div>
                         <div class="mt-5 pt-4 border-t">
                             <h3 class="font-bold text-gray-800 mb-3">감독 근무표</h3>
@@ -1757,9 +1757,9 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             if (susiMonthLabel && susiTextList) {
                 susiMonthLabel.textContent = selectedCalendarDate;
                 if (susiScheduleLoading) {
-                    susiTextList.innerHTML = '<p class="text-xs text-gray-400">수시 합격 발표 일정을 불러오는 중입니다…</p>';
+                    susiTextList.innerHTML = '<p class="md:col-span-2 text-xs text-gray-400">수시 합격 발표 일정을 불러오는 중입니다…</p>';
                 } else if (susiScheduleError) {
-                    susiTextList.innerHTML = `<p class="text-xs text-amber-700">수시 발표 일정을 불러오지 못했습니다. ${escapeHTML(susiScheduleError)}</p>`;
+                    susiTextList.innerHTML = `<p class="md:col-span-2 text-xs text-amber-700">수시 발표 일정을 불러오지 못했습니다. ${escapeHTML(susiScheduleError)}</p>`;
                 } else {
                     const susiItems = (susiScheduleCache || []).filter(e => e.date === selectedCalendarDate).sort((a, b) => (a.time || '').localeCompare(b.time || '') || (a.university || '').localeCompare(b.university || '')).map(e => {
                         const categoryText = (e.category || '').trim();
@@ -1770,9 +1770,9 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                         const category = categoryText ? `<span class="text-base font-bold ${categoryClass}">${escapeHTML(categoryText)}</span>` : '';
                         const details = [e.admissionType, e.time, e.note].filter(Boolean).map(escapeHTML);
                         const detailText = details.length ? `<span class="text-sm text-gray-600">${details.join(' · ')}</span>` : '';
-                        return `<p class="py-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">${university}${category}${detailText}</p>`;
+                        return `<div class="min-w-0 rounded-lg border border-gray-200 bg-white px-3 py-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">${university}${category}${detailText}</div>`;
                     }).join('');
-                    susiTextList.innerHTML = susiItems || '<p class="text-sm text-gray-400">선택한 날짜의 수시 합격 발표 일정이 없습니다.</p>'; 
+                    susiTextList.innerHTML = susiItems || '<p class="md:col-span-2 text-sm text-gray-400">선택한 날짜의 수시 합격 발표 일정이 없습니다.</p>'; 
                 }
             }
             renderSupervisorDutyRoster();
