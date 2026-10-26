@@ -693,9 +693,14 @@ window.cloudDataStore = {
     },
     deleteNotice: async (id) => {
         if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
-        // 삭제 후 컬렉션이 비어도 구버전 localStorage 자료가 다시 이전되지 않도록 표시합니다.
-        await setDoc(doc(db, "notices", "__legacy_migration_state__"), { _systemRecord: true, migrationComplete: true, updatedBy: currentUser.email, updatedAt: serverTimestamp() }, { merge: true });
+        // 실제 전달 사항 삭제를 먼저 실행합니다. 마이그레이션 표시 기록이 거부되더라도 삭제를 막지 않습니다.
         await deleteDoc(doc(db, "notices", String(id)));
+        try {
+            await setDoc(doc(db, "notices", "__legacy_migration_state__"), { _systemRecord: true, migrationComplete: true, updatedBy: currentUser.email, updatedAt: serverTimestamp() }, { merge: true });
+        } catch (markerError) {
+            // 표시 기록이 보안 규칙에 의해 거부되어도 삭제는 이미 성공했습니다.
+            console.warn("전달 사항 마이그레이션 표시 기록 실패(삭제는 완료):", markerError);
+        }
     },
     saveCalendarEvent: async (item) => {
         if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
@@ -703,9 +708,14 @@ window.cloudDataStore = {
     },
     deleteCalendarEvent: async (id) => {
         if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
-        // 삭제 후 컬렉션이 비어도 구버전 localStorage 일정이 다시 이전되지 않도록 표시합니다.
-        await setDoc(doc(db, "calendarEvents", "__legacy_migration_state__"), { _systemRecord: true, migrationComplete: true, updatedBy: currentUser.email, updatedAt: serverTimestamp() }, { merge: true });
+        // 실제 일정 삭제를 먼저 실행합니다. 마이그레이션 표시 기록이 거부되더라도 삭제를 막지 않습니다.
         await deleteDoc(doc(db, "calendarEvents", String(id)));
+        try {
+            await setDoc(doc(db, "calendarEvents", "__legacy_migration_state__"), { _systemRecord: true, migrationComplete: true, updatedBy: currentUser.email, updatedAt: serverTimestamp() }, { merge: true });
+        } catch (markerError) {
+            // 표시 기록이 보안 규칙에 의해 거부되어도 삭제는 이미 성공했습니다.
+            console.warn("일정 마이그레이션 표시 기록 실패(삭제는 완료):", markerError);
+        }
     },
     saveSupervisorDuty: async (item) => {
         if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
