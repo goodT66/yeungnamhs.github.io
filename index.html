@@ -133,9 +133,6 @@
             <button type="button" onclick="openSusiResultView()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-left text-lg xl:text-xl font-extrabold shadow-sm hover:bg-amber-100 hover:border-amber-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-amber-300 transition duration-150">
                 <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">📝</span><span class="min-w-0 leading-snug whitespace-nowrap" style="white-space:nowrap;">수시 입결 조회</span>
             </button>
-            <button type="button" onclick="openMealView()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-lime-200 bg-lime-50 text-lime-900 text-left text-lg xl:text-xl font-extrabold shadow-sm hover:bg-lime-100 hover:border-lime-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-lime-300 transition duration-150" title="오늘의 점심·석식 급식 메뉴">
-                <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">🍚</span><span class="min-w-0 leading-snug">급식 메뉴</span>
-            </button>
         </nav>
 
         <!-- [화면 1] 메인 메뉴 대시보드 -->
@@ -154,17 +151,35 @@
                     <ul id="notice-grade3" class="space-y-3 min-h-24 max-h-72 overflow-y-auto pr-2"></ul>
                 </section>
 
-                <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                    <div class="flex justify-between items-center gap-3 mb-3 border-b pb-3">
-                        <div>
-                            <h2 class="text-lg font-bold text-gray-800">📂 부서별 전달 사항</h2>
-                            <p class="text-xs text-gray-500 mt-1">부서별 공지와 기록을 날짜별로 관리합니다.</p>
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start min-w-0">
+                    <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 min-w-0">
+                        <div class="flex flex-col 2xl:flex-row 2xl:justify-between 2xl:items-center gap-3 mb-3 border-b pb-3">
+                            <div class="min-w-0">
+                                <h2 class="text-lg font-bold text-gray-800">📂 부서별 전달 사항</h2>
+                                <p class="text-xs text-gray-500 mt-1">부서별 공지와 기록을 날짜별로 관리합니다.</p>
+                            </div>
+                            <button onclick="writeNotice('dept')" class="self-start shrink-0 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm">＋ 전달 사항 추가</button>
                         </div>
-                        <button onclick="writeNotice('dept')" class="shrink-0 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm">＋ 전달 사항 추가</button>
-                    </div>
-                    <div id="notice-dept-tabs" class="flex flex-wrap gap-2 mb-3" aria-label="부서별 전달 사항 날짜 탭"></div>
-                    <ul id="notice-dept" class="space-y-3 min-h-24 max-h-72 overflow-y-auto pr-2"></ul>
-                </section>
+                        <div id="notice-dept-tabs" class="flex flex-wrap gap-2 mb-3" aria-label="부서별 전달 사항 날짜 탭"></div>
+                        <ul id="notice-dept" class="space-y-3 min-h-24 max-h-72 overflow-y-auto pr-2"></ul>
+                    </section>
+
+                    <section id="mealView" class="bg-white rounded-xl shadow-sm border border-gray-200 border-t-4 border-lime-500 p-4 min-w-0">
+                        <div class="mb-4 pb-3 border-b">
+                            <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2"><span class="text-2xl">🍚</span> 급식 메뉴</h2>
+                            <p id="mealDateLabel" class="text-xs text-gray-500 mt-1"></p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 mb-4">
+                            <button onclick="changeMealDate(-1)" class="px-2 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm font-bold">◀ 전날</button>
+                            <input id="mealDateInput" type="date" class="border border-gray-300 rounded-lg p-2 text-sm min-w-0 max-w-full" onchange="loadMealForSelectedDate()" aria-label="급식 날짜 선택">
+                            <button onclick="changeMealDate(1)" class="px-2 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm font-bold">다음 날 ▶</button>
+                            <button onclick="loadMealForSelectedDate(true)" class="px-3 py-2 rounded-lg bg-lime-600 text-white hover:bg-lime-700 text-sm font-bold">새로고침</button>
+                        </div>
+                        <div id="mealStatus" class="text-center text-gray-500 py-4 text-sm">급식 메뉴를 불러올 준비가 되었습니다.</div>
+                        <div id="mealCards" class="grid grid-cols-1 gap-3"></div>
+                        <p class="text-xs text-gray-400 mt-4">나이스 교육정보 개방 포털 자료 기준</p>
+                    </section>
+                </div>
             </div>
 
             <!-- 모니터 기준 오른쪽: 퀵메뉴 위, 달력 아래 -->
@@ -1196,18 +1211,6 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
 
 </script>
 
-        <!-- [추가 화면] 오늘의 급식 메뉴 -->
-        <div id="mealView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-lime-500">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
-                <div><h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><span class="text-3xl">🍚</span> 오늘의 급식 메뉴</h3><p id="mealDateLabel" class="text-sm text-gray-500 mt-2"></p></div>
-                <button onclick="showMainDashboard()" class="mt-4 sm:mt-0 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg">◀ 메인 화면으로</button>
-            </div>
-            <div class="flex flex-wrap items-center gap-3 mb-5"><button onclick="changeMealDate(-1)" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 font-bold">◀ 전날</button><input id="mealDateInput" type="date" class="border border-gray-300 rounded-lg p-2" onchange="loadMealForSelectedDate()"><button onclick="changeMealDate(1)" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 font-bold">다음 날 ▶</button><button onclick="loadMealForSelectedDate(true)" class="px-4 py-2 rounded-lg bg-lime-600 text-white hover:bg-lime-700 font-bold">오늘 메뉴 새로고침</button></div>
-            <div id="mealStatus" class="text-center text-gray-500 py-8">급식 메뉴를 불러올 준비가 되었습니다.</div>
-            <div id="mealCards" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
-            <p class="text-xs text-gray-400 mt-5">메뉴는 나이스 교육정보 개방 포털 자료를 기준으로 표시합니다. 급식이 제공되지 않는 날에는 메뉴가 없을 수 있습니다.</p>
-        </div>
-
     <script>
         const SHEET_ID = '1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM';
         const MOCK_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
@@ -1219,7 +1222,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
 
         // 화면 전환 시 메인 대시보드와 각 조회 화면 중 하나만 표시합니다.
         function hideAllContentViews() {
-            ['mainDashboard', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView', 'studentLookupView', 'mealView']
+            ['mainDashboard', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView', 'studentLookupView']
                 .forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.classList.add('hidden');
@@ -3609,8 +3612,6 @@ let mealCurrentDate = new Date();
 let mealRequestSerial = 0;
 function mealISODate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function openMealView() {
-  hideAllContentViews();
-  document.getElementById('mealView').classList.remove('hidden');
   const input = document.getElementById('mealDateInput');
   if (input && !input.value) input.value = mealISODate(mealCurrentDate);
   loadMealForSelectedDate();
@@ -3661,6 +3662,8 @@ function loadMealForSelectedDate(force) {
 window.openMealView = openMealView;
 window.loadMealForSelectedDate = loadMealForSelectedDate;
 window.changeMealDate = changeMealDate;
+// 메인 화면에 급식 조회 칸이 항상 표시되므로 최초 진입 시 오늘 급식을 불러옵니다.
+loadMealForSelectedDate();
 </script>
 
 </body>
