@@ -1919,14 +1919,42 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     .map(slot => String(base[slot] || '').replace(/\s*선생님\s*$/, '').trim())
                     .filter(Boolean)
             );
+            // 같은 날짜·같은 슬롯에 Firebase 기록이 여러 개 남아 있으면
+            // updatedAt이 가장 최신인 기록을 우선 적용합니다.
+            const getSupervisorDutyTimestamp = item => {
+                const updatedAt = item?.updatedAt;
+                if (updatedAt && typeof updatedAt.toMillis === 'function') return updatedAt.toMillis();
+                if (updatedAt instanceof Date) return updatedAt.getTime();
+                if (typeof updatedAt === 'number' && Number.isFinite(updatedAt)) return updatedAt;
+                if (typeof updatedAt === 'string' && updatedAt.trim()) {
+                    const parsed = Date.parse(updatedAt);
+                    if (Number.isFinite(parsed)) return parsed;
+                }
+                const createdAt = item?.createdAt;
+                if (createdAt && typeof createdAt.toMillis === 'function') return createdAt.toMillis();
+                if (createdAt instanceof Date) return createdAt.getTime();
+                if (typeof createdAt === 'number' && Number.isFinite(createdAt)) return createdAt;
+                if (typeof createdAt === 'string' && createdAt.trim()) {
+                    const parsed = Date.parse(createdAt);
+                    if (Number.isFinite(parsed)) return parsed;
+                }
+                return 0;
+            };
+            const latestRecordBySlot = new Map();
             records.forEach(item => {
                 const teacher = String(item.teacherName || '').replace(/\s*선생님\s*$/, '').trim();
                 const isDuplicateOldSaturdayMorningMapping = isSelectedSaturday &&
                     ['오후1', '오후2'].includes(item.slot) &&
                     baseMorningTeachers.has(teacher);
-                if (!isDuplicateOldSaturdayMorningMapping) {
-                    bySlot.set(item.slot, { ...item, source: 'firebase' });
+                if (isDuplicateOldSaturdayMorningMapping) return;
+
+                const existing = latestRecordBySlot.get(item.slot);
+                if (!existing || getSupervisorDutyTimestamp(item) >= getSupervisorDutyTimestamp(existing)) {
+                    latestRecordBySlot.set(item.slot, item);
                 }
+            });
+            latestRecordBySlot.forEach((item, slot) => {
+                bySlot.set(slot, { ...item, source: 'firebase' });
             });
 
             if ((!supervisorSheetValues && supervisorSheetError) || (!cheongunSheetValues && cheongunSheetError)) {
