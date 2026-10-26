@@ -206,6 +206,11 @@
                         <div class="flex justify-between items-center gap-2 mb-2"><h3 id="calendarSelectedDate" class="font-bold text-gray-800"></h3><button onclick="addCalendarEvent()" class="text-sm text-indigo-700 hover:underline">＋ 선택 날짜에 일정 추가</button></div>
                         <ul id="calendarEventList" class="space-y-2"></ul>
                         <div class="mt-5 pt-4 border-t">
+                            <h3 class="font-bold text-orange-800 mb-2">수시 합격 발표 일정</h3>
+                            <p id="susiScheduleMonthLabel" class="text-xs text-gray-500 mb-2"></p>
+                            <div id="susiScheduleTextList" class="text-sm text-gray-700 leading-relaxed space-y-1"></div>
+                        </div>
+                        <div class="mt-5 pt-4 border-t">
                             <h3 class="font-bold text-gray-800 mb-3">감독 근무표</h3>
                             <div id="supervisorDutyRoster" class="space-y-2"></div>
                         </div>
@@ -1582,7 +1587,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     const note = susiCellValue(c[6]);
                     if (!date || (!category && !university && !admissionType && !time && !note)) return null;
                     const details = [category ? `구분: ${category}` : '', weekday ? `요일: ${weekday}` : '', time ? `발표 시간: ${time}` : '', note ? `비고: ${note}` : ''].filter(Boolean).join('\n');
-                    return { id: `susi_${date}_${index}`, date, title: [category, university].filter(Boolean).join(' · ') || '수시 합격 발표', university, admissionType, time, content: [admissionType ? `전형: ${admissionType}` : '', details].filter(Boolean).join('\n'), source: 'susi' };
+                    return { id: `susi_${date}_${index}`, date, weekday, category, title: [category, university].filter(Boolean).join(' · ') || '수시 합격 발표', university, admissionType, time, note, content: [admissionType ? `전형: ${admissionType}` : '', details].filter(Boolean).join('\n'), source: 'susi' };
                 }).filter(Boolean);
             } catch (error) {
                 susiScheduleError = error?.message || '수시 발표 일정을 불러오지 못했습니다.';
@@ -1683,9 +1688,13 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const key = calendarMonthKey(year, monthIndex);
             const localEvents = getCalendarEvents().map(event => ({ ...event, source: 'user' }));
             const schoolEvents = neisScheduleCache.get(key) || [];
-            const susiEvents = (susiScheduleCache || []).filter(e => String(e.date || '').startsWith(`${year}-${String(monthIndex + 1).padStart(2, '0')}-`));
-            return [...localEvents.filter(e => String(e.date || '').startsWith(`${year}-${String(monthIndex + 1).padStart(2, '0')}-`)), ...schoolEvents, ...susiEvents]
+            return [...localEvents.filter(e => String(e.date || '').startsWith(`${year}-${String(monthIndex + 1).padStart(2, '0')}-`)), ...schoolEvents]
                 .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.time || '').localeCompare(b.time || '') || (a.title || '').localeCompare(b.title || ''));
+        }
+        function getSusiScheduleForMonth(year, monthIndex) {
+            const prefix = `${year}-${String(monthIndex + 1).padStart(2, '0')}-`;
+            return (susiScheduleCache || []).filter(e => String(e.date || '').startsWith(prefix))
+                .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.time || '').localeCompare(b.time || '') || (a.university || '').localeCompare(b.university || ''));
         }
 
         function changeCalendarMonth(delta) {
@@ -1717,36 +1726,47 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 const isSelected = date === selectedCalendarDate;
                 const isToday = date === todayISO();
                 const eventLabels = dayEvents.slice(0, 3).map(e => {
-                    const eventLabel = e.source === 'susi' ? `수시 ${e.university || e.title || '합격 발표'}` : `${e.time ? e.time + ' ' : ''}${e.title || '일정'}`;
-                    const schoolClass = e.source === 'susi'
-                        ? (isSelected ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-800')
-                        : e.source === 'neis'
-                            ? (isSelected ? 'bg-teal-500 text-white' : 'bg-teal-50 text-teal-800')
-                            : (isSelected ? 'bg-indigo-500 text-white' : 'bg-indigo-50 text-indigo-700');
+                    const eventLabel = `${e.time ? e.time + ' ' : ''}${e.title || '일정'}`;
+                    const schoolClass = e.source === 'neis'
+                        ? (isSelected ? 'bg-teal-500 text-white' : 'bg-teal-50 text-teal-800')
+                        : (isSelected ? 'bg-indigo-500 text-white' : 'bg-indigo-50 text-indigo-700');
                     return `<span title="${escapeHTML(eventLabel)}" class="block w-full truncate rounded px-1 py-0.5 text-left text-[8px] leading-tight font-bold sm:text-[9px] ${schoolClass}">${escapeHTML(eventLabel)}</span>`;
                 }).join('');
                 const moreLabel = dayEvents.length > 3 ? `<span class="block text-[8px] leading-tight font-bold ${isSelected ? 'text-indigo-100' : 'text-gray-500'}">+${dayEvents.length - 3}개 더</span>` : '';
                 cells.push(`<button onclick="selectCalendarDate('${date}')" class="min-w-0 min-h-20 sm:min-h-24 rounded-lg border text-sm flex flex-col items-stretch justify-start gap-1 p-1 ${isSelected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-100 hover:bg-indigo-50'} ${isToday && !isSelected ? 'ring-2 ring-indigo-300' : ''}"><span class="self-center">${day}</span><span class="flex w-full flex-col gap-0.5 overflow-hidden">${eventLabels}${moreLabel}</span></button>`);
             }
             grid.innerHTML = cells.join('');
-            selectedLabel.textContent = `${selectedCalendarDate} 일정`;
+            selectedLabel.textContent = `학사 일정 · ${selectedCalendarDate}`;
             const selectedEvents = events.filter(e => e.date === selectedCalendarDate);
             let statusNote = '';
             if (neisScheduleLoading.has(monthKey)) statusNote = '<li class="text-xs text-gray-400 py-1 text-center">나이스 학사일정을 불러오는 중입니다…</li>';
             else if (neisScheduleErrors.has(monthKey)) statusNote = `<li class="text-xs text-amber-700 py-1 text-center" title="${escapeHTML(neisScheduleErrors.get(monthKey))}">나이스 학사일정을 불러오지 못했습니다. ${escapeHTML(neisScheduleErrors.get(monthKey))}</li>`;
-            if (susiScheduleLoading) statusNote += '<li class="text-xs text-gray-400 py-1 text-center">수시 합격 발표 일정을 불러오는 중입니다…</li>';
-            else if (susiScheduleError) statusNote += `<li class="text-xs text-amber-700 py-1 text-center" title="${escapeHTML(susiScheduleError)}">수시 발표 일정을 불러오지 못했습니다. ${escapeHTML(susiScheduleError)}</li>`;
             const eventItems = selectedEvents.map(e => {
                 const isNeis = e.source === 'neis';
-                const isSusi = e.source === 'susi';
-                const typeLabel = isSusi
-                    ? '<span class="inline-block mr-1 rounded bg-orange-100 text-orange-800 px-1.5 py-0.5 text-[10px] font-bold">수시 합격 발표</span>'
-                    : isNeis ? `<span class="inline-block mr-1 rounded bg-teal-50 text-teal-800 px-1.5 py-0.5 text-[10px] font-bold">나이스${e.type && e.type !== '해당없음' ? ` · ${escapeHTML(e.type)}` : ''}</span>` : '';
+                const typeLabel = isNeis ? `<span class="inline-block mr-1 rounded bg-teal-50 text-teal-800 px-1.5 py-0.5 text-[10px] font-bold">나이스${e.type && e.type !== '해당없음' ? ` · ${escapeHTML(e.type)}` : ''}</span>` : '';
                 const gradeLabel = isNeis && e.grade3 === 'N' ? '<span class="text-[10px] text-gray-500 ml-1">(3학년 대상 아님)</span>' : '';
-                const actions = (isNeis || isSusi) ? '' : `<div class="flex gap-1 shrink-0"><button onclick="editCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border hover:bg-indigo-50">수정</button><button onclick="deleteCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border text-red-600 hover:bg-red-50">삭제</button></div>`;
-                return `<li class="border rounded-lg p-3 flex justify-between items-start gap-3 ${isSusi ? 'border-orange-200 bg-orange-50/50' : isNeis ? 'border-teal-100 bg-teal-50/40' : ''}"><div class="min-w-0">${typeLabel}<p class="font-semibold text-sm text-gray-800 mt-1">${e.time && !isSusi ? `<span class="text-indigo-700">${escapeHTML(e.time)}</span> ` : ''}${escapeHTML(e.title || '일정')}${gradeLabel}</p>${e.content ? `<p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap">${escapeHTML(e.content)}</p>` : ''}${isSusi && e.time ? `<p class="text-sm font-semibold text-orange-800 mt-1">발표 시간: ${escapeHTML(e.time)}</p>` : ''}</div>${actions}</li>`;
+                const actions = isNeis ? '' : `<div class="flex gap-1 shrink-0"><button onclick="editCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border hover:bg-indigo-50">수정</button><button onclick="deleteCalendarEvent('${e.id}')" class="text-xs px-2 py-1 rounded border text-red-600 hover:bg-red-50">삭제</button></div>`;
+                return `<li class="border rounded-lg p-3 flex justify-between items-start gap-3 ${isNeis ? 'border-teal-100 bg-teal-50/40' : ''}"><div class="min-w-0">${typeLabel}<p class="font-semibold text-sm text-gray-800 mt-1">${e.time ? `<span class="text-indigo-700">${escapeHTML(e.time)}</span> ` : ''}${escapeHTML(e.title || '일정')}${gradeLabel}</p>${e.content ? `<p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap">${escapeHTML(e.content)}</p>` : ''}</div>${actions}</li>`;
             }).join('');
-            list.innerHTML = statusNote + (eventItems || (!statusNote ? '<li class="text-sm text-gray-400 py-3 text-center">선택한 날짜에 등록된 일정이 없습니다.</li>' : ''));
+            list.innerHTML = statusNote + (eventItems || (!statusNote ? '<li class="text-sm text-gray-400 py-3 text-center">선택한 날짜에 등록된 학사 일정이 없습니다.</li>' : ''));
+
+            const susiMonthLabel = document.getElementById('susiScheduleMonthLabel');
+            const susiTextList = document.getElementById('susiScheduleTextList');
+            if (susiMonthLabel && susiTextList) {
+                susiMonthLabel.textContent = `${year}년 ${month + 1}월 발표 일정`;
+                if (susiScheduleLoading) {
+                    susiTextList.innerHTML = '<p class="text-xs text-gray-400">수시 합격 발표 일정을 불러오는 중입니다…</p>';
+                } else if (susiScheduleError) {
+                    susiTextList.innerHTML = `<p class="text-xs text-amber-700">수시 발표 일정을 불러오지 못했습니다. ${escapeHTML(susiScheduleError)}</p>`;
+                } else {
+                    const susiItems = getSusiScheduleForMonth(year, month).map(e => {
+                        const dateText = `${e.date}${e.weekday ? `(${e.weekday})` : ''}`;
+                        const details = [e.category, e.university, e.admissionType, e.time, e.note].filter(Boolean).map(escapeHTML);
+                        return `<p class="py-0.5"><span class="font-semibold text-orange-800">${escapeHTML(dateText)}</span> — ${details.join(' · ') || '수시 합격 발표'}</p>`;
+                    }).join('');
+                    susiTextList.innerHTML = susiItems || '<p class="text-sm text-gray-400">이번 달 수시 합격 발표 일정이 없습니다.</p>';
+                }
+            }
             renderSupervisorDutyRoster();
         }
         function openSupervisorModal() {
