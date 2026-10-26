@@ -72,6 +72,80 @@
           #studentLookupCard * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
           @page { size:A4 portrait; margin:10mm; }
         }
+
+        /* 주요 메뉴 7개: 책 위에 붙인 포스트잇 디자인 (기존 기능/이벤트는 유지) */
+        nav[aria-label="주요 메뉴"] > button {
+            position: relative !important;
+            justify-self: stretch !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            min-height: 76px !important;
+            box-sizing: border-box !important;
+            overflow: visible !important;
+            border: 1px solid rgba(90, 80, 60, 0.16) !important;
+            border-radius: 2px 2px 5px 2px !important;
+            padding: 18px 10px 14px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            text-align: center !important;
+            color: #263238 !important;
+            font-size: clamp(12px, 0.95vw, 17px) !important;
+            line-height: 1.35 !important;
+            font-weight: 800 !important;
+            white-space: normal !important;
+            box-shadow: 1px 4px 7px rgba(40, 40, 40, 0.16), inset 0 1px 0 rgba(255,255,255,.75) !important;
+            transform: rotate(-0.7deg);
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease !important;
+        }
+        nav[aria-label="주요 메뉴"] > button:nth-child(2n) { transform: rotate(0.8deg); }
+        nav[aria-label="주요 메뉴"] > button::before {
+            content: "";
+            position: absolute;
+            top: -7px;
+            left: 50%;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.9) 0 10%, transparent 12%), #d95c58;
+            box-shadow: 0 2px 3px rgba(0,0,0,.22);
+            z-index: 2;
+        }
+        nav[aria-label="주요 메뉴"] > button::after {
+            content: "";
+            position: absolute;
+            right: -1px;
+            bottom: -1px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 0 13px 13px;
+            border-color: transparent transparent rgba(90,80,60,.18) transparent;
+            filter: drop-shadow(-1px -1px 1px rgba(0,0,0,.06));
+        }
+        nav[aria-label="주요 메뉴"] > button:nth-child(1) { background: #fff0a8 !important; border-color: #eadb8c !important; color: #51451c !important; }
+        nav[aria-label="주요 메뉴"] > button:nth-child(2) { background: #cceaff !important; border-color: #a9d7f4 !important; color: #17456a !important; }
+        nav[aria-label="주요 메뉴"] > button:nth-child(3) { background: #ffd7e8 !important; border-color: #f4b8d0 !important; color: #71334e !important; }
+        nav[aria-label="주요 메뉴"] > button:nth-child(4) { background: #d9f5cf !important; border-color: #b9e5ac !important; color: #315d2b !important; }
+        nav[aria-label="주요 메뉴"] > button:nth-child(5) { background: #e4d7ff !important; border-color: #cbb8f4 !important; color: #49336f !important; }
+        nav[aria-label="주요 메뉴"] > button:nth-child(6) { background: #ffe0b8 !important; border-color: #f2c78d !important; color: #70451d !important; }
+        nav[aria-label="주요 메뉴"] > button:nth-child(7) { background: #c9f0eb !important; border-color: #a5ddd6 !important; color: #205a55 !important; }
+        nav[aria-label="주요 메뉴"] > button:nth-child(2)::before { background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.9) 0 10%, transparent 12%), #3b91d4; }
+        nav[aria-label="주요 메뉴"] > button:nth-child(3)::before { background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.9) 0 10%, transparent 12%), #df5c91; }
+        nav[aria-label="주요 메뉴"] > button:nth-child(4)::before { background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.9) 0 10%, transparent 12%), #5aaf52; }
+        nav[aria-label="주요 메뉴"] > button:nth-child(5)::before { background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.9) 0 10%, transparent 12%), #8c61cf; }
+        nav[aria-label="주요 메뉴"] > button:nth-child(6)::before { background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.9) 0 10%, transparent 12%), #e58b32; }
+        nav[aria-label="주요 메뉴"] > button:nth-child(7)::before { background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.9) 0 10%, transparent 12%), #239d91; }
+        nav[aria-label="주요 메뉴"] > button:hover { transform: translateY(-3px) rotate(0deg) !important; box-shadow: 2px 8px 12px rgba(40,40,40,.2) !important; filter: saturate(1.04); }
+        nav[aria-label="주요 메뉴"] > button:focus-visible { outline: 3px solid #64748b !important; outline-offset: 3px !important; }
+        nav[aria-label="주요 메뉴"] > button > span { position: relative; z-index: 1; }
+        nav[aria-label="주요 메뉴"] > button > span:first-child { font-size: 1.35em !important; }
+        @media (max-width: 639px) {
+            nav[aria-label="주요 메뉴"] > button { min-height: 66px !important; padding: 16px 7px 10px !important; gap: 5px !important; }
+        }
+
 </style>
 </head>
 <body class="min-h-screen flex flex-col items-center pt-10 pb-20 px-4 relative overflow-x-hidden">
