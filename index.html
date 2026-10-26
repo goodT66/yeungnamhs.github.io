@@ -1445,26 +1445,54 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             return escapeHTML(text).replace(/\r?\n/g, '<br>');
         }
         function renderNoticeContent(value) {
-            // 기존 일반 텍스트와 새 서식 HTML을 모두 표시합니다.
+            // 기존 일반 텍스트와 서식 HTML을 함께 지원하고, 편집기에서 생성된 서식 속성을 안전하게 보존합니다.
             const raw = plainTextToNoticeHtml(value);
-            const template = document.createElement('template'); template.innerHTML = raw;
+            const template = document.createElement('template');
+            template.innerHTML = raw;
             const allowed = new Set(['B','STRONG','I','EM','U','BR','P','DIV','SPAN','UL','OL','LI','H1','H2','H3','FONT']);
+            const allowedStyles = new Set(['font-size','font-family','text-align','font-weight','font-style','text-decoration','color','background-color']);
+            const fontSizes = { '1':'10px', '2':'13px', '3':'16px', '4':'18px', '5':'24px', '6':'32px', '7':'48px' };
+
             const walk = node => {
                 [...node.childNodes].forEach(child => {
-                    if (child.nodeType === 1) {
-                        if (!allowed.has(child.tagName)) { child.replaceWith(document.createTextNode(child.textContent || '')); return; }
-                        [...child.attributes].forEach(attr => {
-                            if (attr.name !== 'style' && !(child.tagName === 'FONT' && attr.name === 'face')) child.removeAttribute(attr.name);
-                        });
-                        if (child.hasAttribute('style')) {
-                            const safe = [...child.style].filter(k => ['font-size','font-family','text-align','font-weight','font-style','text-decoration','color','background-color'].includes(k)).map(k => `${k}:${child.style.getPropertyValue(k)}`).join(';');
-                            if (safe) child.setAttribute('style',safe); else child.removeAttribute('style');
-                        }
-                        walk(child);
+                    if (child.nodeType !== 1) return;
+                    if (!allowed.has(child.tagName)) {
+                        child.replaceWith(document.createTextNode(child.textContent || ''));
+                        return;
                     }
+
+                    // execCommand가 생성할 수 있는 align, color, size, face 속성을 CSS로 변환합니다.
+                    const style = child.style;
+                    const align = child.getAttribute('align');
+                    if (align && ['left','center','right','justify'].includes(align.toLowerCase())) {
+                        style.textAlign = align.toLowerCase();
+                    }
+                    if (child.tagName === 'FONT') {
+                        const color = child.getAttribute('color');
+                        const size = child.getAttribute('size');
+                        const face = child.getAttribute('face');
+                        if (color && !style.color) style.color = color;
+                        if (size && !style.fontSize) style.fontSize = fontSizes[size] || '';
+                        if (face && !style.fontFamily) style.fontFamily = face;
+                    }
+
+                    [...child.attributes].forEach(attr => {
+                        if (attr.name !== 'style') child.removeAttribute(attr.name);
+                    });
+
+                    const safe = [...style]
+                        .filter(k => allowedStyles.has(k))
+                        .map(k => `${k}:${style.getPropertyValue(k).trim()}`)
+                        .join(';');
+                    if (safe) child.setAttribute('style', safe);
+                    else child.removeAttribute('style');
+
+                    walk(child);
                 });
             };
-            walk(template.content); return template.innerHTML;
+
+            walk(template.content);
+            return template.innerHTML;
         }
         function writeNotice(category) {
             if (!requireCloudEditor()) return;
