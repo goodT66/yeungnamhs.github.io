@@ -3851,34 +3851,36 @@ function updateSusiRecommendationSummary(rows) {
         if (getSusiSupportPosition(row, selectedSusiMockAverage) !== '적정') return;
         const university = getSusiRecommendationUniversity(row[5]);
         const percentile = getSusiCsatPercentile(row);
+        const major = String(row[6] || '').trim();
         if (!university || !Number.isFinite(percentile)) return;
         if (!jeokjeong.has(university)) jeokjeong.set(university, []);
-        jeokjeong.get(university).push(percentile);
+        jeokjeong.get(university).push({ percentile, major });
     });
     const universityOrder = new Map(SUSI_RECOMMENDATION_UNIVERSITIES.map((item, index) => [item.name, index]));
-    const median = values => {
-        const sorted = [...values].sort((a, b) => a - b);
-        const middle = Math.floor(sorted.length / 2);
-        return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-    };
     const highest = [...jeokjeong.entries()]
-        .map(([name, values]) => [name, Math.max(...values)])
-        .sort((a, b) => b[1] - a[1] || universityOrder.get(a[0]) - universityOrder.get(b[0]))[0];
+        .map(([name, records]) => [name, records.reduce((best, record) => record.percentile > best.percentile ? record : best)])
+        .sort((a, b) => b[1].percentile - a[1].percentile || universityOrder.get(a[0]) - universityOrder.get(b[0]))[0];
     const midpoint = selectedSusiMockAverage - 2.5;
     const midpointUniversity = [...jeokjeong.entries()]
-        .map(([name, values]) => [name, median(values)])
-        .sort((a, b) => Math.abs(a[1] - midpoint) - Math.abs(b[1] - midpoint) || universityOrder.get(a[0]) - universityOrder.get(b[0]))[0];
+        .map(([name, records]) => [name, records.reduce((best, record) => Math.abs(record.percentile - midpoint) < Math.abs(best.percentile - midpoint) ? record : best)])
+        .sort((a, b) => Math.abs(a[1].percentile - midpoint) - Math.abs(b[1].percentile - midpoint) || universityOrder.get(a[0]) - universityOrder.get(b[0]))[0];
     const appendText = text => summary.appendChild(document.createTextNode(text));
     const appendSchool = entry => {
         if (!entry) { appendText('해당 대학 자료 없음'); return; }
-        const [name, percentile] = entry;
+        const [name, record] = entry;
         const label = document.createElement('span');
         label.className = 'text-base font-extrabold text-blue-700';
         label.textContent = name;
         summary.appendChild(label);
+        if (record.major) {
+            const major = document.createElement('span');
+            major.className = 'text-sm font-semibold text-gray-700';
+            major.textContent = ` · ${record.major}`;
+            summary.appendChild(major);
+        }
         const score = document.createElement('span');
         score.className = 'text-xs font-medium text-gray-500';
-        score.textContent = ` (${percentile.toFixed(1)})`;
+        score.textContent = ` (${record.percentile.toFixed(1)})`;
         summary.appendChild(score);
     };
     summary.replaceChildren();
