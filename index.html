@@ -2841,7 +2841,20 @@ function selectGradSummary(type, key) {
             const passBoundaries = isUniversity ? groups.filter(group => group.grades.length && (group.key === '합격-기타' || group.key === '합격-논술')).flatMap(group => [group.min, group.max].map(value => { const position = ((value - domainMin) / span) * 100; return `<span title="${group.label} 경계 ${format(value)}" style="position:absolute;top:32px;left:${position}%;width:6px;height:14px;transform:translateX(-50%);background:#f3f4f6;border-radius:2px;z-index:4;"></span>`; })).join('') : '';
             const failTop = 12, passTop = isUniversity ? 36 : 48, essayTop = 60, extraTop = 84;
             const sameLine = `<div style="position:relative;height:132px;border-radius:10px;background:#f3f4f6;overflow:visible;">${rangeBar('불합격', failTop, '#ef4444', 6)}${isUniversity ? `${rangeBar('합격-기타', passTop, '#2563eb', 6)}${rangeBar('합격-논술', essayTop, '#16a34a', 6)}${passBoundaries}` : rangeBar('합격', passTop, '#2563eb', 6)}${rangeBar('추가합격', extraTop, '#eab308', 6)}</div>`;
-            return `<section class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-2"><h4 class="font-bold text-gray-800">${escapeHtmlGrad(chartTitle)} 일반등급 범위</h4><span class="text-xs text-gray-500">각 결과 범위의 양 끝에 최저·최고 등급 표시</span></div>${sameLine}<div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">${rangeSummary}</div></section>`;
+            const typicalGrades = subjectRows.filter(row => {
+                const result = String(row[24] || '').replace(/\s+/g, '');
+                if (!result.includes('합격') || result.includes('불합격')) return false;
+                const text = row.map(value => String(value || '')).join(' ');
+                return !text.includes('논술') && (text.includes('교과') || text.includes('종합'));
+            }).map(row => {
+                const value = Number(String(row[20] ?? '').replace(/,/g, '').trim());
+                return Number.isFinite(value) && value > 0 ? value : null;
+            }).filter(value => value !== null);
+            const bandCounts = new Map();
+            typicalGrades.forEach(value => { const band = Math.max(1, Math.min(9, Math.floor(value))); bandCounts.set(band, (bandCounts.get(band) || 0) + 1); });
+            const mostCommonBand = [...bandCounts.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0];
+            const guidance = mostCommonBand ? `영남고 학생은 수시 교과 전형, 종합 전형에서 평균적으로 ${mostCommonBand[0]}등급~${Math.min(9, mostCommonBand[0] + 1)}등급 이내의 학생이 합격하고 있습니다.` : '교과·종합 전형 합격 등급 자료가 없습니다.';
+            return `<section class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-2"><div class="flex flex-wrap items-center gap-3"><h4 class="font-bold text-gray-800">${escapeHtmlGrad(chartTitle)} 일반등급 범위</h4><span class="text-sm font-bold text-indigo-800">${guidance}</span></div><span class="text-xs text-gray-500">각 결과 범위의 양 끝에 최저·최고 등급 표시</span></div>${sameLine}<div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">${rangeSummary}</div></section>`;
         }
 function applyGradFilter() {
             const yEl = document.getElementById('filterYear');
