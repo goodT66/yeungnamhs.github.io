@@ -3804,39 +3804,33 @@ window.setSusiSort = setSusiSort;
 const SUSI_RECOMMENDATION_UNIVERSITIES = [
     { name: '서울대학교', aliases: ['서울대학교', '서울대'] },
     { name: '연세대학교', aliases: ['연세대학교', '연세대'] },
-    { name: '연세대학교(미래)', aliases: ['연세대학교(미래)', '연세대(미래)'] },
     { name: '고려대학교', aliases: ['고려대학교', '고려대'] },
     { name: '고려대학교(세종)', aliases: ['고려대학교(세종)', '고려대(세종)'] },
     { name: '성균관대학교', aliases: ['성균관대학교', '성균관대'] },
-    { name: '한양대학교', aliases: ['한양대학교', '한양대'] },
     { name: '서강대학교', aliases: ['서강대학교', '서강대'] },
+    { name: '한양대학교', aliases: ['한양대학교', '한양대'] },
+    { name: '한양대학교(ERICA)', aliases: ['한양대학교(ERICA)', '한양대(ERICA)', '한양대학교(에리카)', '한양대(에리카)'] },
     { name: '중앙대학교', aliases: ['중앙대학교', '중앙대'] },
     { name: '중앙대학교(다빈치)', aliases: ['중앙대학교(다빈치)', '중앙대(다빈치)'] },
     { name: '경희대학교', aliases: ['경희대학교', '경희대'] },
-    { name: '한국외국어대학교', aliases: ['한국외국어대학교', '한국외대'] },
     { name: '서울시립대학교', aliases: ['서울시립대학교', '서울시립대', '시립대'] },
-    { name: '경북대학교', aliases: ['경북대학교', '경북대'] },
-    { name: '부산대학교', aliases: ['부산대학교', '부산대'] },
-    { name: '계명대학교', aliases: ['계명대학교', '계명대'] },
-    { name: '영남대학교', aliases: ['영남대학교', '영남대'] },
-    { name: '금오공과대학교', aliases: ['금오공과대학교', '금오공대'] },
+    { name: '한국외국어대학교', aliases: ['한국외국어대학교', '한국외대'] },
     { name: '건국대학교', aliases: ['건국대학교', '건국대'] },
+    { name: '숭실대학교', aliases: ['숭실대학교', '숭실대'] },
     { name: '동국대학교', aliases: ['동국대학교', '동국대'] },
     { name: '동국대학교(WISE)', aliases: ['동국대학교(WISE)', '동국대(WISE)', '동국대학교(와이즈)', '동국대(와이즈)', '동국대학교(경주)', '동국대(경주)'] },
-    { name: '숭실대학교', aliases: ['숭실대학교', '숭실대'] },
-    { name: '국민대학교', aliases: ['국민대학교', '국민대'] },
-    { name: '세종대학교', aliases: ['세종대학교', '세종대'] },
-    { name: '단국대학교', aliases: ['단국대학교', '단국대'] },
+    { name: '홍익대학교', aliases: ['홍익대학교', '홍익대'] },
+    { name: '경북대학교', aliases: ['경북대학교', '경북대'] },
+    { name: '부산대학교', aliases: ['부산대학교', '부산대'] },
     { name: '가천대학교', aliases: ['가천대학교', '가천대'] }
-];
-function getSusiRecommendationUniversity(value) {
+];function getSusiRecommendationUniversity(value) {
     const raw = String(value || '').replace(/\s/g, '');
     const lower = raw.toLowerCase();
-    if (/연세대/.test(raw) && /미래/.test(raw)) return '연세대학교(미래)';
+    if (/연세대/.test(raw) && /미래/.test(raw)) return null;
     if (/고려대/.test(raw) && /세종/.test(raw)) return '고려대학교(세종)';
     if (/중앙대/.test(raw) && /다빈치/.test(raw)) return '중앙대학교(다빈치)';
     if (/동국대/.test(raw) && /(wise|와이즈|경주)/i.test(lower)) return '동국대학교(WISE)';
-    if (/한양대/.test(raw) && /(erica|에리카)/i.test(lower)) return null;
+    if (/한양대/.test(raw) && /(erica|에리카)/i.test(lower)) return '한양대학교(ERICA)';
     const normalized = raw.replace(/\([^)]*\)/g, '');
     return SUSI_RECOMMENDATION_UNIVERSITIES.find(item => item.aliases.some(alias => normalized.includes(alias)))?.name || null;
 }
@@ -3852,7 +3846,6 @@ function updateSusiRecommendationSummary(rows) {
         summary.classList.add('hidden');
         return;
     }
-
     const soshin = new Map();
     const jeokjeong = new Map();
     rows.forEach(row => {
@@ -3862,15 +3855,25 @@ function updateSusiRecommendationSummary(rows) {
         const percentile = getSusiCsatPercentile(row);
         if (!university || !Number.isFinite(percentile)) return;
         const target = position === '소신' ? soshin : jeokjeong;
-        target.set(university, Math.max(target.get(university) ?? -Infinity, percentile));
+        if (!target.has(university)) target.set(university, []);
+        target.get(university).push(percentile);
     });
     const universityOrder = new Map(SUSI_RECOMMENDATION_UNIVERSITIES.map((item, index) => [item.name, index]));
-    const entries = schools => [...schools.entries()]
-        .sort((a, b) => b[1] - a[1] || universityOrder.get(a[0]) - universityOrder.get(b[0]))
-        .slice(0, 2);
+    const median = values => {
+        const sorted = [...values].sort((a, b) => a - b);
+        const middle = Math.floor(sorted.length / 2);
+        return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+    };
+    const entries = (schools, position) => {
+        const midpoint = position === '소신' ? selectedSusiMockAverage + 1.5 : selectedSusiMockAverage - 2.5;
+        return [...schools.entries()]
+            .map(([name, values]) => [name, median(values)])
+            .sort((a, b) => Math.abs(a[1] - midpoint) - Math.abs(b[1] - midpoint) || universityOrder.get(a[0]) - universityOrder.get(b[0]))
+            .slice(0, 2);
+    };
     const appendText = text => summary.appendChild(document.createTextNode(text));
-    const appendSchools = schools => {
-        const list = entries(schools);
+    const appendSchools = (schools, position) => {
+        const list = entries(schools, position);
         if (!list.length) { appendText('해당 대학 자료 없음'); return; }
         list.forEach(([name, percentile], index) => {
             if (index) appendText(', ');
@@ -3886,11 +3889,9 @@ function updateSusiRecommendationSummary(rows) {
     };
     summary.replaceChildren();
     appendText(`${studentName} 학생은 ${month}월 모의고사 성적을 기준으로 소신 지원의 경우 `);
-
-
-    appendSchools(soshin);
+    appendSchools(soshin, '소신');
     appendText(', 적정 지원의 경우 ');
-    appendSchools(jeokjeong);
+    appendSchools(jeokjeong, '적정');
     appendText('입니다.');
     summary.classList.remove('hidden');
 }function renderSusiResultTable() {
