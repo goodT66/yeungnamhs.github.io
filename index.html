@@ -2729,6 +2729,13 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             if (majorName === '의예과·의학과') return aliases.includes(unit);
             return aliases.some(alias => unit.includes(alias));
         }
+        function isGradEssayAdmission(row) {
+            return String(row?.[12] || '').replace(/\s+/g, '').includes('논술');
+        }
+        function isGradCurriculumOrHolisticAdmission(row) {
+            const type = String(row?.[12] || '').replace(/\s+/g, '');
+            return type.includes('교과') || type.includes('종합');
+        }
 function renderGradUniversitySummary() {
             const box = document.getElementById('gradUniversitySummary');
             const year = document.getElementById('filterYear')?.value || '';
@@ -2816,7 +2823,7 @@ function selectGradSummary(type, key) {
                     const isAccepted = result.includes('합격') && !result.includes('불합격') && !isExtraAcceptance;
                     if (!isAccepted) return false;
                     if (category.key === '합격') return true;
-                    const isEssay = row.some(value => String(value || '').includes('논술'));
+                    const isEssay = isGradEssayAdmission(row);
                     if (category.key === '합격-논술') return isEssay;
                     if (category.key === '합격-기타') return !isEssay;
                     return false;
@@ -2854,8 +2861,7 @@ function selectGradSummary(type, key) {
             const typicalGrades = subjectRows.filter(row => {
                 const result = String(row[24] || '').replace(/\s+/g, '');
                 if (!result.includes('합격') || result.includes('불합격')) return false;
-                const text = row.map(value => String(value || '')).join(' ');
-                return !text.includes('논술') && (text.includes('교과') || text.includes('종합'));
+                return isGradCurriculumOrHolisticAdmission(row) && !isGradEssayAdmission(row);
             }).map(row => {
                 const value = Number(String(row[20] ?? '').replace(/,/g, '').trim());
                 return Number.isFinite(value) && value > 0 ? value : null;
