@@ -37,7 +37,13 @@
         .grad-table th { background-color: #f0fdf4; font-weight: bold; border: 1px solid #bbf7d0; padding: 12px 8px; text-align: center; white-space: nowrap; cursor: pointer; transition: background 0.2s; user-select: none; }
         .grad-table th:hover { background-color: #dcfce7; }
         .grad-table td { border: 1px solid #e2e8f0; padding: 10px 8px; text-align: center; white-space: nowrap; }
-        .grad-table tr:hover td { background-color: #f8fafc; }
+        .grad-table tr:hover td { background-color: #f8fafc; }        /* 전달 사항 목록에서도 편집기 서식과 줄바꿈을 유지 */
+        .notice-rendered-content { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.75; }
+        .notice-rendered-content p, .notice-rendered-content div { margin: 0 0 .45em; }
+        .notice-rendered-content ul { list-style: disc; padding-left: 1.5rem; margin: .35em 0; }
+        .notice-rendered-content ol { list-style: decimal; padding-left: 1.5rem; margin: .35em 0; }
+        .notice-rendered-content li { margin: .15em 0; }
+        .notice-rendered-content h1, .notice-rendered-content h2, .notice-rendered-content h3 { font-weight: 700; margin: .45em 0; }
         .sort-icon { display: inline-block; width: 14px; color: #16a34a; }
     
         #noticeEditorOverlay { display:none; position:fixed; inset:0; z-index:10000; background:rgba(15,23,42,.62); align-items:center; justify-content:center; padding:18px; }
