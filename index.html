@@ -455,7 +455,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                         <span id="gradWarning" class="text-red-500 font-normal text-xs ml-2 hidden">(최대 100건 표시)</span>
                     </div>
                 </div>
-                <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
+            <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
                 <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 65vh;">
                     <table class="grad-table text-sm w-full">
                       <thead class="sticky top-0 z-10 shadow-sm bg-gray-50">
@@ -502,7 +502,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                     <input list="classMajorList" id="classMajorInput" placeholder="학과명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-48" onchange="renderClassTable()" onkeyup="renderClassTable()">
                     <datalist id="classMajorList"></datalist>
                 </div>
-                <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
+            <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
                 <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 70vh;">
                     <table class="grad-table text-sm w-full">
                         <thead class="sticky top-0 z-10 shadow-sm">
@@ -561,7 +561,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                         검색 결과: <span id="ivCount" class="text-orange-600 text-lg">0</span>건
                     </div>
                 </div>
-                <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
+            <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
                 <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 70vh;">
                     <table class="grad-table text-sm w-full">
                         <thead class="sticky top-0 z-10 shadow-sm">
@@ -648,7 +648,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
 <!-- 5. 검색 결과 및 엑셀 다운로드 버튼 -->
             <div class="flex items-center text-sm text-gray-700 font-bold bg-white px-3 py-2 rounded border border-gray-200 shadow-sm">
                 검색 결과: <span id="susiResultCount" class="text-yellow-600 text-lg mx-1">0</span>건
-                <span id="susiResultWarning" class="text-red-500 font-normal text-xs ml-2 hidden">(전체 결과를 순차 표시)</span>
+
                 
                 <button onclick="downloadSusiExcel()" class="ml-4 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded shadow text-xs transition-colors flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -660,10 +660,13 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         </div>
     </div>
     
-    <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다. <span class="ml-2 inline-flex items-center gap-1"><i class="inline-block h-3 w-3 rounded-sm border border-amber-300 bg-amber-100"></i>음영: 선택 학생 평균 ±1 백분위</span></p>
+<div id="susiPagination" class="flex flex-wrap items-center justify-between gap-2 mb-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
+    <span id="susiPageSummary" class="text-sm text-gray-600">조회 결과 없음</span>
+    <div class="flex items-center gap-2"><button id="susiPrevPage" type="button" onclick="changeSusiPage(-1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">이전</button><span id="susiPageNumber" class="min-w-16 text-center text-sm font-semibold text-gray-700">0 / 0</span><button id="susiNextPage" type="button" onclick="changeSusiPage(1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">다음</button></div>
+</div>    <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다. <span class="ml-2 inline-flex items-center gap-1"><i class="inline-block h-3 w-3 rounded-sm border border-amber-300 bg-amber-100"></i>음영: 선택 학생 평균 ±1 백분위</span></p>
 
     <!-- 테이블 영역 유지 -->
-    <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 70vh;">
+    <div id="susiResultTableScroll" class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 70vh;">
         <table class="grad-table text-sm w-full">
             <thead class="sticky top-0 z-10 shadow-sm">
                 <tr>
@@ -3583,7 +3586,9 @@ let susiKnownUniversitySet = new Set();
 const susiRowMetaCache = new WeakMap();
 let currentSusiSortCol = null;
 let isSusiAscending = true;
-let susiRenderToken = 0;
+let susiCurrentPage = 0;
+const susiPageSize = 500;
+let susiFilteredRows = [];
 
 // 표시할 열 인덱스 (연도~만점)
 const susiColOrder = [1, 5, 6, 8, 9, 10, 11, 12, 13, "position", 17, 18, 19, 20, 14, 15, 16];
@@ -3796,7 +3801,6 @@ function renderSusiResultTable() {
     const minCsat = minCsatEl && minCsatEl.value ? parseFloat(minCsatEl.value) : -Infinity;
     const maxCsat = maxCsatEl && maxCsatEl.value ? parseFloat(maxCsatEl.value) : Infinity;
 
-    const renderToken = ++susiRenderToken;
     if (susiResultData.length === 0) return;
 
     const selectedUniversityIsExact = susiKnownUniversitySet.has(u);
@@ -3837,69 +3841,75 @@ function renderSusiResultTable() {
 
     const totalCount = filtered.length;
     const countEl = document.getElementById('susiResultCount');
-    if(countEl) countEl.textContent = totalCount;
+    if (countEl) countEl.textContent = totalCount;
+    susiFilteredRows = filtered;
+    susiCurrentPage = 0;
+    renderSusiResultPage(0);
+}
 
-    const warningEl = document.getElementById('susiResultWarning');
+function changeSusiPage(delta) {
+    renderSusiResultPage(susiCurrentPage + delta);
+}
+
+function renderSusiResultPage(page) {
+    const tbody = document.getElementById('susiResultTableBody');
+    const pagination = document.getElementById('susiPagination');
+    if (!tbody || !pagination) return;
+    const total = susiFilteredRows.length;
     tbody.innerHTML = '';
-    if (filtered.length === 0) {
-        if (warningEl) warningEl.classList.add('hidden');
+    if (!total) {
+        pagination.classList.add('hidden');
         tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
         return;
     }
-
+    const pageCount = Math.ceil(total / susiPageSize);
+    susiCurrentPage = Math.max(0, Math.min(page, pageCount - 1));
+    const start = susiCurrentPage * susiPageSize;
+    const end = Math.min(start + susiPageSize, total);
     const studentAverage = selectedSusiMockAverage;
-    const chunkSize = 500;
-    let renderIndex = 0;
-    if (warningEl && filtered.length > chunkSize) {
-        warningEl.textContent = '(전체 결과를 표시하는 중...)';
-        warningEl.classList.remove('hidden');
-    } else if (warningEl) warningEl.classList.add('hidden');
-
-    const renderNextChunk = () => {
-        if (renderToken !== susiRenderToken) return;
-        const fragment = document.createDocumentFragment();
-        const endIndex = Math.min(renderIndex + chunkSize, filtered.length);
-        for (; renderIndex < endIndex; renderIndex++) {
-            const row = filtered[renderIndex];
-            const tr = document.createElement('tr');
-            const rowPercentile = getSusiCsatPercentile(row);
-            const isNearStudentAverage = Number.isFinite(studentAverage) && Number.isFinite(rowPercentile) && Math.abs(rowPercentile - studentAverage) <= 1;
-            if (isNearStudentAverage) tr.classList.add('susi-near-average');
-            let html = '';
-            susiColOrder.forEach(idx => {
-                if (idx === 'position') {
-                    const position = getSusiSupportPosition(row, studentAverage);
-                    const badgeClass = {
-                        '안정': 'bg-emerald-100 text-emerald-800',
-                        '소신안정': 'bg-lime-100 text-lime-800',
-                        '적정': 'bg-blue-100 text-blue-800',
-                        '상향': 'bg-amber-100 text-amber-800',
-                        '위험': 'bg-rose-100 text-rose-800'
-                    }[position] || '';
-                    html += position === '-' ? '<td class="text-center text-gray-400">-</td>' : `<td class="text-center"><span class="inline-block rounded px-2 py-0.5 text-xs font-bold ${badgeClass}">${position}</span></td>`;
-                    return;
-                }
-                const val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
-                let tdClass = '';
-                if (idx === 5 || idx === 6) tdClass = 'font-bold text-gray-800';
-                if (idx === 14) tdClass = 'font-bold text-yellow-700 bg-yellow-50/50';
-                if (idx >= 17 && idx <= 20) tdClass = 'text-blue-700 bg-blue-50/30 font-medium';
-                html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
-            });
-            tr.innerHTML = html;
-            if (isNearStudentAverage) tr.querySelectorAll('td').forEach(td => td.style.setProperty('background-color', '#fff3c4', 'important'));
-            fragment.appendChild(tr);
-        }
-        tbody.appendChild(fragment);
-        if (renderIndex < filtered.length) {
-            requestAnimationFrame(renderNextChunk);
-        } else if (warningEl) {
-            warningEl.classList.add('hidden');
-        }
-    };
-    renderNextChunk();
-}
-window.renderSusiResultTable = renderSusiResultTable;;
+    const fragment = document.createDocumentFragment();
+    for (let rowIndex = start; rowIndex < end; rowIndex++) {
+        const row = susiFilteredRows[rowIndex];
+        const tr = document.createElement('tr');
+        const rowPercentile = getSusiCsatPercentile(row);
+        const isNearStudentAverage = Number.isFinite(studentAverage) && Number.isFinite(rowPercentile) && Math.abs(rowPercentile - studentAverage) <= 1;
+        if (isNearStudentAverage) tr.classList.add('susi-near-average');
+        let html = '';
+        susiColOrder.forEach(idx => {
+            if (idx === 'position') {
+                const position = getSusiSupportPosition(row, studentAverage);
+                const badgeClass = {
+                    '안정': 'bg-emerald-100 text-emerald-800',
+                    '소신안정': 'bg-lime-100 text-lime-800',
+                    '적정': 'bg-blue-100 text-blue-800',
+                    '상향': 'bg-amber-100 text-amber-800',
+                    '위험': 'bg-rose-100 text-rose-800'
+                }[position] || '';
+                html += position === '-' ? '<td class="text-center text-gray-400">-</td>' : `<td class="text-center"><span class="inline-block rounded px-2 py-0.5 text-xs font-bold ${badgeClass}">${position}</span></td>`;
+                return;
+            }
+            const val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
+            let tdClass = '';
+            if (idx === 5 || idx === 6) tdClass = 'font-bold text-gray-800';
+            if (idx === 14) tdClass = 'font-bold text-yellow-700 bg-yellow-50/50';
+            if (idx >= 17 && idx <= 20) tdClass = 'text-blue-700 bg-blue-50/30 font-medium';
+            html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
+        });
+        tr.innerHTML = html;
+        if (isNearStudentAverage) tr.querySelectorAll('td').forEach(td => td.style.setProperty('background-color', '#fff3c4', 'important'));
+        fragment.appendChild(tr);
+    }
+    tbody.appendChild(fragment);
+    document.getElementById('susiPageSummary').textContent = `${start + 1}–${end}건 / 전체 ${total.toLocaleString()}건`;
+    document.getElementById('susiPageNumber').textContent = `${susiCurrentPage + 1} / ${pageCount}`;
+    document.getElementById('susiPrevPage').disabled = susiCurrentPage === 0;
+    document.getElementById('susiNextPage').disabled = susiCurrentPage >= pageCount - 1;
+    pagination.classList.remove('hidden');
+    const scroller = document.getElementById('susiResultTableScroll');
+    if (scroller) scroller.scrollTop = 0;
+}window.renderSusiResultTable = renderSusiResultTable;;
+window.renderSusiResultPage = renderSusiResultPage;
+window.changeSusiPage = changeSusiPage;
 
     
     </script>
