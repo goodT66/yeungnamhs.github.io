@@ -3598,7 +3598,24 @@ function onSusiMockGradeChange(){const g=document.getElementById('susiMockGrade'
 function onSusiMockClassChange(){const g=document.getElementById('susiMockGrade').value,c=document.getElementById('susiMockClass').value,s=document.getElementById('susiMockStudent'),e=document.getElementById('susiMockExam');s.innerHTML='<option value="">번호-이름</option>';e.innerHTML='<option value="">모의고사 월</option>';studentLookupRows.filter(x=>x.grade===g&&x.cls===c).sort((a,b)=>Number(a.no)-Number(b.no)).forEach(x=>s.add(new Option(`${x.no}번 - ${x.name}`,`${x.no}|${x.name}`)));s.disabled=!(g&&c);e.disabled=true;clearSusiMockResult();}
 function getSusiMockSelectedRows(){const g=document.getElementById('susiMockGrade').value,c=document.getElementById('susiMockClass').value,[n,name]=document.getElementById('susiMockStudent').value.split('|'),s=studentLookupRows.find(x=>x.grade===g&&x.cls===c&&x.no===n&&x.name===name);if(!s)return[];const ids=new Set([`${s.grade}${String(s.cls).padStart(2,'0')}${String(s.no).padStart(2,'0')}`,`${s.grade}${s.cls}${s.no}`,`${s.grade}${String(s.cls).padStart(2,'0')}${s.no}`]);return lookupMockRows.filter(r=>{if(r.name.trim()!==s.name.trim())return false;const id=String(r.id).replace(/\D/g,'');return ids.has(id)||(id.startsWith(s.grade)&&id.endsWith(String(s.no).padStart(2,'0'))&&id.includes(String(s.cls)));});}
 async function onSusiMockStudentChange(){const e=document.getElementById('susiMockExam'),st=document.getElementById('susiMockLookupStatus'),[n,name]=document.getElementById('susiMockStudent').value.split('|');e.innerHTML='<option value="">모의고사 월</option>';e.disabled=true;clearSusiMockResult();if(!n||!name)return;try{await loadLookupMockRows();const exams=[...new Set(getSusiMockSelectedRows().map(r=>r.exam).filter(Boolean))];exams.forEach(x=>e.add(new Option(x,x)));e.disabled=!exams.length;st.textContent=exams.length?`${name} 학생의 모의고사 자료 ${exams.length}건을 불러왔습니다.`:'선택한 학생의 모의고사 자료가 없습니다.';if(exams.length)renderSusiMockAverage();}catch(err){console.error(err);st.textContent='모의고사 자료를 불러오지 못했습니다.';}}
-function renderSusiMockAverage(){const exam=document.getElementById('susiMockExam').value,r=getSusiMockSelectedRows().find(x=>x.exam===exam);if(!r){clearSusiMockResult();return;}const p=[r.korPtc,r.mathPtc,r.i1Ptc,r.i2Ptc].map(x=>Number(String(x).replace(',','.'))),valid=p.filter(Number.isFinite),raw=Number(String(r.avg).replace(',','.')),avg=Number.isFinite(raw)?raw:(valid.length?valid.reduce((a,b)=>a+b,0)/valid.length:NaN);document.getElementById('susiMockAverageValue').textContent=Number.isFinite(avg)?avg.toFixed(1):'-';['susiMockKorValue','susiMockMathValue','susiMockInq1Value','susiMockInq2Value'].forEach((id,i)=>document.getElementById(id).textContent=Number.isFinite(p[i])?String(p[i]):'-');}
+function renderSusiMockAverage() {
+    const examName=document.getElementById('susiMockExam').value;
+    const row=getSusiMockSelectedRows().find(x=>x.exam===examName);
+    if(!row){clearSusiMockResult();return;}
+    const parsePercentile=value=>parseFloat(String(value??'').replace(/,/g,'.').replace(/[^0-9.\-]/g,''));
+    const percentiles=[row.korPtc,row.mathPtc,row.i1Ptc,row.i2Ptc].map(parsePercentile);
+    const valid=percentiles.filter(Number.isFinite);
+    const recordedAverage=parsePercentile(row.avg);
+    const average=Number.isFinite(recordedAverage)?recordedAverage:(valid.length?valid.reduce((sum,value)=>sum+value,0)/valid.length:NaN);
+    document.getElementById('susiMockAverageValue').textContent=Number.isFinite(average)?average.toFixed(1):'-';
+    ['susiMockKorValue','susiMockMathValue','susiMockInq1Value','susiMockInq2Value'].forEach((id,index)=>document.getElementById(id).textContent=Number.isFinite(percentiles[index])?String(percentiles[index]):'-');
+    if(Number.isFinite(average)){
+        const min=document.getElementById('susiCsatMin'), max=document.getElementById('susiCsatMax');
+        min.value=Math.max(0,average-5).toFixed(1);
+        max.value=Math.min(100,average+5).toFixed(1);
+        renderSusiResultTable();
+    }
+}
 
 async function fetchSusiResultData() {
     const spinner = document.getElementById('susiResultLoadingSpinner');
