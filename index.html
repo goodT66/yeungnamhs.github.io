@@ -2724,8 +2724,24 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 }).length;
                 return `<span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-100 px-3 py-1.5 text-sm"><span class="font-semibold text-gray-700">${escapeHtmlGrad(university.name)}</span><strong class="text-blue-700">${count}건</strong></span>`;
             });
+            const targetMajors = [
+                { name: '의예과·의학과', matches: ['의예과', '의학과'] },
+                { name: '약학과', matches: ['약학과', '약학부'] },
+                { name: '수의예과', matches: ['수의예과'] },
+                { name: '치의예과', matches: ['치의예과'] },
+                { name: '한의예과', matches: ['한의예과'] }
+            ];
+            const majorCounts = targetMajors.map(major => {
+                const count = rows.filter(row => {
+                    const result = String(row[24] || '').replace(/\s+/g, '');
+                    if (!result.includes('합격') || result.includes('불합격')) return false;
+                    const unit = String(row[15] || '').replace(/\s+/g, '');
+                    return major.matches.some(name => unit.includes(name));
+                }).length;
+                return `<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-100 px-3 py-1.5 text-sm"><span class="font-semibold text-gray-700">${escapeHtmlGrad(major.name)}</span><strong class="text-rose-700">${count}건</strong></span>`;
+            });
             const yearLabel = year ? `${escapeHtmlGrad(year)}학년도` : '전체 연도';
-            box.innerHTML = `<div class="flex flex-wrap items-center gap-2"><strong class="text-gray-800 mr-1">${yearLabel} 주요 대학 합격 현황</strong>${counts.join('')}</div>`;
+            box.innerHTML = `<div class="flex flex-wrap items-center gap-2"><strong class="text-gray-800 mr-1">${yearLabel} 주요 대학 합격 현황</strong>${counts.join('')}<span class="mx-1 h-6 border-l border-gray-300" aria-hidden="true"></span><strong class="text-gray-800 mr-1">의약학 계열</strong>${majorCounts.join('')}</div>`;
         }
 function applyGradFilter() {
             const yEl = document.getElementById('filterYear');
