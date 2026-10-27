@@ -3836,11 +3836,12 @@ function updateSusiRecommendationSummary(rows) {
     const jeokjeong = new Map();
     rows.forEach(row => {
         const position = getSusiSupportPosition(row, selectedSusiMockAverage);
-        if (position !== '소신안정' && position !== '적정') return;
+        // 소신 지원은 적정보다 높고 위험보다는 낮은 구간(현재 '상향': 학생 평균보다 +2.0~+3.9)으로 계산합니다.
+        if (position !== '상향' && position !== '적정') return;
         const university = getSusiRecommendationUniversity(row[5]);
         const percentile = getSusiCsatPercentile(row);
         if (!university || !Number.isFinite(percentile)) return;
-        const target = position === '소신안정' ? soshin : jeokjeong;
+        const target = position === '상향' ? soshin : jeokjeong;
         target.set(university, Math.max(target.get(university) ?? -Infinity, percentile));
     });
     const universityOrder = new Map(SUSI_RECOMMENDATION_UNIVERSITIES.map((item, index) => [item.name, index]));
