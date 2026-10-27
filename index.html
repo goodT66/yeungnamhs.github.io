@@ -2710,7 +2710,16 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             { name: '한국외국어대학교', aliases: ['한국외국어대학교', '한국외대', '외국어대학교', '외대'] },
             { name: '경북대학교', aliases: ['경북대학교', '경북대'] }, { name: '부산대학교', aliases: ['부산대학교', '부산대'] }
         ];
-        function renderGradUniversitySummary() {
+                function matchesGradSummaryUniversity(schoolName, universityName) {
+            const school = String(schoolName || '').replace(/\s+/g, '').toLowerCase();
+            if (universityName === '한양대학교' && (school.includes('erica') || school.includes('에리카'))) return false;
+            if (universityName === '고려대학교' && school.includes('세종')) return false;
+            const university = GRAD_SUMMARY_UNIVERSITIES.find(item => item.name === universityName);
+            if (!university) return false;
+            const aliases = university.aliases.map(alias => alias.replace(/\s+/g, '').toLowerCase());
+            return aliases.some(alias => school.includes(alias));
+        }
+function renderGradUniversitySummary() {
             const box = document.getElementById('gradUniversitySummary');
             const year = document.getElementById('filterYear')?.value || '';
             if (!box) return;
@@ -2721,7 +2730,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     const result = String(row[24] || '').replace(/\s+/g, '');
                     if (!result.includes('합격') || result.includes('불합격')) return false;
                     const school = String(row[8] || '').replace(/\s+/g, '').toLowerCase();
-                    return aliases.some(alias => school.includes(alias));
+                    return matchesGradSummaryUniversity(row[8], university.name);
                 }).length;
                 const active = gradSummarySelection?.type === 'university' && gradSummarySelection.key === university.name;
                 return `<button type="button" onclick="selectGradSummary('university','${escapeHtmlGrad(university.name)}')" class="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm cursor-pointer transition" style="${active ? 'background-color:#3730a3;border-color:#312e81;color:#fff;' : 'background-color:#eef2ff;border-color:#c7d2fe;color:#374151;'}"><span class="font-semibold" style="color:${active ? '#fff' : '#374151'}">${escapeHtmlGrad(university.name)}</span><strong style="color:${active ? '#fff' : '#1d4ed8'}">${count}건</strong></button>`;
@@ -2765,7 +2774,7 @@ function selectGradSummary(type, key) {
                 const university = GRAD_SUMMARY_UNIVERSITIES.find(item => item.name === selection.key);
                 if (!university) return '';
                 const aliases = university.aliases.map(alias => alias.replace(/\s+/g, '').toLowerCase());
-                subjectRows = yearRows.filter(row => aliases.some(alias => String(row[8] || '').replace(/\s+/g, '').toLowerCase().includes(alias)));
+                subjectRows = yearRows.filter(row => matchesGradSummaryUniversity(row[8], university.name));
             } else {
                 const majorKeywords = {
                     '의예과·의학과': ['의예과', '의학과'], '약학과': ['약학과', '약학부'],
@@ -2863,7 +2872,7 @@ function applyGradFilter() {
                         const university = GRAD_SUMMARY_UNIVERSITIES.find(item => item.name === gradSummarySelection.key);
                         const aliases = university ? university.aliases.map(alias => alias.replace(/\s+/g, '').toLowerCase()) : [];
                         const school = u.replace(/\s+/g, '').toLowerCase();
-                        return aliases.some(alias => school.includes(alias));
+                        return matchesGradSummaryUniversity(u, gradSummarySelection.key);
                     }
                     if (gradSummarySelection.type === 'major') {
                         const majorAliases = {
