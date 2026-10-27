@@ -3829,20 +3829,26 @@ function updateSusiRecommendationSummary(rows) {
         summary.classList.add('hidden');
         return;
     }
-    const soshin = new Set();
-    const jeokjeong = new Set();
+    const soshin = new Map();
+    const jeokjeong = new Map();
     rows.forEach(row => {
         const position = getSusiSupportPosition(row, selectedSusiMockAverage);
+        if (position !== '소신안정' && position !== '적정') return;
         const university = getSusiRecommendationUniversity(row[5]);
-        if (!university) return;
-        if (position === '소신안정') soshin.add(university);
-        if (position === '적정') jeokjeong.add(university);
+        const percentile = getSusiCsatPercentile(row);
+        if (!university || !Number.isFinite(percentile)) return;
+        const target = position === '소신안정' ? soshin : jeokjeong;
+        target.set(university, Math.max(target.get(university) ?? -Infinity, percentile));
     });
-    const names = set => set.size ? SUSI_RECOMMENDATION_UNIVERSITIES.filter(item => set.has(item.name)).map(item => item.name).join(', ') : '해당 대학 자료 없음';
+    const universityOrder = new Map(SUSI_RECOMMENDATION_UNIVERSITIES.map((item, index) => [item.name, index]));
+    const names = schools => [...schools.entries()]
+        .sort((a, b) => b[1] - a[1] || universityOrder.get(a[0]) - universityOrder.get(b[0]))
+        .slice(0, 2)
+        .map(([name]) => name)
+        .join(', ') || '해당 대학 자료 없음';
     summary.textContent = `${studentName} 학생은 ${month}월 모의고사 성적을 기준으로 소신 지원의 경우 ${names(soshin)}, 적정 지원의 경우 ${names(jeokjeong)}입니다.`;
     summary.classList.remove('hidden');
-}
-function renderSusiResultTable() {
+}function renderSusiResultTable() {
     const yEl = document.getElementById('susiYearSelect');
     const uEl = document.getElementById('susiUnivInput');
     const mEl = document.getElementById('susiMajorInput');
