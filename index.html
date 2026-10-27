@@ -38,6 +38,33 @@
         .grad-table th:hover { background-color: #dcfce7; }
         .grad-table td { border: 1px solid #e2e8f0; padding: 10px 8px; text-align: center; white-space: nowrap; }
         .grad-table tr:hover td { background-color: #f8fafc; }        /* 수시 입결 표는 모집단위가 길어도 다른 열 너비를 밀어내지 않도록 제한 */
+        #classView .grad-table { table-layout: fixed; min-width: 1800px; }
+        #classView .grad-table th, #classView .grad-table td { white-space: normal; overflow-wrap: anywhere; word-break: keep-all; line-height: 1.35; }
+        #classView .grad-table th:nth-child(1), #classView .grad-table td:nth-child(1) { width: 50px; min-width: 50px; max-width: 50px; }
+        #classView .grad-table th:nth-child(2), #classView .grad-table td:nth-child(2) { width: 60px; min-width: 60px; max-width: 60px; }
+        #classView .grad-table th:nth-child(3), #classView .grad-table td:nth-child(3) { width: 80px; min-width: 80px; max-width: 80px; }
+        #classView .grad-table th:nth-child(4), #classView .grad-table td:nth-child(4) { width: 170px; min-width: 170px; max-width: 170px; }
+        #classView .grad-table th:nth-child(5), #classView .grad-table td:nth-child(5) { width: 120px; min-width: 120px; max-width: 120px; }
+        #classView .grad-table th:nth-child(6), #classView .grad-table td:nth-child(6) { width: 150px; min-width: 150px; max-width: 150px; }
+        #classView .grad-table th:nth-child(7), #classView .grad-table td:nth-child(7) { width: 60px; min-width: 60px; max-width: 60px; }
+        #classView .grad-table th:nth-child(8), #classView .grad-table td:nth-child(8) { width: 220px; min-width: 220px; max-width: 220px; }
+        #classView .grad-table th:nth-child(12), #classView .grad-table td:nth-child(12) { width: 180px; min-width: 180px; max-width: 180px; }
+        #classView .grad-table th:nth-child(14), #classView .grad-table td:nth-child(14) { width: 100px; min-width: 100px; max-width: 100px; }
+        #classView .grad-table th:nth-child(17), #classView .grad-table td:nth-child(17) { width: 230px; min-width: 230px; max-width: 230px; }
+        #classView .grad-table thead th { position: sticky; top: 0; z-index: 20; }
+        #classView .grad-table thead th:nth-child(-n+8) { z-index: 40; }
+        #classView .grad-table tbody td:nth-child(-n+8) { position: sticky; z-index: 10; background-color: #fff; }
+        #classView .grad-table tbody tr.bg-blue-50 td:nth-child(-n+8) { background-color: #eff6ff; }
+        #classView .grad-table tbody tr.bg-red-50 td:nth-child(-n+8) { background-color: #fef2f2; }
+        #classView .grad-table tbody tr:hover td:nth-child(-n+8) { background-color: #f8fafc; }
+        #classView .grad-table th:nth-child(1), #classView .grad-table td:nth-child(1) { left: 0; }
+        #classView .grad-table th:nth-child(2), #classView .grad-table td:nth-child(2) { left: 50px; }
+        #classView .grad-table th:nth-child(3), #classView .grad-table td:nth-child(3) { left: 110px; }
+        #classView .grad-table th:nth-child(4), #classView .grad-table td:nth-child(4) { left: 190px; }
+        #classView .grad-table th:nth-child(5), #classView .grad-table td:nth-child(5) { left: 360px; }
+        #classView .grad-table th:nth-child(6), #classView .grad-table td:nth-child(6) { left: 480px; }
+        #classView .grad-table th:nth-child(7), #classView .grad-table td:nth-child(7) { left: 630px; }
+        #classView .grad-table th:nth-child(8), #classView .grad-table td:nth-child(8) { left: 690px; }
         #susiResultTableScroll .grad-table { table-layout: fixed; }
         #susiResultTableScroll .grad-table th:nth-child(3),
         #susiResultTableScroll .grad-table td:nth-child(3) { width: 220px; min-width: 220px; max-width: 220px; white-space: normal; overflow-wrap: anywhere; word-break: keep-all; line-height: 1.35; }
@@ -526,6 +553,8 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
 
                     <input list="classMajorList" id="classMajorInput" placeholder="학과명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-48" onchange="renderClassTable()" onkeyup="renderClassTable()">
                     <datalist id="classMajorList"></datalist>
+                    <button type="button" id="saveClassSusiEditsButton" onclick="saveClassSusiEdits()" class="rounded bg-blue-600 px-4 py-2 font-bold text-white transition-colors hover:bg-blue-700">저장</button>
+                    <span id="classSusiSaveStatus" class="text-xs text-gray-500" role="status"></span>
                 </div>
             <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
                 <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 70vh;">
@@ -800,6 +829,25 @@ window.studentSusiPlanStore = {
     save: async (studentId, payload) => setDoc(doc(db, "studentSusiPlans", studentId), { ...payload, updatedAt: serverTimestamp() }, { merge: true })
 };
 
+window.classSusiEditStore = {
+    load: async () => {
+        if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
+        const snapshot = await getDocs(collection(db, "classSusiEdits"));
+        return snapshot.docs.map(item => item.data());
+    },
+    save: async (items) => {
+        if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
+        for (let start = 0; start < items.length; start += 450) {
+            const batch = writeBatch(db);
+            items.slice(start, start + 450).forEach(item => {
+                const { id, ...payload } = item;
+                batch.set(doc(db, "classSusiEdits", id), { ...payload, updatedBy: currentUser.email, updatedAt: serverTimestamp() }, { merge: true });
+            });
+            await batch.commit();
+        }
+    }
+};
+
 // 전달 사항과 일정도 브라우저 로컬 저장소가 아닌 Firestore에 저장합니다.
 window.cloudDataStore = {
     getNotices: () => noticeCache.map(item => ({ ...item })),
@@ -998,7 +1046,7 @@ document.getElementById('userEmail').innerText = user.email;
                 window.applyGradFilter();
             }
             if (window.classSusiData && window.classSusiData.length > 0 && document.getElementById('classGradeSelect').options.length <= 1) {
-                window.populateClassGradeDropdown();
+                window.loadClassSusiEdits().then(() => window.populateClassGradeDropdown()).catch(error => console.error('수시 지원 반별 조회 저장값 불러오기 실패:', error));
             }
             if (window.interviewData && window.interviewData.length > 0) {
                 window.renderInterviewTable();
@@ -3084,9 +3132,74 @@ function applyGradFilter() {
         // [기능 3] 2026 수시 지원 반별 조회 스크립트
         // =====================================================================
         let classSusiData = [];
+        let classSusiEdits = {};
+        let classSusiEditsLoaded = false;
+        let classSusiEditsLoadPromise = null;
+        let classSusiEditsDirty = false;
         let currentClassSortCol = null;
         let isClassAscending = true;
         const classColOrder = [2, 3, 4, 5, 6, 7, 8, 9, 13, 14, 17, 18, 19, 20, 10, 11, 12, 24];
+
+        function getClassSusiRowKey(row) {
+            return JSON.stringify([1, 2, 3, 4, 5, 6, 7, 8, 9].map(index => String(row[index] ?? '').trim()));
+        }
+
+        function setClassSusiEdit(row, columnIndex, value) {
+            const key = getClassSusiRowKey(row);
+            if (!classSusiEdits[key]) classSusiEdits[key] = {};
+            classSusiEdits[key][columnIndex] = value;
+            row[columnIndex] = value;
+            classSusiEditsDirty = true;
+            const status = document.getElementById('classSusiSaveStatus');
+            if (status) status.textContent = '저장되지 않은 변경사항이 있습니다.';
+        }
+
+        async function loadClassSusiEdits() {
+            if (classSusiEditsLoaded) return;
+            if (classSusiEditsLoadPromise) return classSusiEditsLoadPromise;
+            if (!window.classSusiEditStore) return;
+            classSusiEditsLoadPromise = (async () => {
+                const savedItems = await window.classSusiEditStore.load();
+                classSusiEdits = {};
+                savedItems.forEach(item => {
+                    if (item && item.key && item.values) classSusiEdits[item.key] = item.values;
+                });
+                classSusiData.forEach(row => {
+                    const values = classSusiEdits[getClassSusiRowKey(row)];
+                    if (values) Object.entries(values).forEach(([columnIndex, value]) => { row[Number(columnIndex)] = value; });
+                });
+                classSusiEditsLoaded = true;
+            })();
+            try {
+                await classSusiEditsLoadPromise;
+            } finally {
+                classSusiEditsLoadPromise = null;
+            }
+        }
+        window.loadClassSusiEdits = loadClassSusiEdits;
+
+        function saveClassSusiEdits() {
+            const button = document.getElementById('saveClassSusiEditsButton');
+            const status = document.getElementById('classSusiSaveStatus');
+            if (!window.classSusiEditStore) {
+                if (status) status.textContent = '저장 기능을 불러오지 못했습니다.';
+                return;
+            }
+            if (button) { button.disabled = true; button.textContent = '저장 중…'; }
+            if (status) status.textContent = '입력 내용을 저장하고 있습니다.';
+            const items = Object.entries(classSusiEdits).map(([key, values]) => ({ id: encodeURIComponent(key), key, values }));
+            window.classSusiEditStore.save(items).then(() => {
+                classSusiEditsDirty = false;
+                if (status) status.textContent = '저장되었습니다.';
+            }).catch(error => {
+                console.error('수시 지원 반별 조회 입력값 저장 실패:', error);
+                if (status) status.textContent = '저장하지 못했습니다.';
+                alert(`입력 내용을 Firestore에 저장하지 못했습니다. 로그인 및 Firestore 보안 규칙을 확인해 주세요.\n${error?.code || error?.message || ''}`);
+            }).finally(() => {
+                if (button) { button.disabled = false; button.textContent = '저장'; }
+            });
+        }
+        window.saveClassSusiEdits = saveClassSusiEdits;
 
         async function fetchClassSusiData() {
             try {
@@ -3095,12 +3208,13 @@ function applyGradFilter() {
                 const text = await response.text();
                 Papa.parse(text, {
                     skipEmptyLines: true,
-                    complete: function(results) {
+                    complete: async function(results) {
                         const data = results.data;
                         if(data.length > 1) {
                             classSusiData = data.slice(1);
                             window.classSusiData = classSusiData;
                             if (window.getCurrentUser && window.getCurrentUser()) {
+                                try { await loadClassSusiEdits(); } catch (error) { console.error('수시 지원 반별 조회 저장값 불러오기 실패:', error); }
                                 populateClassGradeDropdown();
                             }
                         }
@@ -3266,6 +3380,7 @@ function applyGradFilter() {
             filtered.forEach(row => {
                 const tr = document.createElement('tr');
                 const finalResult = String(row[18] || '').trim(); 
+                const rowIndex = classSusiData.indexOf(row);
                 
                 if(finalResult.includes('합격') && !finalResult.includes('불')) tr.classList.add('bg-blue-50');
                 if(finalResult.includes('불합격')) tr.classList.add('bg-red-50');
@@ -3275,9 +3390,25 @@ function applyGradFilter() {
                     let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
                     let tdClass = "";
                     if (idx >= 17 && idx <= 20) {
-                        const rowIndex = classSusiData.indexOf(row);
-                        const safeValue = String(val).replace(/&/g, '&amp;').replace(/\"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                        html += `<td><input type="text" aria-label="${idx === 17 ? '1단계' : idx === 18 ? '최종단계' : idx === 19 ? '불합격사유' : '최초후보순위'} 입력" value="${safeValue === '-' ? '' : safeValue}" oninput="updateClassSusiCell(${rowIndex}, ${idx}, this.value)" class="w-full min-w-16 rounded border border-gray-300 bg-white px-2 py-1 text-center focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-300"></td>`;
+                        const safeValue = String(val === '-' ? '' : val).replace(/&/g, '&amp;').replace(/\"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        if (idx === 17) {
+                            const selectedValue = /불합격/.test(safeValue) ? '불합격' : /합격/.test(safeValue) ? '합격' : safeValue;
+                            html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['합격', '불합격'], '1단계')}</td>`;
+                        } else if (idx === 18) {
+                            const selectedValue = /불합격/.test(safeValue) ? '불합격' : /충원|추가/.test(safeValue) ? '추가합격' : /합격/.test(safeValue) ? '최초합격' : safeValue;
+                            html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['최초합격', '추가합격', '불합격'], '최종단계')}</td>`;
+                        } else if (idx === 19) {
+                            const firstStage = String(row[17] || '').trim();
+                            if (firstStage === '불합격' || /불합격/.test(firstStage)) {
+                                if (row[19] !== '1단계 불합격') setClassSusiEdit(row, 19, '1단계 불합격');
+                                html += '<td><span class="font-semibold text-gray-600">1단계 불합격</span></td>';
+                            } else {
+                                const selectedValue = /최저/.test(safeValue) ? '최저 미충족' : /2단계/.test(safeValue) ? '2단계 불합격' : /미응시/.test(safeValue) ? '미응시' : safeValue;
+                                html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['최저 미충족', '2단계 불합격', '미응시'], '불합격 사유')}</td>`;
+                            }
+                        } else {
+                            html += `<td><input type="text" aria-label="최초후보순위 입력" value="${safeValue}" oninput="updateClassSusiCell(${rowIndex}, ${idx}, this.value)" class="w-full min-w-16 rounded border border-gray-300 bg-white px-2 py-1 text-center focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-300"></td>`;
+                        }
                         return;
                     }
                     if (idx === 18) { 
@@ -3297,9 +3428,30 @@ function applyGradFilter() {
         }
         window.renderClassTable = renderClassTable;
 
+        function buildClassSusiSelect(rowIndex, columnIndex, selectedValue, options, label) {
+            const escape = value => String(value ?? '').replace(/&/g, '&amp;').replace(/\"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const values = [...options];
+            if (selectedValue && selectedValue !== '-' && !values.includes(selectedValue)) values.push(selectedValue);
+            const optionsHtml = [`<option value="">선택</option>`, ...values.map(value => `<option value="${escape(value)}"${value === selectedValue ? ' selected' : ''}>${escape(value)}</option>`)].join('');
+            return `<select aria-label="${label} 선택" onchange="handleClassSusiSelectChange(${rowIndex}, ${columnIndex}, this.value)" class="w-full min-w-20 rounded border border-gray-300 bg-white px-1 py-1 text-center focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-300">${optionsHtml}</select>`;
+        }
+
+        function handleClassSusiSelectChange(rowIndex, columnIndex, value) {
+            const row = classSusiData[rowIndex];
+            if (!row) return;
+            setClassSusiEdit(row, columnIndex, value);
+            if (columnIndex === 17) {
+                if (value === '불합격') setClassSusiEdit(row, 19, '1단계 불합격');
+                else if (String(row[19] || '') === '1단계 불합격') setClassSusiEdit(row, 19, '');
+            }
+            renderClassTable();
+        }
+        window.handleClassSusiSelectChange = handleClassSusiSelectChange;
+
         function updateClassSusiCell(rowIndex, columnIndex, value) {
-            if (!classSusiData[rowIndex]) return;
-            classSusiData[rowIndex][columnIndex] = value;
+            const row = classSusiData[rowIndex];
+            if (!row) return;
+            setClassSusiEdit(row, columnIndex, value);
         }
         window.updateClassSusiCell = updateClassSusiCell;
 
@@ -3313,8 +3465,8 @@ function applyGradFilter() {
             const escapeExcelHtml = value => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');
             const headerHtml = `<tr>${headers.map(value => `<th>${escapeExcelHtml(value)}</th>`).join('')}</tr>`;
             const bodyHtml = rows.map(tr => `<tr>${Array.from(tr.querySelectorAll('td')).map(td => {
-                const input = td.querySelector('input');
-                return `<td>${escapeExcelHtml(input ? input.value : td.textContent.trim())}</td>`;
+                const control = td.querySelector('input, select');
+                return `<td>${escapeExcelHtml(control ? control.value : td.textContent.trim())}</td>`;
             }).join('')}</tr>`).join('');
             const workbookHtml = `<html><head><meta charset="UTF-8"></head><body><table>${headerHtml}${bodyHtml}</table></body></html>`;
             const blob = new Blob(['\ufeff', workbookHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
