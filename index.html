@@ -3856,15 +3856,21 @@ function updateSusiRecommendationSummary(rows) {
         jeokjeong.get(university).push(percentile);
     });
     const universityOrder = new Map(SUSI_RECOMMENDATION_UNIVERSITIES.map((item, index) => [item.name, index]));
-    const rankedHigh = [...jeokjeong.entries()]
+    const median = values => {
+        const sorted = [...values].sort((a, b) => a - b);
+        const middle = Math.floor(sorted.length / 2);
+        return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+    };
+    const highest = [...jeokjeong.entries()]
         .map(([name, values]) => [name, Math.max(...values)])
-        .sort((a, b) => b[1] - a[1] || universityOrder.get(a[0]) - universityOrder.get(b[0]));
-    const rankedLow = [...jeokjeong.entries()]
-        .map(([name, values]) => [name, Math.min(...values)])
-        .sort((a, b) => a[1] - b[1] || universityOrder.get(a[0]) - universityOrder.get(b[0]));
+        .sort((a, b) => b[1] - a[1] || universityOrder.get(a[0]) - universityOrder.get(b[0]))[0];
+    const midpoint = selectedSusiMockAverage - 2.5;
+    const midpointUniversity = [...jeokjeong.entries()]
+        .map(([name, values]) => [name, median(values)])
+        .sort((a, b) => Math.abs(a[1] - midpoint) - Math.abs(b[1] - midpoint) || universityOrder.get(a[0]) - universityOrder.get(b[0]))[0];
     const appendText = text => summary.appendChild(document.createTextNode(text));
     const appendSchool = entry => {
-        if (!entry) { appendText('자료 부족'); return; }
+        if (!entry) { appendText('해당 대학 자료 없음'); return; }
         const [name, percentile] = entry;
         const label = document.createElement('span');
         label.className = 'text-base font-extrabold text-blue-700';
@@ -3876,10 +3882,10 @@ function updateSusiRecommendationSummary(rows) {
         summary.appendChild(score);
     };
     summary.replaceChildren();
-    appendText(`${studentName} 학생은 ${month}월 모의고사 성적을 기준으로 적정 지원의 경우 백분위 상위 3번째 대학은 `);
-    appendSchool(rankedHigh[2]);
-    appendText(', 하위 3번째 대학은 ');
-    appendSchool(rankedLow[2]);
+    appendText(`${studentName} 학생은 ${month}월 모의고사 성적을 기준으로 적정 지원 최고 백분위 대학은 `);
+    appendSchool(highest);
+    appendText(', 적정 범위 평균 지점에 가까운 대학은 ');
+    appendSchool(midpointUniversity);
     appendText('입니다.');
     summary.classList.remove('hidden');
 }function renderSusiResultTable() {
