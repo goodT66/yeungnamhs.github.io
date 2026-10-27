@@ -2700,7 +2700,8 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             }[ch]));
         }
 
-               const GRAD_SUMMARY_UNIVERSITIES = [
+        let gradSummarySelection = null;
+        const GRAD_SUMMARY_UNIVERSITIES = [
             { name: '서울대학교', aliases: ['서울대학교', '서울대'] }, { name: '연세대학교', aliases: ['연세대학교', '연세대'] },
             { name: '고려대학교', aliases: ['고려대학교', '고려대'] }, { name: '성균관대학교', aliases: ['성균관대학교', '성균관대'] },
             { name: '한양대학교', aliases: ['한양대학교', '한양대'] }, { name: '서강대학교', aliases: ['서강대학교', '서강대'] },
@@ -2722,7 +2723,8 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     const school = String(row[8] || '').replace(/\s+/g, '').toLowerCase();
                     return aliases.some(alias => school.includes(alias));
                 }).length;
-                return `<span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-100 px-3 py-1.5 text-sm"><span class="font-semibold text-gray-700">${escapeHtmlGrad(university.name)}</span><strong class="text-blue-700">${count}건</strong></span>`;
+                const active = gradSummarySelection?.type === 'university' && gradSummarySelection.key === university.name;
+                return `<button type="button" onclick="selectGradSummary('university','${escapeHtmlGrad(university.name)}')" class="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm cursor-pointer transition ${active ? 'bg-indigo-700 border-indigo-700 text-white ring-2 ring-indigo-300' : 'bg-indigo-50 border-indigo-100 hover:bg-indigo-100'}"><span class="font-semibold ${active ? 'text-white' : 'text-gray-700'}">${escapeHtmlGrad(university.name)}</span><strong class="${active ? 'text-white' : 'text-blue-700'}">${count}건</strong></button>`;
             });
             const targetMajors = [
                 { name: '의예과·의학과', matches: ['의예과', '의학과'] },
@@ -2738,7 +2740,8 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     const unit = String(row[15] || '').replace(/\s+/g, '');
                     return major.matches.some(name => unit.includes(name));
                 }).length;
-                return `<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-100 px-3 py-1.5 text-sm"><span class="font-semibold text-gray-700">${escapeHtmlGrad(major.name)}</span><strong class="text-rose-700">${count}건</strong></span>`;
+                const active = gradSummarySelection?.type === 'major' && gradSummarySelection.key === major.name;
+                return `<button type="button" onclick="selectGradSummary('major','${escapeHtmlGrad(major.name)}')" class="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm cursor-pointer transition ${active ? 'bg-rose-700 border-rose-700 text-white ring-2 ring-rose-300' : 'bg-rose-50 border-rose-100 hover:bg-rose-100'}"><span class="font-semibold ${active ? 'text-white' : 'text-gray-700'}">${escapeHtmlGrad(major.name)}</span><strong class="${active ? 'text-white' : 'text-rose-700'}">${count}건</strong></button>`;
             });
             const yearLabel = year ? `${escapeHtmlGrad(year)}학년도` : '전체 연도';
             box.innerHTML = `<div class="flex flex-wrap items-center gap-2"><strong class="text-gray-800 mr-1">${yearLabel} 주요 대학 합격 현황</strong>${counts.join('')}<span class="mx-1 h-6 border-l border-gray-300" aria-hidden="true"></span><strong class="text-gray-800 mr-1">의약학 계열</strong>${majorCounts.join('')}</div>`;
@@ -2766,9 +2769,26 @@ function applyGradFilter() {
                 const r = String(row[24] || '').trim();
 
                 if (fYear && y !== fYear) return false;
+                if (gradSummarySelection) {
+                    const normalizedResult = r.replace(/\s+/g, '');
+                    if (!normalizedResult.includes('합격') || normalizedResult.includes('불합격')) return false;
+                    if (gradSummarySelection.type === 'university') {
+                        const university = GRAD_SUMMARY_UNIVERSITIES.find(item => item.name === gradSummarySelection.key);
+                        const aliases = university ? university.aliases.map(alias => alias.replace(/\s+/g, '').toLowerCase()) : [];
+                        const school = u.replace(/\s+/g, '').toLowerCase();
+                        return aliases.some(alias => school.includes(alias));
+                    }
+                    if (gradSummarySelection.type === 'major') {
+                        const majorAliases = {
+                            '의예과·의학과': ['의예과', '의학과'], '약학과': ['약학과', '약학부'],
+                            '수의예과': ['수의예과'], '치의예과': ['치의예과'], '한의예과': ['한의예과']
+                        }[gradSummarySelection.key] || [];
+                        const unit = m.replace(/\s+/g, '');
+                        return majorAliases.some(alias => unit.includes(alias));
+                    }
+                }
                 if (fUniv && u !== fUniv) return false;
                 if (fMajor && !m.includes(fMajor)) return false;
-                
                 if (fResult) {
                     // 결과는 부분 문자열이 아니라 분류별로 구분합니다.
                     // '충원합격'도 '합격'이라는 글자를 포함하므로 먼저 분리해야 합니다.
