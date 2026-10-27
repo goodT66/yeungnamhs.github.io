@@ -618,6 +618,7 @@
         <select id="susiMockClass" onchange="onSusiMockClassChange()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium w-28"><option value="">반</option></select>
         <select id="susiMockStudent" onchange="onSusiMockStudentChange()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">번호-이름</option></select>
         <select id="susiMockExam" onchange="renderSusiMockAverage()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">모의고사 월</option></select>
+        <div class="flex items-center space-x-1 rounded-lg border border-blue-200 bg-white px-2 py-1 shadow-sm"><span class="pl-1 text-sm font-bold text-gray-700">수능 백분위</span><input type="number" id="susiCsatMin" oninput="renderSusiResultTable()" placeholder="최소" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-sm outline-none focus:border-blue-500"><span class="text-gray-500">~</span><input type="number" id="susiCsatMax" oninput="renderSusiResultTable()" placeholder="최대" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-sm outline-none focus:border-blue-500"></div>
         <div class="ml-auto flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2">
             <span class="text-sm font-bold text-gray-700">국·수·탐 백분위 평균</span>
             <strong id="susiMockAverageValue" class="text-xl font-black text-blue-700">-</strong>
@@ -644,15 +645,7 @@
         
         <!-- 우측 정렬 그룹: 수능 백분위 + 검색결과 + 엑셀 다운로드 -->
         <div class="ml-auto flex flex-wrap items-center gap-3">
-            <!-- 4. 수능 백분위 범위 필터 -->
-            <div class="flex items-center space-x-1 bg-white px-2 py-1 rounded border border-gray-300 shadow-sm">
-                <span class="text-sm font-bold text-gray-700 pl-1">수능 백분위:</span>
-                <input type="number" id="susiCsatMin" oninput="renderSusiResultTable()" placeholder="최소" step="0.1" class="w-16 border border-gray-300 rounded p-1 text-center text-sm outline-none focus:border-yellow-500">
-                <span class="text-gray-500">~</span>
-                <input type="number" id="susiCsatMax" oninput="renderSusiResultTable()" placeholder="최대" step="0.1" class="w-16 border border-gray-300 rounded p-1 text-center text-sm outline-none focus:border-yellow-500">
-            </div>
-
-            <!-- 5. 검색 결과 및 엑셀 다운로드 버튼 -->
+<!-- 5. 검색 결과 및 엑셀 다운로드 버튼 -->
             <div class="flex items-center text-sm text-gray-700 font-bold bg-white px-3 py-2 rounded border border-gray-200 shadow-sm">
                 검색 결과: <span id="susiResultCount" class="text-yellow-600 text-lg mx-1">0</span>건
                 <span id="susiResultWarning" class="text-red-500 font-normal text-xs ml-2 hidden">(최대 200건 표시)</span>
@@ -3672,8 +3665,11 @@ async function fetchSusiResultData() {
 }
 
 // 대학명 입력 시 해당 대학의 모집단위만 필터링하여 Datalist에 추가
+let currentSusiMajorUniversity = "";
 function updateSusiMajorList() {
     const selectedUniv = document.getElementById('susiUnivInput').value.trim();
+    const majorInput = document.getElementById('susiMajorInput');
+    if (selectedUniv !== currentSusiMajorUniversity) { majorInput.value = ''; currentSusiMajorUniversity = selectedUniv; }
     const mList = document.getElementById('susiMajorList');
     
     // 리스트 초기화
@@ -3755,7 +3751,8 @@ function renderSusiResultTable() {
 
         if (y && rowY !== y) return false;
         // 대학명과 모집단위는 포함(includes) 또는 정확한 일치로 검색되도록 처리
-        if (u && !rowU.includes(u)) return false; 
+        const selectedUniversityIsExact = Array.from(document.getElementById('susiUnivList')?.options || []).some(option => option.value === u);
+        if (u && (selectedUniversityIsExact ? rowU !== u : !rowU.includes(u))) return false;
         if (m && !rowM.includes(m)) return false;
 
         // 수능 백분위 필터 처리 (데이터가 있고, 범위를 벗어나면 false)
