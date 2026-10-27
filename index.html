@@ -499,9 +499,12 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                 <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
                     <span class="text-3xl">🧑‍🤝‍🧑</span> 2026 수시 지원 반별 조회
                 </h3>
-                <button onclick="showMainDashboard()" class="mt-4 sm:mt-0 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
-                    <span>◀</span> 메인 화면으로
-                </button>
+                <div class="mt-4 sm:mt-0 flex items-center gap-2">
+                    <button onclick="downloadClassSusiExcel()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-2 rounded-lg text-xs transition-colors">엑셀 다운로드</button>
+                    <button onclick="showMainDashboard()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
+                        <span>◀</span> 메인 화면으로
+                    </button>
+                </div>
             </div>
             <div id="authRequiredClass" class="text-center py-10">
                 <p class="text-red-500 font-bold text-lg mb-2">🔒 교사 인증이 필요합니다.</p>
@@ -3271,6 +3274,12 @@ function applyGradFilter() {
                 classColOrder.forEach(idx => {
                     let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
                     let tdClass = "";
+                    if (idx >= 17 && idx <= 20) {
+                        const rowIndex = classSusiData.indexOf(row);
+                        const safeValue = String(val).replace(/&/g, '&amp;').replace(/\"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        html += `<td><input type="text" aria-label="${idx === 17 ? '1단계' : idx === 18 ? '최종단계' : idx === 19 ? '불합격사유' : '최초후보순위'} 입력" value="${safeValue === '-' ? '' : safeValue}" oninput="updateClassSusiCell(${rowIndex}, ${idx}, this.value)" class="w-full min-w-16 rounded border border-gray-300 bg-white px-2 py-1 text-center focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-300"></td>`;
+                        return;
+                    }
                     if (idx === 18) { 
                         if (val.includes('불합격')) tdClass = "font-black text-red-700 text-base";
                         else if (val.includes('합격')) tdClass = "font-black text-blue-700 text-base";
@@ -3287,6 +3296,37 @@ function applyGradFilter() {
             });
         }
         window.renderClassTable = renderClassTable;
+
+        function updateClassSusiCell(rowIndex, columnIndex, value) {
+            if (!classSusiData[rowIndex]) return;
+            classSusiData[rowIndex][columnIndex] = value;
+        }
+        window.updateClassSusiCell = updateClassSusiCell;
+
+        function downloadClassSusiExcel() {
+            const table = document.querySelector('#classView #classContent table');
+            if (!table) return;
+            const headers = Array.from(table.querySelectorAll('thead th')).map(th =>
+                th.textContent.replace(/[▲▼]/g, '').trim()
+            );
+            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(tr => tr.querySelectorAll('td').length > 1);
+            const escapeExcelHtml = value => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');
+            const headerHtml = `<tr>${headers.map(value => `<th>${escapeExcelHtml(value)}</th>`).join('')}</tr>`;
+            const bodyHtml = rows.map(tr => `<tr>${Array.from(tr.querySelectorAll('td')).map(td => {
+                const input = td.querySelector('input');
+                return `<td>${escapeExcelHtml(input ? input.value : td.textContent.trim())}</td>`;
+            }).join('')}</tr>`).join('');
+            const workbookHtml = `<html><head><meta charset="UTF-8"></head><body><table>${headerHtml}${bodyHtml}</table></body></html>`;
+            const blob = new Blob(['\ufeff', workbookHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `2026_수시지원_반별조회_${new Date().toISOString().slice(0, 10)}.xls`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(link.href);
+        }
+        window.downloadClassSusiExcel = downloadClassSusiExcel;
 
         // =====================================================================
         // [기능 4] 2026 수시 면접 조편성 스크립트
