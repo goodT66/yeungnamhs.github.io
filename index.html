@@ -2746,7 +2746,17 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const yearLabel = year ? `${escapeHtmlGrad(year)}학년도` : '전체 연도';
             box.innerHTML = `<div class="flex flex-wrap items-center gap-2"><strong class="text-gray-800 mr-1">${yearLabel} 주요 대학 합격 현황</strong>${counts.join('')}<span class="mx-1 h-6 border-l border-gray-300" aria-hidden="true"></span><strong class="text-gray-800 mr-1">의약학 계열</strong>${majorCounts.join('')}</div>`;
         }
-function applyGradFilter() {
+function selectGradSummary(type, key) {
+            if (gradSummarySelection && gradSummarySelection.type === type && gradSummarySelection.key === key) {
+                gradSummarySelection = null;
+            } else {
+                gradSummarySelection = { type, key };
+            }
+            applyGradFilter();
+        }
+        window.selectGradSummary = selectGradSummary;
+
+        function applyGradFilter() {
             const yEl = document.getElementById('filterYear');
             const uEl = document.getElementById('filterUniv');
             const mEl = document.getElementById('filterMajor');
