@@ -3916,6 +3916,11 @@ function updateSusiRecommendationSummary(rows) {
     appendText(', 적정 범위 평균 지점에 가까운 대학은 ');
     appendSchool(midpointUniversity);
     appendText('입니다.');
+    summary.appendChild(document.createElement('br'));
+    const note = document.createElement('span');
+    note.className = 'block w-full text-xs font-normal text-gray-500';
+    note.textContent = '(평균 백분위에 해당되더라도, 각 대학교의 과목별 반영 비율 및 탐구 선택과목의 가산점 부여 정도에 따라 합격선이 달라질 수 있습니다.)';
+    summary.appendChild(note);
     summary.classList.remove('hidden');
 }function renderSusiResultTable() {
     const yEl = document.getElementById('susiYearSelect');
