@@ -39,9 +39,9 @@
         .grad-table td { border: 1px solid #e2e8f0; padding: 10px 8px; text-align: center; white-space: nowrap; }
         .grad-table tr:hover td { background-color: #f8fafc; }        /* 전달 사항 목록에서도 편집기 서식과 줄바꿈을 유지 */
         .notice-rendered-content { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.75; }
-        .notice-card-layout { display:block; position:relative; }
-        .notice-card-actions { position:absolute; top:0; right:0; }
-        .notice-card-title { padding-right:90px; }
+.notice-card-layout { display:block; position:relative; }
+.notice-card-actions { position:absolute; top:0; right:0; }
+.notice-card-title { padding-right:90px; }
         .notice-rendered-content p, .notice-rendered-content div { margin: 0 0 .45em; }
         .notice-rendered-content ul { list-style: disc; padding-left: 1.5rem; margin: .35em 0; }
         .notice-rendered-content ol { list-style: decimal; padding-left: 1.5rem; margin: .35em 0; }
@@ -434,6 +434,7 @@
                 <p class="text-gray-600">우측 상단의 [교사 인증 (Google 로그인)] 버튼을 클릭해 주세요.</p>
             </div>
             <div id="gradContent" class="hidden">
+                <div id="gradUniversitySummary" class="mb-3 p-3 bg-white border border-green-200 rounded-lg shadow-sm" aria-live="polite"></div>
                 <div class="mb-4 flex flex-wrap gap-4 items-center bg-green-50 p-4 rounded-lg border border-green-200">
                     <select id="filterYear" class="border border-gray-300 rounded p-2 bg-white font-medium" onchange="applyGradFilter()">
                         <option value="">연도 전체</option>
@@ -2699,7 +2700,34 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             }[ch]));
         }
 
-       function applyGradFilter() {
+               const GRAD_SUMMARY_UNIVERSITIES = [
+            { name: '서울대학교', aliases: ['서울대학교', '서울대'] }, { name: '연세대학교', aliases: ['연세대학교', '연세대'] },
+            { name: '고려대학교', aliases: ['고려대학교', '고려대'] }, { name: '성균관대학교', aliases: ['성균관대학교', '성균관대'] },
+            { name: '한양대학교', aliases: ['한양대학교', '한양대'] }, { name: '서강대학교', aliases: ['서강대학교', '서강대'] },
+            { name: '중앙대학교', aliases: ['중앙대학교', '중앙대'] }, { name: '경희대학교', aliases: ['경희대학교', '경희대'] },
+            { name: '서울시립대학교', aliases: ['서울시립대학교', '서울시립대', '시립대학교', '시립대'] },
+            { name: '한국외국어대학교', aliases: ['한국외국어대학교', '한국외대', '외국어대학교', '외대'] },
+            { name: '경북대학교', aliases: ['경북대학교', '경북대'] }, { name: '부산대학교', aliases: ['부산대학교', '부산대'] }
+        ];
+        function renderGradUniversitySummary() {
+            const box = document.getElementById('gradUniversitySummary');
+            const year = document.getElementById('filterYear')?.value || '';
+            if (!box) return;
+            const rows = rawGradData.filter(row => !year || String(row[0] || '').trim() === year);
+            const counts = GRAD_SUMMARY_UNIVERSITIES.map(university => {
+                const aliases = university.aliases.map(x => x.replace(/\s+/g, '').toLowerCase());
+                const count = rows.filter(row => {
+                    const result = String(row[24] || '').replace(/\s+/g, '');
+                    if (!result.includes('합격') || result.includes('불합격')) return false;
+                    const school = String(row[8] || '').replace(/\s+/g, '').toLowerCase();
+                    return aliases.some(alias => school.includes(alias));
+                }).length;
+                return `<span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-100 px-3 py-1.5 text-sm"><span class="font-semibold text-gray-700">${escapeHtmlGrad(university.name)}</span><strong class="text-blue-700">${count}건</strong></span>`;
+            });
+            const yearLabel = year ? `${escapeHtmlGrad(year)}학년도` : '전체 연도';
+            box.innerHTML = `<div class="flex flex-wrap items-center gap-2"><strong class="text-gray-800 mr-1">${yearLabel} 주요 대학 합격 현황</strong>${counts.join('')}</div>`;
+        }
+function applyGradFilter() {
             const yEl = document.getElementById('filterYear');
             const uEl = document.getElementById('filterUniv');
             const mEl = document.getElementById('filterMajor');
@@ -2708,6 +2736,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             if(!yEl || !uEl || !mEl || !rEl) return;
 
             const fYear = yEl.value;
+            renderGradUniversitySummary();
             const fUniv = uEl.value;
             const fMajor = mEl.value.trim();
             const fResult = rEl.value;
