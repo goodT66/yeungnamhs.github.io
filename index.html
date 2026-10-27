@@ -2738,6 +2738,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 function matchesGradSummaryUniversity(schoolName, universityName) {
             const school = String(schoolName || '').replace(/\s+/g, '').toLowerCase();
             if (universityName === '한양대학교' && (school.includes('erica') || school.includes('에리카'))) return false;
+            if (universityName === '연세대학교' && school.includes('미래')) return false;
             if (universityName === '고려대학교' && school.includes('세종')) return false;
             if (universityName === '중앙대학교' && school.includes('다빈치')) return false;
             const university = GRAD_SUMMARY_UNIVERSITIES.find(item => item.name === universityName);
@@ -3685,13 +3686,13 @@ async function fetchSusiResultData() {
 function getSusiSupportPosition(row, studentAverage) {
     const percentile = getSusiCsatPercentile(row);
     if (!Number.isFinite(percentile) || !Number.isFinite(studentAverage)) return '-';
-    // 차이 = 학생 평균 - 대학 합격자 평균 (모두 백분위 점수 차이)
-    const difference = Math.round((studentAverage - percentile) * 10) / 10;
-    if (difference < -10) return '위험';
-    if (difference < -5) return '상향';
-    if (difference < 3) return '적정';
-    if (difference < 7) return '적정안정';
-    return '안정';
+    // 차이 = 대학 합격자 평균 - 학생 평균 (백분위 점수 차이)
+    const difference = Math.round((percentile - studentAverage) * 10) / 10;
+    if (difference <= -7) return '안정';
+    if (difference < -5) return '적정안정';
+    if (difference <= 3) return '적정';
+    if (difference <= 10) return '상향';
+    return '위험';
 }
 function getSusiRowMeta(row) {
     let meta = susiRowMetaCache.get(row);
@@ -3837,7 +3838,7 @@ function updateSusiRecommendationSummary(rows) {
     const jeokjeong = new Map();
     rows.forEach(row => {
         const position = getSusiSupportPosition(row, selectedSusiMockAverage);
-        // 새 분류 기준에서 소신 지원은 '상향'(학생 평균 - 대학 합격자 평균: -10 이상~-5 미만)입니다.
+        // 상향 지원은 대학 합격자 평균이 학생 평균보다 3점 초과~10점 이하 높은 구간입니다.
         if (position !== '상향' && position !== '적정') return;
         const university = getSusiRecommendationUniversity(row[5]);
         const percentile = getSusiCsatPercentile(row);
@@ -3866,7 +3867,7 @@ function updateSusiRecommendationSummary(rows) {
         });
     };
     summary.replaceChildren();
-    appendText(`${studentName} 학생은 ${month}월 모의고사 성적을 기준으로 소신 지원의 경우 `);
+    appendText(`${studentName} 학생은 ${month}월 모의고사 성적을 기준으로 상향 지원의 경우 `);
     appendSchools(soshin);
     appendText(', 적정 지원의 경우 ');
     appendSchools(jeokjeong);
