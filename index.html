@@ -1368,7 +1368,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             hideAllContentViews();
             document.getElementById('interviewView').classList.remove('hidden');
             if (window.getCurrentUser && window.getCurrentUser()) {
-                if(interviewData.length > 0) renderInterviewTable();
+                fetchInterviewData();
             }
         }
 
@@ -3090,13 +3090,14 @@ function applyGradFilter() {
             if(tbody) tbody.innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">반을 선택해주세요.</td></tr>';
             
             const g = document.getElementById('classGradeSelect').value;
-            if (!g) return;
+            if (!g) { renderClassTable(); return; }
             
             const classes = new Set();
             classSusiData.forEach(row => {
                 if(String(row[1]).trim() === g && row[2]) classes.add(String(row[2]).trim());
             });
             Array.from(classes).sort((a,b) => parseInt(a) - parseInt(b)).forEach(c => select.appendChild(new Option(`${c}반`, c)));
+            renderClassTable();
         }
         window.onClassGradeChange = onClassGradeChange;
 
@@ -3175,8 +3176,8 @@ function applyGradFilter() {
             const u = uEl.value.trim();
             const m = mEl.value.trim();
             
-            if(!g || !c) {
-                tbody.innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">학년과 반을 선택해주세요.</td></tr>';
+            if(!g) {
+                tbody.innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">학년을 선택해주세요.</td></tr>';
                 return;
             }
 
@@ -3187,7 +3188,7 @@ function applyGradFilter() {
                 const rowU = String(row[5] || '').trim();
                 const rowM = String(row[9] || '').trim();
 
-                if (rowG !== g || rowC !== c) return false;
+                if (rowG !== g || (c && rowC !== c)) return false;
                 if (n && rowN !== n) return false;
                 if (u && !rowU.includes(u)) return false;
                 if (m && !rowM.includes(m)) return false;
@@ -3250,57 +3251,60 @@ function applyGradFilter() {
         // [기능 4] 2026 수시 면접 조편성 스크립트
         // =====================================================================
         let interviewData = [];
+        let interviewFetchSequence = 0;
         let currentIvSortCol = null;
         let isIvAscending = true;
         // 학번(1), 이름(5), 지도교사(18), 1~4회(19~22), 대학명(6) ... 환산등급(17)
 // 정확히 19개 열: 학번(1), 이름(5), 지도교사(18), 지도1~4회(19~22), 대학명(6) ... 환산점수(17), 환산등급(16)
 const ivColOrder = [1, 5, 18, 19, 20, 21, 22, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16];
         async function fetchInterviewData() {
+            const requestSequence = ++interviewFetchSequence;
+            const tbody = document.getElementById('interviewTableBody');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="23" class="text-center py-10 text-gray-500">면접 자료를 새로 불러오는 중입니다...</td></tr>';
             try {
-                const response = await fetch(INTERVIEW_2026_CSV_URL);
-                if (!response.ok) throw new Error("네트워크 오류");
+                const requestUrl = `${INTERVIEW_2026_CSV_URL}&cacheBust=${Date.now()}`;
+                const response = await fetch(requestUrl, { cache: 'no-store' });
+                if (requestSequence !== interviewFetchSequence) return;
+                if (!response.ok) throw new Error('네트워크 응답 오류');
                 const text = await response.text();
-                
                 Papa.parse(text, {
                     skipEmptyLines: true,
                     complete: function(results) {
+                        if (requestSequence !== interviewFetchSequence) return;
                         const data = results.data;
-                        if(data.length > 1) {
-                            interviewData = data.slice(1);
-                            window.interviewData = interviewData;
-                            
-                            
-const tSelect = document.getElementById('ivTeacherSelect');
-if (tSelect) {
-    // 기존 지도교사 목록을 초기화하되, 기본 선택 항목은 유지
-    tSelect.innerHTML = '<option value="">지도교사 전체</option>';
-
-    const teachers = new Set();
-
-    interviewData.forEach(row => {
-        const teacher = String(row[18] || '').trim();
-        if (teacher && teacher !== '-') {
-            teachers.add(teacher);
-        }
-    });
-
-    Array.from(teachers)
-        .sort((a, b) => a.localeCompare(b, 'ko'))
-        .forEach(teacher => {
-            tSelect.appendChild(new Option(teacher, teacher));
-        });
-}
-
-                            if (window.getCurrentUser && window.getCurrentUser()) {
-                                renderInterviewTable();
-                            }
+                        if (data.length <= 1) {
+                            if (tbody) tbody.innerHTML = '<tr><td colspan="23" class="text-center py-10 text-red-500">면접 자료가 비어 있습니다. 시트 공유 설정과 시트 이름을 확인해 주세요.</td></tr>';
+                            return;
                         }
+                        interviewData = data.slice(1);
+                        window.interviewData = interviewData;
+                        const tSelect = document.getElementById('ivTeacherSelect');
+                        if (tSelect) {
+                            const selectedTeacher = tSelect.value;
+                            tSelect.innerHTML = '<option value="">지도교사 전체</option>';
+                            const teachers = new Set();
+                            interviewData.forEach(row => {
+                                const teacher = String(row[18] || '').trim();
+                                if (teacher && teacher !== '-') teachers.add(teacher);
+                            });
+                            Array.from(teachers).sort((a, b) => a.localeCompare(b, 'ko')).forEach(teacher => tSelect.appendChild(new Option(teacher, teacher)));
+                            if ([...tSelect.options].some(option => option.value === selectedTeacher)) tSelect.value = selectedTeacher;
+                        }
+                        if (window.getCurrentUser && window.getCurrentUser()) renderInterviewTable();
+                    },
+                    error: function(error) {
+                        if (requestSequence !== interviewFetchSequence) return;
+                        console.error('면접 자료 CSV 파싱 오류:', error);
+                        if (tbody) tbody.innerHTML = '<tr><td colspan="23" class="text-center py-10 text-red-500">면접 자료 형식을 읽지 못했습니다.</td></tr>';
                     }
                 });
-            } catch (error) { console.error("2026면접 데이터 로드 실패", error); }
+            } catch (error) {
+                if (requestSequence !== interviewFetchSequence) return;
+                console.error('2026면접 데이터 로드 실패', error);
+                if (tbody) tbody.innerHTML = '<tr><td colspan="23" class="text-center py-10 text-red-500">면접 자료를 불러오지 못했습니다. 네트워크와 Google 시트 공유 권한을 확인해 주세요.</td></tr>';
+            }
         }
-
-        function setIvSort(colIndex) {
+function setIvSort(colIndex) {
             if (currentIvSortCol === colIndex) {
                 isIvAscending = !isIvAscending;
             } else {
