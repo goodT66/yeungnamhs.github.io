@@ -37,7 +37,11 @@
         .grad-table th { background-color: #f0fdf4; font-weight: bold; border: 1px solid #bbf7d0; padding: 12px 8px; text-align: center; white-space: nowrap; cursor: pointer; transition: background 0.2s; user-select: none; }
         .grad-table th:hover { background-color: #dcfce7; }
         .grad-table td { border: 1px solid #e2e8f0; padding: 10px 8px; text-align: center; white-space: nowrap; }
-        .grad-table tr:hover td { background-color: #f8fafc; }        /* 전달 사항 목록에서도 편집기 서식과 줄바꿈을 유지 */
+        .grad-table tr:hover td { background-color: #f8fafc; }        /* 수시 입결 표는 모집단위가 길어도 다른 열 너비를 밀어내지 않도록 제한 */
+        #susiResultTableScroll .grad-table { table-layout: fixed; }
+        #susiResultTableScroll .grad-table th:nth-child(3),
+        #susiResultTableScroll .grad-table td:nth-child(3) { width: 220px; min-width: 220px; max-width: 220px; white-space: normal; overflow-wrap: anywhere; word-break: keep-all; line-height: 1.35; }
+        /* 전달 사항 목록에서도 편집기 서식과 줄바꿈을 유지 */
         .notice-rendered-content { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.75; }
 .notice-card-layout { display:block; position:relative; }
 .notice-card-actions { position:absolute; top:0; right:0; }
@@ -641,7 +645,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         <!-- 3. 모집단위 검색 및 드롭다운 (Datalist 적용) -->
         <div class="relative">
             <select id="susiMajorInput" onchange="renderSusiResultTable()" class="border border-gray-300 rounded p-2 font-medium w-48 bg-white"><option value="">모집단위 전체</option></select>
-            <select id="susiPositionSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-36"><option value="">지원 위치 전체</option><option value="위험">위험</option><option value="상향">상향</option><option value="적정">적정</option><option value="적정안정">적정안정</option><option value="안정">안정</option></select>
+            <select id="susiPositionSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-36"><option value="">지원 위치 전체</option><option value="위험">위험</option><option value="상향">상향</option><option value="소신">소신</option><option value="적정">적정</option><option value="안정">안정</option></select>
         </div>
         
         <!-- 우측 정렬 그룹: 수능 백분위 + 검색결과 + 엑셀 다운로드 -->
@@ -661,7 +665,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         </div>
     </div>
     
-<p class="mb-2 px-1 text-xs leading-relaxed text-gray-500"><span class="font-bold text-gray-700">지원 위치 기준</span> (대학 합격자 평균 - 학생 평균, 백분위 점수 차이): 안정 ≤ -7 · 적정안정 &gt; -7~&lt; -5 · 적정 -5~+3 · 상향 &gt; +3~+7 · 위험 &gt; +7. <span class="font-semibold text-rose-600">대학 백분위 100은 학생 평균 98 미만일 때 위험으로 분류</span></p><div id="susiPagination" class="flex flex-wrap items-center justify-between gap-2 mb-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
+<p class="mb-2 px-1 text-xs leading-relaxed text-gray-500"><span class="font-bold text-gray-700">지원 위치 기준</span> (학생 평균 백분위 - 대학 기준 백분위): 위험 -10 미만 · 상향 -10 이상~-5 미만 · 소신 -5 이상~0 미만 · 적정 0 이상~+5 미만 · 안정 +5 이상</p><div id="susiPagination" class="flex flex-wrap items-center justify-between gap-2 mb-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
     <span id="susiPageSummary" class="text-sm text-gray-600">조회 결과 없음</span><span id="susiRecommendationSummary" class="hidden min-w-0 flex-1 px-2 text-sm text-right text-gray-700"></span>
     <div class="flex items-center gap-2"><button id="susiPrevPage" type="button" onclick="changeSusiPage(-1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">이전</button><span id="susiPageNumber" class="min-w-16 text-center text-sm font-semibold text-gray-700">0 / 0</span><button id="susiNextPage" type="button" onclick="changeSusiPage(1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">다음</button></div>
 </div>    <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다. <span class="ml-2 inline-flex items-center gap-1"><i class="inline-block h-3 w-3 rounded-sm border border-amber-300 bg-amber-100"></i>음영: 선택 학생 평균 ±1 백분위</span></p>
@@ -3692,17 +3696,14 @@ async function fetchSusiResultData() {
 function getSusiSupportPosition(row, studentAverage) {
     const percentile = getSusiCsatPercentile(row);
     if (!Number.isFinite(percentile) || !Number.isFinite(studentAverage)) return '-';
-    // 만점 백분위는 학생 평균이 98 미만이면 위험으로 분류합니다.
-    if (percentile >= 100 && studentAverage < 98) return '위험';
-    // 차이 = 대학 합격자 평균 - 학생 평균 (백분위 점수 차이)
-    const difference = Math.round((percentile - studentAverage) * 10) / 10;
-    if (difference <= -7) return '안정';
-    if (difference < -5) return '적정안정';
-    if (difference <= 3) return '적정';
-    if (difference <= 7) return '상향';
-    return '위험';
-}
-function getSusiRowMeta(row) {
+    // 차이 = 학생 평균 백분위 - 대학 기준 백분위
+    const difference = Math.round((studentAverage - percentile) * 10) / 10;
+    if (difference < -10) return '위험';
+    if (difference < -5) return '상향';
+    if (difference < 0) return '소신';
+    if (difference < 5) return '적정';
+    return '안정';
+}function getSusiRowMeta(row) {
     let meta = susiRowMetaCache.get(row);
     if (!meta) {
         const raw = String(row?.[17] ?? '').trim();
@@ -3851,16 +3852,16 @@ function updateSusiRecommendationSummary(rows) {
         summary.classList.add('hidden');
         return;
     }
+    const sanghyang = new Map();
     const soshin = new Map();
     const jeokjeong = new Map();
     rows.forEach(row => {
         const position = getSusiSupportPosition(row, selectedSusiMockAverage);
-        // 상향 지원은 대학 합격자 평균이 학생 평균보다 3점 초과~7점 이하 높은 구간입니다.
-        if (position !== '상향' && position !== '적정') return;
+        if (!['상향', '소신', '적정'].includes(position)) return;
         const university = getSusiRecommendationUniversity(row[5]);
         const percentile = getSusiCsatPercentile(row);
         if (!university || !Number.isFinite(percentile)) return;
-        const target = position === '상향' ? soshin : jeokjeong;
+        const target = position === '상향' ? sanghyang : position === '소신' ? soshin : jeokjeong;
         target.set(university, Math.max(target.get(university) ?? -Infinity, percentile));
     });
     const universityOrder = new Map(SUSI_RECOMMENDATION_UNIVERSITIES.map((item, index) => [item.name, index]));
@@ -3885,6 +3886,8 @@ function updateSusiRecommendationSummary(rows) {
     };
     summary.replaceChildren();
     appendText(`${studentName} 학생은 ${month}월 모의고사 성적을 기준으로 상향 지원의 경우 `);
+    appendSchools(sanghyang);
+    appendText(', 소신 지원의 경우 ');
     appendSchools(soshin);
     appendText(', 적정 지원의 경우 ');
     appendSchools(jeokjeong);
@@ -3992,7 +3995,7 @@ function renderSusiResultPage(page) {
                 const position = getSusiSupportPosition(row, studentAverage);
                 const badgeClass = {
                     '안정': 'bg-emerald-100 text-emerald-800',
-                    '적정안정': 'bg-cyan-100 text-cyan-800',
+                    '소신': 'bg-violet-100 text-violet-800',
                     '적정': 'bg-blue-100 text-blue-800',
                     '상향': 'bg-amber-100 text-amber-800',
                     '위험': 'bg-rose-100 text-rose-800'
