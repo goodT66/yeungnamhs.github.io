@@ -2714,6 +2714,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const school = String(schoolName || '').replace(/\s+/g, '').toLowerCase();
             if (universityName === '한양대학교' && (school.includes('erica') || school.includes('에리카'))) return false;
             if (universityName === '고려대학교' && school.includes('세종')) return false;
+            if (universityName === '중앙대학교' && school.includes('다빈치')) return false;
             const university = GRAD_SUMMARY_UNIVERSITIES.find(item => item.name === universityName);
             if (!university) return false;
             const aliases = university.aliases.map(alias => alias.replace(/\s+/g, '').toLowerCase());
