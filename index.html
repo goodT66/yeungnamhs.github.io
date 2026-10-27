@@ -2755,17 +2755,19 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             { name: '성균관대학교', aliases: ['성균관대학교', '성균관대'] },
             { name: '한양대학교', aliases: ['한양대학교', '한양대'] }, { name: '서강대학교', aliases: ['서강대학교', '서강대'] },
             { name: '중앙대학교', aliases: ['중앙대학교', '중앙대'] },
+            { name: '건국대학교', aliases: ['건국대학교', '건국대'] },
             { name: '경희대학교', aliases: ['경희대학교', '경희대'] },
             { name: '서울시립대학교', aliases: ['서울시립대학교', '서울시립대', '시립대학교', '시립대'] },
             { name: '한국외국어대학교', aliases: ['한국외국어대학교', '한국외대', '외국어대학교', '외대'] },
             { name: '경북대학교', aliases: ['경북대학교', '경북대'] }, { name: '부산대학교', aliases: ['부산대학교', '부산대'] },
-            { name: '동국대학교', aliases: ['동국대학교', '동국대'] },
+
         ];
                 function matchesGradSummaryUniversity(schoolName, universityName) {
             const school = String(schoolName || '').replace(/\s+/g, '').toLowerCase();
             if (universityName === '한양대학교' && (school.includes('erica') || school.includes('에리카'))) return false;
             if (universityName === '연세대학교' && school.includes('미래')) return false;
             if (universityName === '고려대학교' && school.includes('세종')) return false;
+            if (universityName === '건국대학교' && (school.includes('글로컬') || school.includes('glocal'))) return false;
             if (universityName === '중앙대학교' && school.includes('다빈치')) return false;
             if (universityName === '동국대학교' && (school.includes('wise') || school.includes('와이즈') || school.includes('경주'))) return false;
             const university = GRAD_SUMMARY_UNIVERSITIES.find(item => item.name === universityName);
