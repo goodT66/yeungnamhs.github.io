@@ -634,7 +634,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         
         <!-- 2. 대학명 검색 및 드롭다운 (Datalist 적용) -->
         <div class="relative">
-            <input type="text" id="susiUnivInput" list="susiUnivList" oninput="updateSusiMajorList()" placeholder="대학명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-40">
+            <input type="text" id="susiUnivInput" list="susiUnivList" oninput="scheduleSusiMajorListUpdate()" placeholder="대학명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-40">
             <datalist id="susiUnivList"></datalist>
         </div>
 
@@ -3578,6 +3578,10 @@ if (interviewTableBodyForSave && !interviewTableBodyForSave.dataset.saveListener
 // =====================================================================
 let susiResultData = [];
 let selectedSusiMockAverage = null;
+let susiRowsByUniversity = new Map();
+let susiRowsByYear = new Map();
+let susiKnownUniversitySet = new Set();
+const susiRowMetaCache = new WeakMap();
 let currentSusiSortCol = null;
 let isSusiAscending = true;
 
@@ -3631,15 +3635,11 @@ async function fetchSusiResultData() {
                 const data = results.data;
                 if(data.length > 1) {
                     susiResultData = data.slice(1);
+                    buildSusiResultIndexes(susiResultData);
                     window.susiResultData = susiResultData;
                     
-                    const yearSet = new Set();
-                    const univSet = new Set(); // 대학명 데이터 추출용
-                    
-                    susiResultData.forEach(row => {
-                        if(row[1]) yearSet.add(String(row[1]).trim());
-                        if(row[5]) univSet.add(String(row[5]).trim()); // 5: 대학명
-                    });
+                    const yearSet = new Set(susiRowsByYear.keys());
+                    const univSet = new Set(susiKnownUniversitySet);
 
                     const ySelect = document.getElementById('susiYearSelect');
                     const uList = document.getElementById('susiUnivList'); // 대학명 datalist
@@ -3680,12 +3680,49 @@ function getSusiSupportPosition(row, studentAverage) {
     if (difference <= 1.9) return '적정';
     if (difference <= 3.9) return '상향';
     return '위험';
-}function getSusiCsatPercentile(row) {
-    const raw = String(row?.[17] ?? '').trim();
-    if (!raw || raw === '-') return NaN;
-    const value = parseFloat(raw.replace(/,/g, '.').replace(/[^0-9.\-]/g, ''));
-    return Number.isFinite(value) ? value : NaN;
-}let currentSusiMajorUniversity = "";
+}
+function getSusiRowMeta(row) {
+    let meta = susiRowMetaCache.get(row);
+    if (!meta) {
+        const raw = String(row?.[17] ?? '').trim();
+        const parsed = raw && raw !== '-' ? parseFloat(raw.replace(/,/g, '.').replace(/[^0-9.\-]/g, '')) : NaN;
+        meta = {
+            year: String(row?.[1] || '').trim(),
+            university: String(row?.[5] || '').trim(),
+            major: String(row?.[6] || '').trim(),
+            percentile: Number.isFinite(parsed) ? parsed : NaN
+        };
+        susiRowMetaCache.set(row, meta);
+    }
+    return meta;
+}
+function getSusiCsatPercentile(row) { return getSusiRowMeta(row).percentile; }
+function buildSusiResultIndexes(rows) {
+    susiRowsByUniversity = new Map();
+    susiRowsByYear = new Map();
+    susiKnownUniversitySet = new Set();
+    rows.forEach(row => {
+        const meta = getSusiRowMeta(row);
+        if (meta.university) {
+            susiKnownUniversitySet.add(meta.university);
+            if (!susiRowsByUniversity.has(meta.university)) susiRowsByUniversity.set(meta.university, []);
+            susiRowsByUniversity.get(meta.university).push(row);
+        }
+        if (meta.year) {
+            if (!susiRowsByYear.has(meta.year)) susiRowsByYear.set(meta.year, []);
+            susiRowsByYear.get(meta.year).push(row);
+        }
+    });
+}
+function getSusiCandidateRows(year, university) {
+    const byUniversity = university && susiKnownUniversitySet.has(university) ? susiRowsByUniversity.get(university) : null;
+    const byYear = year ? susiRowsByYear.get(year) : null;
+    if (byUniversity && byYear) return byUniversity.length <= byYear.length ? byUniversity : byYear;
+    return byUniversity || byYear || susiResultData;
+}
+let currentSusiMajorUniversity = "";
+let susiMajorSearchTimer = null;
+function scheduleSusiMajorListUpdate() { clearTimeout(susiMajorSearchTimer); susiMajorSearchTimer = setTimeout(updateSusiMajorList, 120); }
 function updateSusiMajorList() {
     const selectedUniv = document.getElementById('susiUnivInput').value.trim();
     const majorInput = document.getElementById('susiMajorInput');
@@ -3700,25 +3737,26 @@ function updateSusiMajorList() {
     }
     const mList = document.getElementById('susiMajorList');
     if (mList) mList.innerHTML = '';
-    const universityIsExact = Array.from(document.getElementById('susiUnivList')?.options || []).some(option => option.value === selectedUniv);
+    const universityIsExact = susiKnownUniversitySet.has(selectedUniv);
     const majorSet = new Set();
     if (selectedUniv) {
-        susiResultData.forEach(row => {
-            const rowYear = String(row[1] || '').trim();
-            const rowUniv = String(row[5] || '').trim();
-            const rowMajor = String(row[6] || '').trim();
-            const rowCsat = getSusiCsatPercentile(row);
-            const universityMatches = universityIsExact ? rowUniv === selectedUniv : rowUniv.includes(selectedUniv);
-            if (!universityMatches || (year && rowYear !== year) || !rowMajor) return;
+        getSusiCandidateRows(year, universityIsExact ? selectedUniv : '').forEach(row => {
+            const meta = getSusiRowMeta(row);
+            const rowMajor = meta.major;
+            const rowCsat = meta.percentile;
+            const universityMatches = universityIsExact ? meta.university === selectedUniv : meta.university.includes(selectedUniv);
+            if (!universityMatches || (year && meta.year !== year) || !rowMajor) return;
             if (minCsat !== -Infinity && (!Number.isFinite(rowCsat) || rowCsat < minCsat)) return;
             if (maxCsat !== Infinity && (!Number.isFinite(rowCsat) || rowCsat > maxCsat)) return;
             majorSet.add(rowMajor);
         });
+        const optionsFragment = document.createDocumentFragment();
         Array.from(majorSet).sort().forEach(major => {
             const option = document.createElement('option');
             option.value = major;
-            mList.appendChild(option);
+            optionsFragment.appendChild(option);
         });
+        if (mList) mList.appendChild(optionsFragment);
     }
     if (majorInput.value && !majorSet.has(majorInput.value)) majorInput.value = '';
     renderSusiResultTable();
@@ -3766,20 +3804,14 @@ function renderSusiResultTable() {
 
     if (susiResultData.length === 0) return;
 
-    let filtered = susiResultData.filter(row => {
-        const rowY = String(row[1] || '').trim(); // 연도
-        const rowU = String(row[5] || '').trim(); // 대학명
-        const rowM = String(row[6] || '').trim(); // 모집단위
-        
-        // 17번 열: 수능 백분위 (숫자로 파싱)
-        const rowCsat = getSusiCsatPercentile(row);
+    const selectedUniversityIsExact = susiKnownUniversitySet.has(u);
+    let filtered = getSusiCandidateRows(y, selectedUniversityIsExact ? u : '').filter(row => {
+        const meta = getSusiRowMeta(row);
+        const rowCsat = meta.percentile;
         const hasCsatData = Number.isFinite(rowCsat);
-
-        if (y && rowY !== y) return false;
-        // 대학명과 모집단위는 포함(includes) 또는 정확한 일치로 검색되도록 처리
-        const selectedUniversityIsExact = Array.from(document.getElementById('susiUnivList')?.options || []).some(option => option.value === u);
-        if (u && (selectedUniversityIsExact ? rowU !== u : !rowU.includes(u))) return false;
-        if (m && !rowM.includes(m)) return false;
+        if (y && meta.year !== y) return false;
+        if (u && (selectedUniversityIsExact ? meta.university !== u : !meta.university.includes(u))) return false;
+        if (m && !meta.major.includes(m)) return false;
 
         // 수능 백분위 필터 처리 (데이터가 있고, 범위를 벗어나면 false)
         if (minCsat !== -Infinity && (!hasCsatData || rowCsat < minCsat)) return false;
@@ -3829,6 +3861,7 @@ function renderSusiResultTable() {
     }
     
     const studentAverage = selectedSusiMockAverage;
+    const fragment = document.createDocumentFragment();
     finalData.forEach(row => {
         const tr = document.createElement('tr');
         const rowPercentile = getSusiCsatPercentile(row);
@@ -3860,8 +3893,9 @@ function renderSusiResultTable() {
         });
         tr.innerHTML = html;
         if (isNearStudentAverage) tr.querySelectorAll('td').forEach(td => { td.style.setProperty('background-color', '#fff3c4', 'important'); });
-        tbody.appendChild(tr);
+        fragment.appendChild(tr);
     });
+    tbody.appendChild(fragment);
 }
 window.renderSusiResultTable = renderSusiResultTable;;
 
