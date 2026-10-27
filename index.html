@@ -3846,52 +3846,40 @@ function updateSusiRecommendationSummary(rows) {
         summary.classList.add('hidden');
         return;
     }
-    const soshin = new Map();
     const jeokjeong = new Map();
     rows.forEach(row => {
-        const position = getSusiSupportPosition(row, selectedSusiMockAverage);
-        if (position !== '소신' && position !== '적정') return;
+        if (getSusiSupportPosition(row, selectedSusiMockAverage) !== '적정') return;
         const university = getSusiRecommendationUniversity(row[5]);
         const percentile = getSusiCsatPercentile(row);
         if (!university || !Number.isFinite(percentile)) return;
-        const target = position === '소신' ? soshin : jeokjeong;
-        if (!target.has(university)) target.set(university, []);
-        target.get(university).push(percentile);
+        if (!jeokjeong.has(university)) jeokjeong.set(university, []);
+        jeokjeong.get(university).push(percentile);
     });
     const universityOrder = new Map(SUSI_RECOMMENDATION_UNIVERSITIES.map((item, index) => [item.name, index]));
-    const median = values => {
-        const sorted = [...values].sort((a, b) => a - b);
-        const middle = Math.floor(sorted.length / 2);
-        return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-    };
-    const entries = (schools, position) => {
-        const midpoint = position === '소신' ? selectedSusiMockAverage + 1.5 : selectedSusiMockAverage - 2.5;
-        return [...schools.entries()]
-            .map(([name, values]) => [name, median(values)])
-            .sort((a, b) => Math.abs(a[1] - midpoint) - Math.abs(b[1] - midpoint) || universityOrder.get(a[0]) - universityOrder.get(b[0]))
-            .slice(0, 2);
-    };
+    const rankedHigh = [...jeokjeong.entries()]
+        .map(([name, values]) => [name, Math.max(...values)])
+        .sort((a, b) => b[1] - a[1] || universityOrder.get(a[0]) - universityOrder.get(b[0]));
+    const rankedLow = [...jeokjeong.entries()]
+        .map(([name, values]) => [name, Math.min(...values)])
+        .sort((a, b) => a[1] - b[1] || universityOrder.get(a[0]) - universityOrder.get(b[0]));
     const appendText = text => summary.appendChild(document.createTextNode(text));
-    const appendSchools = (schools, position) => {
-        const list = entries(schools, position);
-        if (!list.length) { appendText('해당 대학 자료 없음'); return; }
-        list.forEach(([name, percentile], index) => {
-            if (index) appendText(', ');
-            const label = document.createElement('span');
-            label.className = 'text-base font-extrabold text-blue-700';
-            label.textContent = name;
-            summary.appendChild(label);
-            const score = document.createElement('span');
-            score.className = 'text-xs font-medium text-gray-500';
-            score.textContent = ` (${percentile.toFixed(1)})`;
-            summary.appendChild(score);
-        });
+    const appendSchool = entry => {
+        if (!entry) { appendText('자료 부족'); return; }
+        const [name, percentile] = entry;
+        const label = document.createElement('span');
+        label.className = 'text-base font-extrabold text-blue-700';
+        label.textContent = name;
+        summary.appendChild(label);
+        const score = document.createElement('span');
+        score.className = 'text-xs font-medium text-gray-500';
+        score.textContent = ` (${percentile.toFixed(1)})`;
+        summary.appendChild(score);
     };
     summary.replaceChildren();
-    appendText(`${studentName} 학생은 ${month}월 모의고사 성적을 기준으로 소신 지원의 경우 `);
-    appendSchools(soshin, '소신');
-    appendText(', 적정 지원의 경우 ');
-    appendSchools(jeokjeong, '적정');
+    appendText(`${studentName} 학생은 ${month}월 모의고사 성적을 기준으로 적정 지원의 경우 백분위 상위 3번째 대학은 `);
+    appendSchool(rankedHigh[2]);
+    appendText(', 하위 3번째 대학은 ');
+    appendSchool(rankedLow[2]);
     appendText('입니다.');
     summary.classList.remove('hidden');
 }function renderSusiResultTable() {
