@@ -3634,7 +3634,7 @@ async function fetchSusiResultData() {
             complete: function(results) {
                 const data = results.data;
                 if(data.length > 1) {
-                    susiResultData = data.slice(1);
+                    susiResultData = data.slice(1).filter(row => !['2021', '2022'].includes(String(row[1] || '').replace(/\D/g, '')));
                     buildSusiResultIndexes(susiResultData);
                     window.susiResultData = susiResultData;
                     
