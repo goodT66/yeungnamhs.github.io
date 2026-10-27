@@ -3865,6 +3865,12 @@ function updateSusiRecommendationSummary(rows) {
         .map(([name, records]) => [name, records.reduce((best, record) => Math.abs(record.percentile - midpoint) < Math.abs(best.percentile - midpoint) ? record : best)])
         .sort((a, b) => Math.abs(a[1].percentile - midpoint) - Math.abs(b[1].percentile - midpoint) || universityOrder.get(a[0]) - universityOrder.get(b[0]))[0];
     const appendText = text => summary.appendChild(document.createTextNode(text));
+    const appendEmphasis = text => {
+        const span = document.createElement('span');
+        span.className = 'text-base font-extrabold text-gray-900';
+        span.textContent = text;
+        summary.appendChild(span);
+    };
     const appendSchool = entry => {
         if (!entry) { appendText('해당 대학 자료 없음'); return; }
         const [name, record] = entry;
@@ -3884,7 +3890,11 @@ function updateSusiRecommendationSummary(rows) {
         summary.appendChild(score);
     };
     summary.replaceChildren();
-    appendText(`${studentName} 학생은 ${month}월 모의고사 성적을 기준으로 적정 지원 최고 백분위 대학은 `);
+    appendText(`${studentName} 학생은 `);
+    appendEmphasis(`${month}월 모의고사`);
+    appendText(' 성적을 기준으로 ');
+    appendEmphasis('적정 지원');
+    appendText(' 최고 백분위 대학은 ');
     appendSchool(highest);
     appendText(', 적정 범위 평균 지점에 가까운 대학은 ');
     appendSchool(midpointUniversity);
