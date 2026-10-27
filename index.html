@@ -156,7 +156,25 @@
         nav[aria-label="주요 메뉴"] > button > span { position: relative; z-index: 1; }
         nav[aria-label="주요 메뉴"] > button > span:first-child { font-size: 1.35em !important; }
         @media (max-width: 639px) {
-            nav[aria-label="주요 메뉴"] > button { min-height: 66px !important; padding: 16px 7px 10px !important; gap: 5px !important; }
+            body { padding: 12px 0 56px !important; }
+            body > .w-full.z-10.relative.px-4 { width: 100% !important; max-width: 100% !important; padding-left: 10px !important; padding-right: 10px !important; }
+            header { padding: 14px !important; margin-bottom: 14px !important; gap: 12px !important; }
+            header h1 { font-size: 1.25rem !important; line-height: 1.35 !important; }
+            header > div:first-child { gap: 10px !important; }
+            header > div:first-child > div:first-child { width: 44px !important; height: 44px !important; }
+            nav[aria-label="주요 메뉴"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; padding: 10px !important; gap: 8px !important; }
+            nav[aria-label="주요 메뉴"] > button { min-height: 58px !important; padding: 14px 6px 9px !important; gap: 5px !important; font-size: 13px !important; }
+            #susiPagination { display: flex !important; flex-direction: column !important; align-items: stretch !important; gap: 8px !important; padding: 10px !important; }
+            #susiPageSummary { width: 100%; font-size: 12px !important; }
+            #susiRecommendationSummary { display: block; width: 100%; min-width: 0 !important; flex: none !important; padding: 4px 0 !important; text-align: left !important; font-size: 13px !important; line-height: 1.7 !important; overflow-wrap: anywhere; word-break: keep-all; }
+            #susiRecommendationSummary.hidden { display: none !important; }
+            #susiRecommendationSummary .text-base { font-size: 14px !important; }
+            #susiPagination > div { width: 100%; justify-content: flex-end; }
+            #susiResultTableScroll { max-height: 65vh !important; -webkit-overflow-scrolling: touch; }
+            .grad-table th, .grad-table td { padding: 8px 6px !important; font-size: 12px !important; }
+            #susiResultTableScroll .grad-table th:nth-child(3),
+            #susiResultTableScroll .grad-table td:nth-child(3) { width: 150px; min-width: 150px; max-width: 150px; }
+            select, input, button { max-width: 100%; }
         }
 
 tr.susi-near-average > td { background-color: #fff3c4 !important; }
