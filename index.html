@@ -2765,7 +2765,7 @@ function selectGradSummary(type, key) {
             const categories = [
                 { key: '불합격', label: '불합격', color: '#ef4444' },
                 { key: '합격-기타', label: '합격 · 기타 전형', color: '#2563eb' },
-                { key: '합격-논술', label: '합격 · 논술 전형', color: '#2563eb' },
+                { key: '합격-논술', label: '합격 · 논술 전형', color: '#16a34a' },
                 { key: '추가합격', label: '추가합격', color: '#eab308' }
             ];
             const groups = categories.map(category => {
@@ -2804,7 +2804,7 @@ function selectGradSummary(type, key) {
             };
             const rangeSummary = groups.map(group => `<div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-gray-200 bg-white px-3 py-2"><div class="flex items-center gap-2 text-base font-bold whitespace-nowrap" style="color:${group.color}"><i style="display:inline-block;width:14px;height:5px;border-radius:999px;background:${group.color}"></i>${group.label}</div><div class="text-sm font-bold text-gray-900 whitespace-nowrap">${group.grades.length ? `${format(group.min)}~${format(group.max)} · ${group.grades.length}명` : '등급 자료 없음'}</div></div>`).join('');
             const passBoundaries = groups.filter(group => group.grades.length && (group.key === '합격-기타' || group.key === '합격-논술')).flatMap(group => [group.min, group.max].map(value => { const position = ((value - domainMin) / span) * 100; return `<span title="${group.label} 경계 ${format(value)}" style="position:absolute;top:32px;left:${position}%;width:6px;height:14px;transform:translateX(-50%);background:#f3f4f6;border-radius:2px;z-index:4;"></span>`; })).join('');
-            const sameLine = `<div style="position:relative;height:114px;border-radius:10px;background:#f3f4f6;overflow:visible;">${rangeBar('불합격', 12, '#ef4444', 6)}${rangeBar('합격-기타', 36, '#2563eb', 6)}${rangeBar('합격-논술', 36, '#2563eb', 6)}${passBoundaries}${rangeBar('추가합격', 84, '#eab308', 6)}</div>`;
+            const sameLine = `<div style="position:relative;height:114px;border-radius:10px;background:#f3f4f6;overflow:visible;">${rangeBar('불합격', 12, '#ef4444', 6)}${rangeBar('합격-기타', 36, '#2563eb', 6)}${rangeBar('합격-논술', 36, '#16a34a', 6)}${passBoundaries}${rangeBar('추가합격', 84, '#eab308', 6)}</div>`;
             return `<section class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-2"><h4 class="font-bold text-gray-800">${escapeHtmlGrad(universityName)} 일반등급 합격 범위</h4><span class="text-xs text-gray-500">각 결과 범위의 양 끝에 최저·최고 등급 표시</span></div>${sameLine}<div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">${rangeSummary}</div></section>`;
         }
 function applyGradFilter() {
