@@ -618,7 +618,7 @@
         <select id="susiMockClass" onchange="onSusiMockClassChange()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium w-28"><option value="">반</option></select>
         <select id="susiMockStudent" onchange="onSusiMockStudentChange()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">번호-이름</option></select>
         <select id="susiMockExam" onchange="renderSusiMockAverage()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">모의고사 월</option></select>
-        <div class="flex items-center space-x-1 rounded-lg border border-blue-200 bg-white px-2 py-1 shadow-sm"><span class="pl-1 text-sm font-bold text-gray-700">수능 백분위</span><input type="number" id="susiCsatMin" oninput="renderSusiResultTable()" placeholder="최소" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-sm outline-none focus:border-blue-500"><span class="text-gray-500">~</span><input type="number" id="susiCsatMax" oninput="renderSusiResultTable()" placeholder="최대" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-sm outline-none focus:border-blue-500"></div>
+        <div class="flex items-center space-x-1 rounded-lg border border-blue-200 bg-white px-2 py-1 shadow-sm"><span class="pl-1 text-sm font-bold text-gray-700">수능 백분위</span><input type="number" id="susiCsatMin" oninput="updateSusiMajorList()" placeholder="최소" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-sm outline-none focus:border-blue-500"><span class="text-gray-500">~</span><input type="number" id="susiCsatMax" oninput="updateSusiMajorList()" placeholder="최대" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-sm outline-none focus:border-blue-500"></div>
         <div class="ml-auto flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2">
             <span class="text-sm font-bold text-gray-700">국·수·탐 백분위 평균</span>
             <strong id="susiMockAverageValue" class="text-xl font-black text-blue-700">-</strong>
@@ -627,7 +627,7 @@
     </div>
     <div class="mb-4 flex flex-wrap gap-4 items-center bg-yellow-50 p-4 rounded-lg border border-yellow-200">
         <!-- 1. 연도 선택 -->
-        <select id="susiYearSelect" onchange="renderSusiResultTable()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
+        <select id="susiYearSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
             <option value="">연도 전체</option>
         </select>
         
@@ -3606,7 +3606,7 @@ function renderSusiMockAverage() {
         const min=document.getElementById('susiCsatMin'), max=document.getElementById('susiCsatMax');
         min.value=Math.max(0,average-5).toFixed(1);
         max.value=Math.min(100,average+5).toFixed(1);
-        renderSusiResultTable();
+        updateSusiMajorList();
     }
 }
 
@@ -3669,31 +3669,38 @@ let currentSusiMajorUniversity = "";
 function updateSusiMajorList() {
     const selectedUniv = document.getElementById('susiUnivInput').value.trim();
     const majorInput = document.getElementById('susiMajorInput');
-    if (selectedUniv !== currentSusiMajorUniversity) { majorInput.value = ''; currentSusiMajorUniversity = selectedUniv; }
+    const year = document.getElementById('susiYearSelect').value;
+    const minValue = document.getElementById('susiCsatMin').value;
+    const maxValue = document.getElementById('susiCsatMax').value;
+    const minCsat = minValue === '' ? -Infinity : parseFloat(minValue);
+    const maxCsat = maxValue === '' ? Infinity : parseFloat(maxValue);
+    if (selectedUniv !== currentSusiMajorUniversity) {
+        majorInput.value = '';
+        currentSusiMajorUniversity = selectedUniv;
+    }
     const mList = document.getElementById('susiMajorList');
-    
-    // 리스트 초기화
-    if(mList) mList.innerHTML = '';
-    
+    if (mList) mList.innerHTML = '';
+    const universityIsExact = Array.from(document.getElementById('susiUnivList')?.options || []).some(option => option.value === selectedUniv);
+    const majorSet = new Set();
     if (selectedUniv) {
-        const majorSet = new Set();
         susiResultData.forEach(row => {
+            const rowYear = String(row[1] || '').trim();
             const rowUniv = String(row[5] || '').trim();
             const rowMajor = String(row[6] || '').trim();
-            // 입력된 대학명과 일치하는 행의 모집단위 수집
-            if (rowUniv === selectedUniv && rowMajor) {
-                majorSet.add(rowMajor);
-            }
+            const rowCsat = parseFloat(String(row[17] || '').replace(/[^0-9.]/g, ''));
+            const universityMatches = universityIsExact ? rowUniv === selectedUniv : rowUniv.includes(selectedUniv);
+            if (!universityMatches || (year && rowYear !== year) || !rowMajor) return;
+            if (minCsat !== -Infinity && (!Number.isFinite(rowCsat) || rowCsat < minCsat)) return;
+            if (maxCsat !== Infinity && (!Number.isFinite(rowCsat) || rowCsat > maxCsat)) return;
+            majorSet.add(rowMajor);
         });
-
-        Array.from(majorSet).sort().forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m;
-            mList.appendChild(opt);
+        Array.from(majorSet).sort().forEach(major => {
+            const option = document.createElement('option');
+            option.value = major;
+            mList.appendChild(option);
         });
     }
-    
-    // 대학명이 변경되었으므로 테이블도 다시 렌더링
+    if (majorInput.value && !majorSet.has(majorInput.value)) majorInput.value = '';
     renderSusiResultTable();
 }
 window.updateSusiMajorList = updateSusiMajorList;
