@@ -2744,7 +2744,8 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 return `<button type="button" onclick="selectGradSummary('major','${escapeHtmlGrad(major.name)}')" class="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm cursor-pointer transition ${active ? 'bg-rose-700 border-rose-700 text-white ring-2 ring-rose-300' : 'bg-rose-50 border-rose-100 hover:bg-rose-100'}"><span class="font-semibold ${active ? 'text-white' : 'text-gray-700'}">${escapeHtmlGrad(major.name)}</span><strong class="${active ? 'text-white' : 'text-rose-700'}">${count}건</strong></button>`;
             });
             const yearLabel = year ? `${escapeHtmlGrad(year)}학년도` : '전체 연도';
-            box.innerHTML = `<div class="flex flex-wrap items-center gap-2"><strong class="text-gray-800 mr-1">${yearLabel} 주요 대학 합격 현황</strong>${counts.join('')}<span class="mx-1 h-6 border-l border-gray-300" aria-hidden="true"></span><strong class="text-gray-800 mr-1">의약학 계열</strong>${majorCounts.join('')}</div>`;
+            const chart = gradSummarySelection?.type === 'university' ? renderGradGradeRangeChart(rows, gradSummarySelection.key) : '';
+            box.innerHTML = `<div class="flex flex-wrap items-center gap-2"><strong class="text-gray-800 mr-1">${yearLabel} 주요 대학 합격 현황</strong>${counts.join('')}<span class="mx-1 h-6 border-l border-gray-300" aria-hidden="true"></span><strong class="text-gray-800 mr-1">의약학 계열</strong>${majorCounts.join('')}</div>${chart}`;
         }
 function selectGradSummary(type, key) {
             if (gradSummarySelection && gradSummarySelection.type === type && gradSummarySelection.key === key) {
@@ -2756,7 +2757,40 @@ function selectGradSummary(type, key) {
         }
         window.selectGradSummary = selectGradSummary;
 
-        function applyGradFilter() {
+                function renderGradGradeRangeChart(yearRows, universityName) {
+            const university = GRAD_SUMMARY_UNIVERSITIES.find(item => item.name === universityName);
+            if (!university) return '';
+            const aliases = university.aliases.map(alias => alias.replace(/\s+/g, '').toLowerCase());
+            const universityRows = yearRows.filter(row => aliases.some(alias => String(row[8] || '').replace(/\s+/g, '').toLowerCase().includes(alias)));
+            const categories = [
+                { key: '불합격', label: '불합격', color: '#ef4444' },
+                { key: '합격', label: '합격', color: '#2563eb' },
+                { key: '추가합격', label: '추가합격', color: '#8b5cf6' }
+            ];
+            const groups = categories.map(category => {
+                const grades = universityRows.filter(row => {
+                    const result = String(row[24] || '').replace(/\s+/g, '');
+                    if (category.key === '불합격') return result.includes('불합격');
+                    if (category.key === '추가합격') return !result.includes('불합격') && (result.includes('충원합격') || result.includes('추가합격'));
+                    return result.includes('합격') && !result.includes('불합격') && !result.includes('충원합격') && !result.includes('추가합격');
+                }).map(row => Number(String(row[20] || '').replace(/,/g, '').trim())).filter(Number.isFinite);
+                return { ...category, grades, min: grades.length ? Math.min(...grades) : null, max: grades.length ? Math.max(...grades) : null };
+            });
+            const allGrades = groups.flatMap(group => group.grades);
+            if (!allGrades.length) return `<div class="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">${escapeHtmlGrad(universityName)} 지원 결과에서 숫자로 된 일반등급 자료를 찾지 못했습니다.</div>`;
+            let domainMin = Math.min(...allGrades), domainMax = Math.max(...allGrades);
+            if (domainMin === domainMax) { domainMin = Math.max(0, domainMin - 0.5); domainMax += 0.5; }
+            const span = domainMax - domainMin;
+            const format = value => Number(value).toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+            const rowsHtml = groups.map(group => {
+                if (!group.grades.length) return `<div style="display:grid;grid-template-columns:72px minmax(80px,1fr) minmax(120px,170px);gap:12px;align-items:center;padding:8px 0;"><strong class="text-sm" style="color:${group.color}">${group.label}</strong><div class="text-xs text-gray-400">등급 자료 없음</div><span class="text-right text-xs text-gray-500">0명</span></div>`;
+                const left = ((group.min - domainMin) / span) * 100;
+                const width = Math.max(1.5, ((group.max - group.min) / span) * 100);
+                return `<div style="display:grid;grid-template-columns:72px minmax(80px,1fr) minmax(120px,170px);gap:12px;align-items:center;padding:8px 0;"><strong class="text-sm whitespace-nowrap" style="color:${group.color}">${group.label}</strong><div class="relative h-3 rounded-full bg-gray-100"><span class="absolute top-0 h-3 rounded-full" style="left:${left}%;width:${width}%;background:${group.color}"></span></div><span class="text-right text-xs text-gray-700 whitespace-nowrap">${format(group.min)}~${format(group.max)} · ${group.grades.length}명</span></div>`;
+            }).join('');
+            return `<section class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-2"><h4 class="font-bold text-gray-800">${escapeHtmlGrad(universityName)} 일반등급 합격 범위</h4><span class="text-xs text-gray-500">낮은 등급 숫자부터 높은 숫자까지 · 최저~최고</span></div>${rowsHtml}<div style="margin-left:84px;margin-right:170px;display:flex;justify-content:space-between;border-top:1px solid #e5e7eb;padding-top:4px;font-size:11px;color:#6b7280;"><span>${format(domainMin)}</span><span>${format(domainMax)}</span></div></section>`;
+        }
+function applyGradFilter() {
             const yEl = document.getElementById('filterYear');
             const uEl = document.getElementById('filterUniv');
             const mEl = document.getElementById('filterMajor');
