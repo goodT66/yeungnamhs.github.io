@@ -2764,7 +2764,8 @@ function selectGradSummary(type, key) {
             const universityRows = yearRows.filter(row => aliases.some(alias => String(row[8] || '').replace(/\s+/g, '').toLowerCase().includes(alias)));
             const categories = [
                 { key: '불합격', label: '불합격', color: '#ef4444' },
-                { key: '합격', label: '합격', color: '#2563eb' },
+                { key: '합격-기타', label: '합격 · 기타 전형', color: '#2563eb' },
+                { key: '합격-논술', label: '합격 · 논술 전형', color: '#0f766e' },
                 { key: '추가합격', label: '추가합격', color: '#eab308' }
             ];
             const groups = categories.map(category => {
@@ -2773,7 +2774,12 @@ function selectGradSummary(type, key) {
                     if (category.key === '불합격') return result.includes('불합격');
                     const isExtraAcceptance = result.includes('충원') || result.includes('추가');
                     if (category.key === '추가합격') return !result.includes('불합격') && result.includes('합격') && isExtraAcceptance;
-                    return result.includes('합격') && !result.includes('불합격') && !isExtraAcceptance;
+                    const isAccepted = result.includes('합격') && !result.includes('불합격') && !isExtraAcceptance;
+                    if (!isAccepted) return false;
+                    const isEssay = row.slice(12, 18).some(value => String(value || '').includes('논술'));
+                    if (category.key === '합격-논술') return isEssay;
+                    if (category.key === '합격-기타') return !isEssay;
+                    return false;
                 }).map(row => Number(String(row[20] || '').replace(/,/g, '').trim())).filter(Number.isFinite);
                 return { ...category, grades, min: grades.length ? Math.min(...grades) : null, max: grades.length ? Math.max(...grades) : null };
             });
@@ -2790,13 +2796,13 @@ function selectGradSummary(type, key) {
                 const left = ((group.min - domainMin) / span) * 100;
                 const width = Math.max(1.5, ((group.max - group.min) / span) * 100);
                 const right = ((group.max - domainMin) / span) * 100;
-                const labelColor = key === '추가합격' ? '#854d0e' : color;
+                const labelColor = (key === '추가합격' || key === '합격-논술') ? (key === '추가합격' ? '#854d0e' : '#115e59') : color;
                 const labelStyle = (position, value, isStart) => `<span style="position:absolute;top:${top + height + 2}px;left:${position}%;transform:${position < 5 ? 'translateX(0)' : position > 95 ? 'translateX(-100%)' : 'translateX(-50%)'};font-size:13px;font-weight:900;line-height:16px;color:${labelColor};background:#fff;padding:0 2px;border-radius:3px;white-space:nowrap;z-index:3;">${format(value)}</span>`;
                 return `${labelStyle(left, group.min, true)}<span title="${group.label}: ${format(group.min)}~${format(group.max)}" style="position:absolute;top:${top}px;left:${left}%;width:${width}%;min-width:3px;height:${height}px;border-radius:999px;background:${color};z-index:2;"></span>${labelStyle(right, group.max, false)}`;
             };
             const rangeSummary = groups.map(group => `<div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-gray-200 bg-white px-3 py-2"><div class="flex items-center gap-2 text-base font-bold whitespace-nowrap" style="color:${group.color}"><i style="display:inline-block;width:14px;height:5px;border-radius:999px;background:${group.color}"></i>${group.label}</div><div class="text-sm font-bold text-gray-900 whitespace-nowrap">${group.grades.length ? `${format(group.min)}~${format(group.max)} · ${group.grades.length}명` : '등급 자료 없음'}</div></div>`).join('');
-            const sameLine = `<div style="position:relative;height:94px;border-radius:10px;background:#f3f4f6;overflow:visible;">${rangeBar('불합격', 24, '#ef4444', 6)}${rangeBar('합격', 46, '#2563eb', 6)}${rangeBar('추가합격', 68, '#eab308', 6)}</div>`;
-            return `<section class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-2"><h4 class="font-bold text-gray-800">${escapeHtmlGrad(universityName)} 일반등급 합격 범위</h4><span class="text-xs text-gray-500">각 결과 범위의 양 끝에 최저·최고 등급 표시</span></div>${sameLine}<div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">${rangeSummary}</div></section>`;
+            const sameLine = `<div style="position:relative;height:114px;border-radius:10px;background:#f3f4f6;overflow:visible;">${rangeBar('불합격', 12, '#ef4444', 6)}${rangeBar('합격-기타', 36, '#2563eb', 6)}${rangeBar('합격-논술', 60, '#0f766e', 6)}${rangeBar('추가합격', 84, '#eab308', 6)}</div>`;
+            return `<section class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-2"><h4 class="font-bold text-gray-800">${escapeHtmlGrad(universityName)} 일반등급 합격 범위</h4><span class="text-xs text-gray-500">각 결과 범위의 양 끝에 최저·최고 등급 표시</span></div>${sameLine}<div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">${rangeSummary}</div></section>`;
         }
 function applyGradFilter() {
             const yEl = document.getElementById('filterYear');
@@ -3766,7 +3772,7 @@ window.renderSusiResultTable = renderSusiResultTable;;
     <div class="student-lookup-body">
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-5">
         <div class="flex items-center gap-2 mb-3"><span class="w-1.5 h-6 rounded-full bg-blue-700"></span><h3 class="font-extrabold text-slate-800">조회할 학생 선택</h3></div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <label class="text-sm font-bold text-slate-700">학년
             <select id="lookupGrade" onchange="updateLookupClasses()" class="mt-1 block w-full border border-slate-300 rounded-lg p-3 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-300"><option value="">학년 선택</option><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option></select>
           </label>
