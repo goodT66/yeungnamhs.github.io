@@ -641,7 +641,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         <!-- 3. 모집단위 검색 및 드롭다운 (Datalist 적용) -->
         <div class="relative">
             <select id="susiMajorInput" onchange="renderSusiResultTable()" class="border border-gray-300 rounded p-2 font-medium w-48 bg-white"><option value="">모집단위 전체</option></select>
-            <select id="susiPositionSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-36"><option value="">지원 위치 전체</option><option value="안정">안정</option><option value="소신안정">소신안정</option><option value="적정">적정</option><option value="상향">상향</option><option value="위험">위험</option></select>
+            <select id="susiPositionSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-36"><option value="">지원 위치 전체</option><option value="위험">위험</option><option value="상향">상향</option><option value="적정">적정</option><option value="적정안정">적정안정</option><option value="안정">안정</option></select>
         </div>
         
         <!-- 우측 정렬 그룹: 수능 백분위 + 검색결과 + 엑셀 다운로드 -->
@@ -3685,12 +3685,13 @@ async function fetchSusiResultData() {
 function getSusiSupportPosition(row, studentAverage) {
     const percentile = getSusiCsatPercentile(row);
     if (!Number.isFinite(percentile) || !Number.isFinite(studentAverage)) return '-';
-    const difference = Math.round((percentile - studentAverage) * 10) / 10;
-    if (difference <= -3) return '안정';
-    if (difference < 0) return '소신안정';
-    if (difference <= 1.9) return '적정';
-    if (difference <= 3.9) return '상향';
-    return '위험';
+    // 차이 = 학생 평균 - 대학 합격자 평균 (모두 백분위 점수 차이)
+    const difference = Math.round((studentAverage - percentile) * 10) / 10;
+    if (difference < -10) return '위험';
+    if (difference < -5) return '상향';
+    if (difference < 3) return '적정';
+    if (difference < 7) return '적정안정';
+    return '안정';
 }
 function getSusiRowMeta(row) {
     let meta = susiRowMetaCache.get(row);
@@ -3836,7 +3837,7 @@ function updateSusiRecommendationSummary(rows) {
     const jeokjeong = new Map();
     rows.forEach(row => {
         const position = getSusiSupportPosition(row, selectedSusiMockAverage);
-        // 소신 지원은 적정보다 높고 위험보다는 낮은 구간(현재 '상향': 학생 평균보다 +2.0~+3.9)으로 계산합니다.
+        // 새 분류 기준에서 소신 지원은 '상향'(학생 평균 - 대학 합격자 평균: -10 이상~-5 미만)입니다.
         if (position !== '상향' && position !== '적정') return;
         const university = getSusiRecommendationUniversity(row[5]);
         const percentile = getSusiCsatPercentile(row);
@@ -3973,7 +3974,7 @@ function renderSusiResultPage(page) {
                 const position = getSusiSupportPosition(row, studentAverage);
                 const badgeClass = {
                     '안정': 'bg-emerald-100 text-emerald-800',
-                    '소신안정': 'bg-lime-100 text-lime-800',
+                    '적정안정': 'bg-cyan-100 text-cyan-800',
                     '적정': 'bg-blue-100 text-blue-800',
                     '상향': 'bg-amber-100 text-amber-800',
                     '위험': 'bg-rose-100 text-rose-800'
