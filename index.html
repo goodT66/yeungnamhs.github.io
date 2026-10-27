@@ -1505,21 +1505,37 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             document.execCommand(kind === 'highlight' ? 'hiliteColor' : 'foreColor', false, color);
             saveNoticeSelection();
         }
+        function applyNoticeInlineStyle(property, value) {
+            const editor = document.getElementById('noticeEditorContent');
+            const selection = window.getSelection();
+            if (!editor || !selection) return;
+            // 메뉴를 누르며 브라우저 선택이 해제되어도 저장한 범위에 서식을 적용합니다.
+            const range = savedNoticeSelection ? savedNoticeSelection.cloneRange() : (selection.rangeCount ? selection.getRangeAt(0).cloneRange() : null);
+            if (!range || range.collapsed || !editor.contains(range.commonAncestorContainer)) {
+                alert(property === 'fontSize' ? '글자 크기를 바꿀 글자를 먼저 선택해 주세요.' : '글꼴을 바꿀 글자를 먼저 선택해 주세요.');
+                return;
+            }
+            try {
+                const fragment = range.extractContents();
+                const span = document.createElement('span');
+                span.style[property] = value;
+                span.appendChild(fragment);
+                range.insertNode(span);
+                const nextRange = document.createRange();
+                nextRange.selectNodeContents(span);
+                selection.removeAllRanges();
+                selection.addRange(nextRange);
+                savedNoticeSelection = nextRange.cloneRange();
+            } catch (e) {
+                console.warn('전달 사항 글자 서식 적용 실패:', e);
+            }
+        }
         function applyNoticeFont(font) {
-            restoreNoticeSelection();
-            document.execCommand('fontName', false, font);
-            saveNoticeSelection();
+            applyNoticeInlineStyle('fontFamily', font);
         }
         function applyNoticeSize(size) {
-            restoreNoticeSelection();
-            const selection = window.getSelection();
-            if (!selection || selection.rangeCount === 0) return;
-            const range = selection.getRangeAt(0);
-            if (range.collapsed) { alert('글자 크기를 바꿀 글자를 먼저 선택해 주세요.'); return; }
-            const span = document.createElement('span'); span.style.fontSize = size;
-            try { span.appendChild(range.extractContents()); range.insertNode(span); selection.removeAllRanges(); const r=document.createRange(); r.selectNodeContents(span); selection.addRange(r); saveNoticeSelection(); } catch(e) { console.warn(e); }
-        }
-        function plainTextToNoticeHtml(value) {
+            applyNoticeInlineStyle('fontSize', size);
+        }        function plainTextToNoticeHtml(value) {
             const text = String(value ?? '');
             if (/<(p|div|span|br|b|strong|i|em|u|ul|ol|li|h[1-6])\b/i.test(text)) return text;
             return escapeHTML(text).replace(/\r?\n/g, '<br>');
