@@ -641,6 +641,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         <!-- 3. 모집단위 검색 및 드롭다운 (Datalist 적용) -->
         <div class="relative">
             <select id="susiMajorInput" onchange="renderSusiResultTable()" class="border border-gray-300 rounded p-2 font-medium w-48 bg-white"><option value="">모집단위 전체</option></select>
+            <select id="susiPositionSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-36"><option value="">지원 위치 전체</option><option value="안정">안정</option><option value="소신안정">소신안정</option><option value="적정">적정</option><option value="상향">상향</option><option value="위험">위험</option></select>
         </div>
         
         <!-- 우측 정렬 그룹: 수능 백분위 + 검색결과 + 엑셀 다운로드 -->
@@ -3739,6 +3740,7 @@ function updateSusiMajorList() {
     const year = document.getElementById('susiYearSelect').value;
     const minValue = document.getElementById('susiCsatMin').value;
     const maxValue = document.getElementById('susiCsatMax').value;
+    const selectedPosition = document.getElementById('susiPositionSelect')?.value || '';
     const minCsat = minValue === '' ? -Infinity : parseFloat(minValue);
     const maxCsat = maxValue === '' ? Infinity : parseFloat(maxValue);
     if (selectedUniv !== currentSusiMajorUniversity) {
@@ -3756,6 +3758,7 @@ function updateSusiMajorList() {
             if (!universityMatches || (year && meta.year !== year) || !meta.major) return;
             if (minCsat !== -Infinity && (!Number.isFinite(meta.percentile) || meta.percentile < minCsat)) return;
             if (maxCsat !== Infinity && (!Number.isFinite(meta.percentile) || meta.percentile > maxCsat)) return;
+            if (selectedPosition && getSusiSupportPosition(row, selectedSusiMockAverage) !== selectedPosition) return;
             majorSet.add(meta.major);
         });
         const optionsFragment = document.createDocumentFragment();
@@ -3841,12 +3844,31 @@ function updateSusiRecommendationSummary(rows) {
         target.set(university, Math.max(target.get(university) ?? -Infinity, percentile));
     });
     const universityOrder = new Map(SUSI_RECOMMENDATION_UNIVERSITIES.map((item, index) => [item.name, index]));
-    const names = schools => [...schools.entries()]
+    const entries = schools => [...schools.entries()]
         .sort((a, b) => b[1] - a[1] || universityOrder.get(a[0]) - universityOrder.get(b[0]))
-        .slice(0, 2)
-        .map(([name]) => name)
-        .join(', ') || '해당 대학 자료 없음';
-    summary.textContent = `${studentName} 학생은 ${month}월 모의고사 성적을 기준으로 소신 지원의 경우 ${names(soshin)}, 적정 지원의 경우 ${names(jeokjeong)}입니다.`;
+        .slice(0, 2);
+    const appendText = text => summary.appendChild(document.createTextNode(text));
+    const appendSchools = schools => {
+        const list = entries(schools);
+        if (!list.length) { appendText('해당 대학 자료 없음'); return; }
+        list.forEach(([name, percentile], index) => {
+            if (index) appendText(', ');
+            const label = document.createElement('span');
+            label.className = 'text-base font-extrabold text-blue-700';
+            label.textContent = name;
+            summary.appendChild(label);
+            const score = document.createElement('span');
+            score.className = 'text-xs font-medium text-gray-500';
+            score.textContent = ` (${percentile.toFixed(1)})`;
+            summary.appendChild(score);
+        });
+    };
+    summary.replaceChildren();
+    appendText(`${studentName} 학생은 ${month}월 모의고사 성적을 기준으로 소신 지원의 경우 `);
+    appendSchools(soshin);
+    appendText(', 적정 지원의 경우 ');
+    appendSchools(jeokjeong);
+    appendText('입니다.');
     summary.classList.remove('hidden');
 }function renderSusiResultTable() {
     const yEl = document.getElementById('susiYearSelect');
@@ -3866,6 +3888,7 @@ function updateSusiRecommendationSummary(rows) {
     
     const minCsat = minCsatEl && minCsatEl.value ? parseFloat(minCsatEl.value) : -Infinity;
     const maxCsat = maxCsatEl && maxCsatEl.value ? parseFloat(maxCsatEl.value) : Infinity;
+    const selectedPosition = document.getElementById('susiPositionSelect')?.value || '';
 
     if (susiResultData.length === 0) return;
 
@@ -3885,6 +3908,9 @@ function updateSusiRecommendationSummary(rows) {
         return true;
     });
     
+    updateSusiRecommendationSummary(filtered);
+    if (selectedPosition) filtered = filtered.filter(row => getSusiSupportPosition(row, selectedSusiMockAverage) === selectedPosition);
+
     if (currentSusiSortCol !== null) {
         filtered.sort((a, b) => {
             let valA = a[currentSusiSortCol] !== undefined && a[currentSusiSortCol] !== null ? String(a[currentSusiSortCol]).trim() : '';
@@ -3906,7 +3932,6 @@ function updateSusiRecommendationSummary(rows) {
     }
 
     const totalCount = filtered.length;
-    updateSusiRecommendationSummary(filtered);
     const countEl = document.getElementById('susiResultCount');
     if (countEl) countEl.textContent = totalCount;
     susiFilteredRows = filtered;
