@@ -38,7 +38,7 @@
         .grad-table th:hover { background-color: #dcfce7; }
         .grad-table td { border: 1px solid #e2e8f0; padding: 10px 8px; text-align: center; white-space: nowrap; }
         .grad-table tr:hover td { background-color: #f8fafc; }        /* 수시 입결 표는 모집단위가 길어도 다른 열 너비를 밀어내지 않도록 제한 */
-        #classView .grad-table { table-layout: fixed; min-width: 1800px; }
+        #classView .grad-table { table-layout: fixed; min-width: 2105px; }
         #classView .grad-table th, #classView .grad-table td { white-space: normal; overflow-wrap: anywhere; word-break: keep-all; line-height: 1.35; }
         #classView .grad-table th:nth-child(1), #classView .grad-table td:nth-child(1) { width: 50px; min-width: 50px; max-width: 50px; }
         #classView .grad-table th:nth-child(2), #classView .grad-table td:nth-child(2) { width: 60px; min-width: 60px; max-width: 60px; }
@@ -48,11 +48,14 @@
         #classView .grad-table th:nth-child(6), #classView .grad-table td:nth-child(6) { width: 150px; min-width: 150px; max-width: 150px; }
         #classView .grad-table th:nth-child(7), #classView .grad-table td:nth-child(7) { width: 60px; min-width: 60px; max-width: 60px; }
         #classView .grad-table th:nth-child(8), #classView .grad-table td:nth-child(8) { width: 220px; min-width: 220px; max-width: 220px; }
-        #classView .grad-table th:nth-child(12), #classView .grad-table td:nth-child(12) { width: 180px; min-width: 180px; max-width: 180px; }
-        #classView .grad-table th:nth-child(14), #classView .grad-table td:nth-child(14) { width: 100px; min-width: 100px; max-width: 100px; }
+        #classView .grad-table th:nth-child(11), #classView .grad-table td:nth-child(11) { width: 100px; min-width: 100px; max-width: 100px; }
+        #classView .grad-table th:nth-child(12), #classView .grad-table td:nth-child(12) { width: 165px; min-width: 165px; max-width: 165px; }
+        #classView .grad-table th:nth-child(13), #classView .grad-table td:nth-child(13) { width: 115px; min-width: 115px; max-width: 115px; }
+        #classView .grad-table th:nth-child(14), #classView .grad-table td:nth-child(14) { width: 110px; min-width: 110px; max-width: 110px; }
         #classView .grad-table th:nth-child(17), #classView .grad-table td:nth-child(17) { width: 230px; min-width: 230px; max-width: 230px; }
-        #classView .grad-table thead th { position: sticky; top: 0; z-index: 20; }
-        #classView .grad-table thead th:nth-child(-n+8) { z-index: 40; }
+        #classView .grad-table select, #classView .grad-table input { box-sizing: border-box; width: 100%; font-size: 11px; }
+        #classView .grad-table thead th { position: sticky; top: 0; z-index: 50; background-color: #f0fdf4 !important; }
+        #classView .grad-table thead th:nth-child(-n+8) { position: sticky; z-index: 100 !important; background-color: #f0fdf4 !important; }
         #classView .grad-table tbody td:nth-child(-n+8) { position: sticky; z-index: 10; background-color: #fff; }
         #classView .grad-table tbody tr.bg-blue-50 td:nth-child(-n+8) { background-color: #eff6ff; }
         #classView .grad-table tbody tr.bg-red-50 td:nth-child(-n+8) { background-color: #fef2f2; }
@@ -3395,8 +3398,14 @@ function applyGradFilter() {
                             const selectedValue = /불합격/.test(safeValue) ? '불합격' : /합격/.test(safeValue) ? '합격' : safeValue;
                             html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['합격', '불합격'], '1단계')}</td>`;
                         } else if (idx === 18) {
-                            const selectedValue = /불합격/.test(safeValue) ? '불합격' : /충원|추가/.test(safeValue) ? '추가합격' : /합격/.test(safeValue) ? '최초합격' : safeValue;
-                            html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['최초합격', '추가합격', '불합격'], '최종단계')}</td>`;
+                            const firstStage = String(row[17] || '').trim();
+                            if (firstStage === '불합격' || /불합격/.test(firstStage)) {
+                                if (row[18] !== '1단계 불합격') setClassSusiEdit(row, 18, '1단계 불합격');
+                                html += '<td><span class="font-semibold text-gray-600">1단계 불합격</span></td>';
+                            } else {
+                                const selectedValue = /불합격/.test(safeValue) ? '불합격' : /충원|추가/.test(safeValue) ? '추가합격' : /합격/.test(safeValue) ? '최초합격' : safeValue;
+                                html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['최초합격', '추가합격', '불합격'], '최종단계')}</td>`;
+                            }
                         } else if (idx === 19) {
                             const firstStage = String(row[17] || '').trim();
                             if (firstStage === '불합격' || /불합격/.test(firstStage)) {
@@ -3441,8 +3450,13 @@ function applyGradFilter() {
             if (!row) return;
             setClassSusiEdit(row, columnIndex, value);
             if (columnIndex === 17) {
-                if (value === '불합격') setClassSusiEdit(row, 19, '1단계 불합격');
-                else if (String(row[19] || '') === '1단계 불합격') setClassSusiEdit(row, 19, '');
+                if (value === '불합격') {
+                    setClassSusiEdit(row, 18, '1단계 불합격');
+                    setClassSusiEdit(row, 19, '1단계 불합격');
+                } else {
+                    if (String(row[18] || '') === '1단계 불합격') setClassSusiEdit(row, 18, '');
+                    if (String(row[19] || '') === '1단계 불합격') setClassSusiEdit(row, 19, '');
+                }
             }
             renderClassTable();
         }
