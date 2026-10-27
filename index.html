@@ -677,6 +677,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                     <th onclick="setSusiSort(11)">지원인원 <span id="susi-icon-11" class="sort-icon"></span></th>
                     <th onclick="setSusiSort(12)">경쟁률 <span id="susi-icon-12" class="sort-icon"></span></th>
                     <th onclick="setSusiSort(13)">충원 <span id="susi-icon-13" class="sort-icon"></span></th>
+                    <th class="bg-indigo-50 text-indigo-800">지원 위치</th>
                     <th onclick="setSusiSort(17)" class="bg-blue-50 text-blue-800">수능백분위 <span id="susi-icon-17" class="sort-icon"></span></th>
                     <th onclick="setSusiSort(18)" class="bg-blue-50 text-blue-800">국어 <span id="susi-icon-18" class="sort-icon"></span></th>
                     <th onclick="setSusiSort(19)" class="bg-blue-50 text-blue-800">수학 <span id="susi-icon-19" class="sort-icon"></span></th>
@@ -687,7 +688,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                 </tr>
             </thead>
             <tbody id="susiResultTableBody">
-                <tr><td colspan="16" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
+                <tr><td colspan="17" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
             </tbody>
         </table>
     </div>
@@ -3576,18 +3577,19 @@ if (interviewTableBodyForSave && !interviewTableBodyForSave.dataset.saveListener
 // ✨ [기능 5] 수시 입결 조회 스크립트 (대학 연동 및 백분위 필터 적용)
 // =====================================================================
 let susiResultData = [];
+let selectedSusiMockAverage = null;
 let currentSusiSortCol = null;
 let isSusiAscending = true;
 
 // 표시할 열 인덱스 (연도~만점)
-const susiColOrder = [1, 5, 6, 8, 9, 10, 11, 12, 13, 17, 18, 19, 20, 14, 15, 16];
+const susiColOrder = [1, 5, 6, 8, 9, 10, 11, 12, 13, "position", 17, 18, 19, 20, 14, 15, 16];
 async function initializeSusiMockLookup() {
  const status=document.getElementById('susiMockLookupStatus'), grade=document.getElementById('susiMockGrade'); if(!grade||grade.dataset.loaded==='true')return;
  status.textContent='학생 명단과 모의고사 자료를 불러오는 중입니다...';
  try { await Promise.all([loadStudentInfoRows(),loadLookupMockRows()]); grade.innerHTML='<option value="">학년</option>'; [...new Set(studentLookupRows.map(s=>s.grade))].sort((a,b)=>Number(a)-Number(b)).forEach(g=>grade.add(new Option(g+'학년',g))); grade.dataset.loaded='true'; grade.disabled=false; status.textContent='학년·반·학생과 모의고사 월을 선택하면 백분위가 표시됩니다.'; }
  catch(e){console.error('수시 입결 모의고사 조회 초기화 실패:',e);status.textContent='학생 명단 또는 모의고사 자료를 불러오지 못했습니다.';}
 }
-function clearSusiMockResult(){['susiMockAverageValue','susiMockKorValue','susiMockMathValue','susiMockInq1Value','susiMockInq2Value'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='-';});const avg=document.getElementById('susiMockAverageValue');if(avg)delete avg.dataset.average;}
+function clearSusiMockResult(){['susiMockAverageValue','susiMockKorValue','susiMockMathValue','susiMockInq1Value','susiMockInq2Value'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='-';});const avg=document.getElementById('susiMockAverageValue');if(avg)delete avg.dataset.average;selectedSusiMockAverage=null;}
 function onSusiMockGradeChange(){const g=document.getElementById('susiMockGrade').value,c=document.getElementById('susiMockClass'),s=document.getElementById('susiMockStudent'),e=document.getElementById('susiMockExam');c.innerHTML='<option value="">반</option>';s.innerHTML='<option value="">번호-이름</option>';e.innerHTML='<option value="">모의고사 월</option>';[...new Set(studentLookupRows.filter(x=>x.grade===g).map(x=>x.cls))].sort((a,b)=>Number(a)-Number(b)).forEach(x=>c.add(new Option(x+'반',x)));c.disabled=!g;s.disabled=true;e.disabled=true;clearSusiMockResult();}
 function onSusiMockClassChange(){const g=document.getElementById('susiMockGrade').value,c=document.getElementById('susiMockClass').value,s=document.getElementById('susiMockStudent'),e=document.getElementById('susiMockExam');s.innerHTML='<option value="">번호-이름</option>';e.innerHTML='<option value="">모의고사 월</option>';studentLookupRows.filter(x=>x.grade===g&&x.cls===c).sort((a,b)=>Number(a.no)-Number(b.no)).forEach(x=>s.add(new Option(`${x.no}번 - ${x.name}`,`${x.no}|${x.name}`)));s.disabled=!(g&&c);e.disabled=true;clearSusiMockResult();}
 function getSusiMockSelectedRows(){const g=document.getElementById('susiMockGrade').value,c=document.getElementById('susiMockClass').value,[n,name]=document.getElementById('susiMockStudent').value.split('|'),s=studentLookupRows.find(x=>x.grade===g&&x.cls===c&&x.no===n&&x.name===name);if(!s)return[];const ids=new Set([`${s.grade}${String(s.cls).padStart(2,'0')}${String(s.no).padStart(2,'0')}`,`${s.grade}${s.cls}${s.no}`,`${s.grade}${String(s.cls).padStart(2,'0')}${s.no}`]);return lookupMockRows.filter(r=>{if(r.name.trim()!==s.name.trim())return false;const id=String(r.id).replace(/\D/g,'');return ids.has(id)||(id.startsWith(s.grade)&&id.endsWith(String(s.no).padStart(2,'0'))&&id.includes(String(s.cls)));});}
@@ -3602,13 +3604,14 @@ function renderSusiMockAverage() {
     const recordedAverage=parsePercentile(row.avg);
     const average=Number.isFinite(recordedAverage)?recordedAverage:(valid.length?valid.reduce((sum,value)=>sum+value,0)/valid.length:NaN);
     const averageElement=document.getElementById('susiMockAverageValue');
-    averageElement.textContent=Number.isFinite(average)?average.toFixed(1):'-';
-    if(Number.isFinite(average)) averageElement.dataset.average=average.toFixed(1); else delete averageElement.dataset.average;
+    const displayedAverage=Number.isFinite(average)?Number(average.toFixed(1)):NaN;
+    averageElement.textContent=Number.isFinite(displayedAverage)?displayedAverage.toFixed(1):'-';
+    if(Number.isFinite(displayedAverage)){averageElement.dataset.average=displayedAverage.toFixed(1);selectedSusiMockAverage=displayedAverage;}else{delete averageElement.dataset.average;selectedSusiMockAverage=null;}
     ['susiMockKorValue','susiMockMathValue','susiMockInq1Value','susiMockInq2Value'].forEach((id,index)=>document.getElementById(id).textContent=Number.isFinite(percentiles[index])?String(percentiles[index]):'-');
-    if(Number.isFinite(average)){
+    if(Number.isFinite(displayedAverage)){
         const min=document.getElementById('susiCsatMin'), max=document.getElementById('susiCsatMax');
-        min.value=Math.max(0,average-5).toFixed(1);
-        max.value=Math.min(100,average+5).toFixed(1);
+        min.value=Math.max(0,displayedAverage-5).toFixed(1);
+        max.value=Math.min(100,displayedAverage+5).toFixed(1);
         updateSusiMajorList();
     }
 }
@@ -3662,13 +3665,27 @@ async function fetchSusiResultData() {
     } catch (error) { 
         console.error("수시입결 데이터 로드 실패", error); 
         const tbody = document.getElementById('susiResultTableBody');
-        if(tbody) tbody.innerHTML = `<tr><td colspan="16" class="text-red-500 py-10 font-bold text-center">데이터를 불러오는 데 실패했습니다.<br>(${error.message})</td></tr>`;
+        if(tbody) tbody.innerHTML = `<tr><td colspan="17" class="text-red-500 py-10 font-bold text-center">데이터를 불러오는 데 실패했습니다.<br>(${error.message})</td></tr>`;
         if(spinner) spinner.classList.add('hidden');
     }
 }
 
 // 대학명 입력 시 해당 대학의 모집단위만 필터링하여 Datalist에 추가
-let currentSusiMajorUniversity = "";
+function getSusiSupportPosition(row, studentAverage) {
+    const percentile = getSusiCsatPercentile(row);
+    if (!Number.isFinite(percentile) || !Number.isFinite(studentAverage)) return '-';
+    const difference = Math.round((percentile - studentAverage) * 10) / 10;
+    if (difference <= -3) return '안정';
+    if (difference < 0) return '소신안정';
+    if (difference <= 1.9) return '적정';
+    if (difference <= 3.9) return '상향';
+    return '위험';
+}function getSusiCsatPercentile(row) {
+    const raw = String(row?.[17] ?? '').trim();
+    if (!raw || raw === '-') return NaN;
+    const value = parseFloat(raw.replace(/,/g, '.').replace(/[^0-9.\-]/g, ''));
+    return Number.isFinite(value) ? value : NaN;
+}let currentSusiMajorUniversity = "";
 function updateSusiMajorList() {
     const selectedUniv = document.getElementById('susiUnivInput').value.trim();
     const majorInput = document.getElementById('susiMajorInput');
@@ -3690,7 +3707,7 @@ function updateSusiMajorList() {
             const rowYear = String(row[1] || '').trim();
             const rowUniv = String(row[5] || '').trim();
             const rowMajor = String(row[6] || '').trim();
-            const rowCsat = parseFloat(String(row[17] || '').replace(/[^0-9.]/g, ''));
+            const rowCsat = getSusiCsatPercentile(row);
             const universityMatches = universityIsExact ? rowUniv === selectedUniv : rowUniv.includes(selectedUniv);
             if (!universityMatches || (year && rowYear !== year) || !rowMajor) return;
             if (minCsat !== -Infinity && (!Number.isFinite(rowCsat) || rowCsat < minCsat)) return;
@@ -3755,9 +3772,8 @@ function renderSusiResultTable() {
         const rowM = String(row[6] || '').trim(); // 모집단위
         
         // 17번 열: 수능 백분위 (숫자로 파싱)
-        let rowCsatStr = String(row[17] || '').replace(/[^0-9.]/g, ''); 
-        let rowCsat = parseFloat(rowCsatStr);
-        let hasCsatData = !isNaN(rowCsat);
+        const rowCsat = getSusiCsatPercentile(row);
+        const hasCsatData = Number.isFinite(rowCsat);
 
         if (y && rowY !== y) return false;
         // 대학명과 모집단위는 포함(includes) 또는 정확한 일치로 검색되도록 처리
@@ -3808,18 +3824,31 @@ function renderSusiResultTable() {
     tbody.innerHTML = '';
     
     if(finalData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="16" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
         return;
     }
     
-    const studentAverage = parseFloat(document.getElementById('susiMockAverageValue')?.dataset.average || '');
+    const studentAverage = selectedSusiMockAverage;
     finalData.forEach(row => {
         const tr = document.createElement('tr');
-        const rowPercentile = parseFloat(String(row[17] || '').replace(/[^0-9.]/g, ''));
-        if (Number.isFinite(studentAverage) && Number.isFinite(rowPercentile) && Math.abs(rowPercentile - studentAverage) <= 1) tr.classList.add('susi-near-average');
+        const rowPercentile = getSusiCsatPercentile(row);
+        const isNearStudentAverage = Number.isFinite(studentAverage) && Number.isFinite(rowPercentile) && Math.abs(rowPercentile - studentAverage) <= 1;
+        if (isNearStudentAverage) tr.classList.add('susi-near-average');
         let html = '';
         
         susiColOrder.forEach(idx => {
+            if (idx === "position") {
+                const position = getSusiSupportPosition(row, studentAverage);
+                const badgeClass = {
+                    '안정': 'bg-emerald-100 text-emerald-800',
+                    '소신안정': 'bg-lime-100 text-lime-800',
+                    '적정': 'bg-blue-100 text-blue-800',
+                    '상향': 'bg-amber-100 text-amber-800',
+                    '위험': 'bg-rose-100 text-rose-800'
+                }[position] || '';
+                html += position === '-' ? '<td class="text-center text-gray-400">-</td>' : `<td class="text-center"><span class="inline-block rounded px-2 py-0.5 text-xs font-bold ${badgeClass}">${position}</span></td>`;
+                return;
+            }
             let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
             let tdClass = "";
 
@@ -3830,6 +3859,7 @@ function renderSusiResultTable() {
             html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
         });
         tr.innerHTML = html;
+        if (isNearStudentAverage) tr.querySelectorAll('td').forEach(td => { td.style.setProperty('background-color', '#fff3c4', 'important'); });
         tbody.appendChild(tr);
     });
 }
