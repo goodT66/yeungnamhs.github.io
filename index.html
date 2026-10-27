@@ -665,7 +665,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         </div>
     </div>
     
-<div class="mb-2 px-1 text-xs leading-relaxed text-gray-500"><div><span class="font-bold text-gray-700">지원 위치 기준</span> (차이 = 학생 평균 백분위 - 대학 기준 백분위; +면 대학 기준이 학생보다 낮고, -면 높음)</div><div>위험 −8 미만 · 상향 −8 이상~−3 미만</div><div class="font-semibold text-blue-700">소신 −3 이상~0 미만 · 적정 0 이상~+5 미만 · 안정 +5 이상</div></div><div id="susiPagination" class="flex flex-wrap items-center justify-between gap-2 mb-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
+<div class="mb-2 px-1 text-xs leading-relaxed text-gray-500"><div><span class="font-bold text-gray-700">지원 위치 기준</span> (차이 = 학생 평균 백분위 - 대학 기준 백분위; +면 대학 기준이 학생보다 낮고, -면 높음)</div><div>위험 −8 미만</div><div class="font-semibold text-blue-700">소신 −3 이상~0 미만 · 적정 0 이상~+5 미만 · 안정 +5 이상</div></div><div id="susiPagination" class="flex flex-wrap items-center justify-between gap-2 mb-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
     <span id="susiPageSummary" class="text-sm text-gray-600">조회 결과 없음</span><span id="susiRecommendationSummary" class="hidden min-w-0 flex-1 px-2 text-sm text-right text-gray-700"></span>
     <div class="flex items-center gap-2"><button id="susiPrevPage" type="button" onclick="changeSusiPage(-1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">이전</button><span id="susiPageNumber" class="min-w-16 text-center text-sm font-semibold text-gray-700">0 / 0</span><button id="susiNextPage" type="button" onclick="changeSusiPage(1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">다음</button></div>
 </div>    <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다. <span class="ml-2 inline-flex items-center gap-1"><i class="inline-block h-3 w-3 rounded-sm border border-amber-300 bg-amber-100"></i>음영: 선택 학생 평균 ±1 백분위</span></p>
@@ -2732,7 +2732,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         let gradSummarySelection = null;
         const GRAD_SUMMARY_UNIVERSITIES = [
             { name: '서울대학교', aliases: ['서울대학교', '서울대'] }, { name: '연세대학교', aliases: ['연세대학교', '연세대'] },
-            { name: '연세대학교(미래)', aliases: ['연세대학교(미래)', '연세대(미래)'] },
+
             { name: '고려대학교', aliases: ['고려대학교', '고려대'] }, { name: '고려대학교(세종)', aliases: ['고려대학교(세종)', '고려대(세종)'] },
             { name: '성균관대학교', aliases: ['성균관대학교', '성균관대'] },
             { name: '한양대학교', aliases: ['한양대학교', '한양대'] }, { name: '서강대학교', aliases: ['서강대학교', '서강대'] },
@@ -3852,16 +3852,16 @@ function updateSusiRecommendationSummary(rows) {
         summary.classList.add('hidden');
         return;
     }
-    const sanghyang = new Map();
+
     const soshin = new Map();
     const jeokjeong = new Map();
     rows.forEach(row => {
         const position = getSusiSupportPosition(row, selectedSusiMockAverage);
-        if (!['상향', '소신', '적정'].includes(position)) return;
+        if (position !== '소신' && position !== '적정') return;
         const university = getSusiRecommendationUniversity(row[5]);
         const percentile = getSusiCsatPercentile(row);
         if (!university || !Number.isFinite(percentile)) return;
-        const target = position === '상향' ? sanghyang : position === '소신' ? soshin : jeokjeong;
+        const target = position === '소신' ? soshin : jeokjeong;
         target.set(university, Math.max(target.get(university) ?? -Infinity, percentile));
     });
     const universityOrder = new Map(SUSI_RECOMMENDATION_UNIVERSITIES.map((item, index) => [item.name, index]));
@@ -3885,9 +3885,9 @@ function updateSusiRecommendationSummary(rows) {
         });
     };
     summary.replaceChildren();
-    appendText(`${studentName} 학생은 ${month}월 모의고사 성적을 기준으로 상향 지원의 경우 `);
-    appendSchools(sanghyang);
-    appendText(', 소신 지원의 경우 ');
+    appendText(`${studentName} 학생은 ${month}월 모의고사 성적을 기준으로 소신 지원의 경우 `);
+
+
     appendSchools(soshin);
     appendText(', 적정 지원의 경우 ');
     appendSchools(jeokjeong);
