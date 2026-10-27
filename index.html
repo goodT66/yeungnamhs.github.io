@@ -661,7 +661,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         </div>
     </div>
     
-<div id="susiPagination" class="flex flex-wrap items-center justify-between gap-2 mb-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
+<p class="mb-2 px-1 text-xs leading-relaxed text-gray-500"><span class="font-bold text-gray-700">지원 위치 기준</span> (대학 합격자 평균 - 학생 평균, 백분위 점수 차이): 안정 ≤ -7 · 적정안정 &gt; -7~&lt; -5 · 적정 -5~+3 · 상향 &gt; +3~+7 · 위험 &gt; +7. <span class="font-semibold text-rose-600">대학 백분위 100은 학생 평균 98 미만일 때 위험으로 분류</span></p><div id="susiPagination" class="flex flex-wrap items-center justify-between gap-2 mb-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
     <span id="susiPageSummary" class="text-sm text-gray-600">조회 결과 없음</span><span id="susiRecommendationSummary" class="hidden min-w-0 flex-1 px-2 text-sm text-right text-gray-700"></span>
     <div class="flex items-center gap-2"><button id="susiPrevPage" type="button" onclick="changeSusiPage(-1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">이전</button><span id="susiPageNumber" class="min-w-16 text-center text-sm font-semibold text-gray-700">0 / 0</span><button id="susiNextPage" type="button" onclick="changeSusiPage(1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">다음</button></div>
 </div>    <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다. <span class="ml-2 inline-flex items-center gap-1"><i class="inline-block h-3 w-3 rounded-sm border border-amber-300 bg-amber-100"></i>음영: 선택 학생 평균 ±1 백분위</span></p>
@@ -3686,12 +3686,14 @@ async function fetchSusiResultData() {
 function getSusiSupportPosition(row, studentAverage) {
     const percentile = getSusiCsatPercentile(row);
     if (!Number.isFinite(percentile) || !Number.isFinite(studentAverage)) return '-';
+    // 만점 백분위는 학생 평균이 98 미만이면 위험으로 분류합니다.
+    if (percentile >= 100 && studentAverage < 98) return '위험';
     // 차이 = 대학 합격자 평균 - 학생 평균 (백분위 점수 차이)
     const difference = Math.round((percentile - studentAverage) * 10) / 10;
     if (difference <= -7) return '안정';
     if (difference < -5) return '적정안정';
     if (difference <= 3) return '적정';
-    if (difference <= 10) return '상향';
+    if (difference <= 7) return '상향';
     return '위험';
 }
 function getSusiRowMeta(row) {
@@ -3838,7 +3840,7 @@ function updateSusiRecommendationSummary(rows) {
     const jeokjeong = new Map();
     rows.forEach(row => {
         const position = getSusiSupportPosition(row, selectedSusiMockAverage);
-        // 상향 지원은 대학 합격자 평균이 학생 평균보다 3점 초과~10점 이하 높은 구간입니다.
+        // 상향 지원은 대학 합격자 평균이 학생 평균보다 3점 초과~7점 이하 높은 구간입니다.
         if (position !== '상향' && position !== '적정') return;
         const university = getSusiRecommendationUniversity(row[5]);
         const percentile = getSusiCsatPercentile(row);
