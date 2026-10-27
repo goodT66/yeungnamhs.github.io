@@ -2719,6 +2719,16 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const aliases = university.aliases.map(alias => alias.replace(/\s+/g, '').toLowerCase());
             return aliases.some(alias => school.includes(alias));
         }
+        function matchesGradSummaryMajor(unitName, majorName) {
+            const unit = String(unitName || '').replace(/\s+/g, '');
+            const aliases = {
+                '의예과·의학과': ['의예과', '의학과'], '약학과': ['약학과', '약학부'],
+                '수의예과': ['수의예과'], '치의예과': ['치의예과'], '한의예과': ['한의예과']
+            }[majorName] || [];
+            if (!aliases.length) return false;
+            if (majorName === '의예과·의학과') return aliases.includes(unit);
+            return aliases.some(alias => unit.includes(alias));
+        }
 function renderGradUniversitySummary() {
             const box = document.getElementById('gradUniversitySummary');
             const year = document.getElementById('filterYear')?.value || '';
@@ -2747,7 +2757,7 @@ function renderGradUniversitySummary() {
                     const result = String(row[24] || '').replace(/\s+/g, '');
                     if (!result.includes('합격') || result.includes('불합격')) return false;
                     const unit = String(row[15] || '').replace(/\s+/g, '');
-                    return major.matches.some(name => unit.includes(name));
+                    return matchesGradSummaryMajor(row[15], major.name);
                 }).length;
                 const active = gradSummarySelection?.type === 'major' && gradSummarySelection.key === major.name;
                 return `<button type="button" onclick="selectGradSummary('major','${escapeHtmlGrad(major.name)}')" class="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm cursor-pointer transition" style="${active ? 'background-color:#be123c;border-color:#9f1239;color:#fff;' : 'background-color:#fff1f2;border-color:#fecdd3;color:#374151;'}"><span class="font-semibold" style="color:${active ? '#fff' : '#374151'}">${escapeHtmlGrad(major.name)}</span><strong style="color:${active ? '#fff' : '#be123c'}">${count}건</strong></button>`;
@@ -2783,7 +2793,7 @@ function selectGradSummary(type, key) {
                 if (!majorKeywords.length) return '';
                 subjectRows = yearRows.filter(row => {
                     const unit = String(row[15] || '').replace(/\s+/g, '');
-                    return majorKeywords.some(keyword => unit.includes(keyword));
+                    return matchesGradSummaryMajor(row[15], selection.key);
                 });
                 chartTitle = `${selection.key} 지원자`;
             }
@@ -2856,8 +2866,8 @@ function selectGradSummary(type, key) {
                 const count = sortedTypicalGrades.filter(value => value >= start && value <= start + 1).length;
                 if (!mostCommonBand || count > mostCommonBand.count) mostCommonBand = { start, end: Math.min(9, start + 1), count };
             }
-            const guidance = mostCommonBand ? `영남고 학생은 수시 교과 전형, 종합 전형에서 평균적으로 ${mostCommonBand.start.toFixed(1)}등급~${mostCommonBand.end.toFixed(1)}등급 이내의 학생이 합격하고 있습니다.` : '교과·종합 전형 합격 등급 자료가 없습니다.';
-            return `<section class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-2"><div class="flex flex-wrap items-center gap-3 flex-1"><h4 class="font-bold text-gray-800">${escapeHtmlGrad(chartTitle)} 일반등급 범위</h4><span class="ml-auto text-right text-sm font-bold text-indigo-800">${guidance}</span></div><span class="text-xs text-gray-500">각 결과 범위의 양 끝에 최저·최고 등급 표시</span></div>${sameLine}<div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">${rangeSummary}</div></section>`;
+            const guidance = mostCommonBand ? `영남고 학생은 수시 교과 전형, 종합 전형에서 평균적으로 <strong class="text-red-600 text-base">${mostCommonBand.start.toFixed(1)}등급~${mostCommonBand.end.toFixed(1)}등급</strong> 이내의 학생이 합격하고 있습니다.` : '교과·종합 전형 합격 등급 자료가 없습니다.';
+            return `<section class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-2"><div class="flex flex-wrap items-center gap-3 flex-1"><h4 class="font-bold text-gray-800">${escapeHtmlGrad(chartTitle)} 일반등급 범위</h4><span class="ml-6 text-sm font-semibold text-gray-800">${guidance}</span></div><span class="text-xs text-gray-500">각 결과 범위의 양 끝에 최저·최고 등급 표시</span></div>${sameLine}<div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">${rangeSummary}</div></section>`;
         }
 function applyGradFilter() {
             const yEl = document.getElementById('filterYear');
@@ -2897,7 +2907,7 @@ function applyGradFilter() {
                             '수의예과': ['수의예과'], '치의예과': ['치의예과'], '한의예과': ['한의예과']
                         }[gradSummarySelection.key] || [];
                         const unit = m.replace(/\s+/g, '');
-                        return majorAliases.some(alias => unit.includes(alias));
+                        return matchesGradSummaryMajor(m, gradSummarySelection.key);
                     }
                 }
                 if (fUniv && u !== fUniv) return false;
