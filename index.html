@@ -618,6 +618,11 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                     </select>
                     <input type="text" id="ivNameInput" placeholder="학생 이름 검색" class="border border-gray-300 rounded p-2 font-medium w-32" onkeyup="renderInterviewTable()">
                     <input type="text" id="ivUnivInput" placeholder="대학명 검색" class="border border-gray-300 rounded p-2 font-medium w-32" onkeyup="renderInterviewTable()">
+                    <div class="ml-8 flex flex-wrap items-center gap-3">
+                        <button type="button" id="saveInterviewDatesButton" onclick="saveAllInterviewDates()" class="rounded bg-blue-600 px-4 py-2 font-bold text-white transition-colors hover:bg-blue-700">저장</button>
+                        <span class="text-sm font-bold text-red-600">입력하신 지도교사 일자를 저장합니다.</span>
+                        <span id="interviewDateSaveStatus" class="text-xs text-gray-500" role="status"></span>
+                    </div>
                     
                     <div class="ml-auto text-sm text-gray-700 font-bold bg-white px-3 py-2 rounded border border-gray-200 shadow-sm">
                         검색 결과: <span id="ivCount" class="text-orange-600 text-lg">0</span>건
@@ -633,8 +638,6 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                                 <th onclick="setIvSort(18)">지도교사 <span id="iv-icon-1" class="sort-icon"></span></th>
                                 <th onclick="setIvSort(19)">지도1회 <span id="iv-icon-19" class="sort-icon"></span></th>
                                 <th onclick="setIvSort(20)">지도2회 <span id="iv-icon-20" class="sort-icon"></span></th>
-                                <th onclick="setIvSort(21)">지도3회 <span id="iv-icon-21" class="sort-icon"></span></th>
-                                <th onclick="setIvSort(22)">지도4회 <span id="iv-icon-22" class="sort-icon"></span></th>
                                 <th onclick="setIvSort(6)">대학명 <span id="iv-icon-6" class="sort-icon"></span></th>
                                 <th onclick="setIvSort(7)">세부전형명 <span id="iv-icon-7" class="sort-icon"></span></th>
                                 <th onclick="setIvSort(8)">계열 <span id="iv-icon-8" class="sort-icon"></span></th>
@@ -651,7 +654,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                             </tr>
                         </thead>
                         <tbody id="interviewTableBody">
-                            <tr><td colspan="23" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
+                            <tr><td colspan="17" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1183,6 +1186,34 @@ async function saveInterviewDate(studentId, studentName, sessionIdx, dateValue, 
     }
 }
 window.saveInterviewDate = saveInterviewDate;
+
+window.interviewDateStore = {
+    saveMany: async (items) => {
+        if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("허용된 교사 계정으로 로그인해 주세요.");
+        for (let start = 0; start < items.length; start += 450) {
+            const batch = writeBatch(db);
+            items.slice(start, start + 450).forEach(item => {
+                const studentId = String(item.studentId).trim();
+                const studentName = String(item.studentName).trim();
+                const sessionIdx = Number(item.sessionIdx);
+                const cloudKey = `${studentId}_${studentName}_${sessionIdx}`;
+                batch.set(doc(db, "interviewDates", cloudKey), {
+                    studentId,
+                    studentName,
+                    sessionIdx,
+                    dateValue: item.dateValue || "",
+                    updatedBy: currentUser.email,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+            });
+            await batch.commit();
+        }
+        items.forEach(item => {
+            const cloudKey = `${String(item.studentId).trim()}_${String(item.studentName).trim()}_${Number(item.sessionIdx)}`;
+            interviewDateCache[cloudKey] = item.dateValue || "";
+        });
+    }
+};
 
 // 2028 대입 자료: 사용자가 제공한 두 자료(최저학력기준 / 평가 방식·반영 비율)를 전형별로 묶어 표시합니다.
 const admissions2028Seed = [
@@ -3528,16 +3559,16 @@ function applyGradFilter() {
         // [기능 4] 2026 수시 면접 조편성 스크립트
         // =====================================================================
         let interviewData = [];
+        let pendingInterviewDates = new Map();
         let interviewFetchSequence = 0;
         let currentIvSortCol = null;
         let isIvAscending = true;
-        // 학번(1), 이름(5), 지도교사(18), 1~4회(19~22), 대학명(6) ... 환산등급(17)
-// 정확히 19개 열: 학번(1), 이름(5), 지도교사(18), 지도1~4회(19~22), 대학명(6) ... 환산점수(17), 환산등급(16)
-const ivColOrder = [1, 5, 18, 19, 20, 21, 22, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16];
+        // 학번(1), 이름(5), 지도교사(18), 지도1~2회(19~20), 대학명(6) ... 환산등급(16)
+const ivColOrder = [1, 5, 18, 19, 20, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16];
         async function fetchInterviewData() {
             const requestSequence = ++interviewFetchSequence;
             const tbody = document.getElementById('interviewTableBody');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="23" class="text-center py-10 text-gray-500">면접 자료를 새로 불러오는 중입니다...</td></tr>';
+            if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-gray-500">면접 자료를 새로 불러오는 중입니다...</td></tr>';
             try {
                 const requestUrl = `${INTERVIEW_2026_CSV_URL}&cacheBust=${Date.now()}`;
                 const response = await fetch(requestUrl, { cache: 'no-store' });
@@ -3550,7 +3581,7 @@ const ivColOrder = [1, 5, 18, 19, 20, 21, 22, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
                         if (requestSequence !== interviewFetchSequence) return;
                         const data = results.data;
                         if (data.length <= 1) {
-                            if (tbody) tbody.innerHTML = '<tr><td colspan="23" class="text-center py-10 text-red-500">면접 자료가 비어 있습니다. 시트 공유 설정과 시트 이름을 확인해 주세요.</td></tr>';
+                            if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-red-500">면접 자료가 비어 있습니다. 시트 공유 설정과 시트 이름을 확인해 주세요.</td></tr>';
                             return;
                         }
                         interviewData = data.slice(1);
@@ -3572,13 +3603,13 @@ const ivColOrder = [1, 5, 18, 19, 20, 21, 22, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
                     error: function(error) {
                         if (requestSequence !== interviewFetchSequence) return;
                         console.error('면접 자료 CSV 파싱 오류:', error);
-                        if (tbody) tbody.innerHTML = '<tr><td colspan="23" class="text-center py-10 text-red-500">면접 자료 형식을 읽지 못했습니다.</td></tr>';
+                        if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-red-500">면접 자료 형식을 읽지 못했습니다.</td></tr>';
                     }
                 });
             } catch (error) {
                 if (requestSequence !== interviewFetchSequence) return;
                 console.error('2026면접 데이터 로드 실패', error);
-                if (tbody) tbody.innerHTML = '<tr><td colspan="23" class="text-center py-10 text-red-500">면접 자료를 불러오지 못했습니다. 네트워크와 Google 시트 공유 권한을 확인해 주세요.</td></tr>';
+                if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-red-500">면접 자료를 불러오지 못했습니다. 네트워크와 Google 시트 공유 권한을 확인해 주세요.</td></tr>';
             }
         }
 function setIvSort(colIndex) {
@@ -3653,7 +3684,7 @@ function setIvSort(colIndex) {
             tbody.innerHTML = '';
             
             if(filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="23" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
                 return;
             }
             
@@ -3689,8 +3720,8 @@ function setIvSort(colIndex) {
                 ivColOrder.forEach(idx => {
                     let val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
                     
-                    // 지도 1~4회(19~22) 달력 입력칸 렌더링
-                    if (idx >= 19 && idx <= 22) {
+                    // 지도 1~2회(19~20) 달력 입력칸 렌더링
+                    if (idx >= 19 && idx <= 20) {
                         
 const savedKey = `interview_date_${studentId}_${studentName}_${idx}`;
 
@@ -3702,28 +3733,26 @@ const dateCache = window.getInterviewDateCache
 const savedDate = Object.prototype.hasOwnProperty.call(dateCache, cloudKey)
     ? dateCache[cloudKey]
     : '';
+const displayedDate = pendingInterviewDates.has(cloudKey)
+    ? pendingInterviewDates.get(cloudKey).dateValue
+    : savedDate;
 
 
                         const safeStudentId = encodeURIComponent(studentId);
                         const safeStudentName = encodeURIComponent(studentName);
                         html += `
                             <td class="p-1 text-center">
-                                <div style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:5px;min-width:0;white-space:nowrap;">
-                                    <input type="date"
-                                           value="${savedDate}"
-                                           data-interview-date="true"
-                                           aria-label="지도${idx - 18}회 날짜"
-                                           class="border border-gray-300 rounded p-1 text-xs bg-white cursor-pointer hover:border-orange-500 focus:outline-none focus:border-orange-600 transition-colors"
-                                           style="display:inline-block;width:112px;min-width:0;padding:5px 3px;">
-                                    <button type="button"
-                                            class="interview-date-save-button"
-                                            data-student-id="${safeStudentId}"
-                                            data-student-name="${safeStudentName}"
-                                            data-session-idx="${idx}"
-                                            style="display:inline-block !important;visibility:visible !important;opacity:1 !important;background:#64748b;color:white;font-weight:700;border:1px solid #475569;border-radius:5px;padding:5px 8px;font-size:12px;white-space:nowrap;cursor:pointer;min-width:0;position:relative;z-index:5;pointer-events:auto;">
-                                        저장
-                                    </button>
-                                </div>
+                                <input type="date"
+                                       value="${displayedDate}"
+                                       data-interview-date="true"
+                                       data-student-id="${safeStudentId}"
+                                       data-student-name="${safeStudentName}"
+                                       data-session-idx="${idx}"
+                                       data-original-value="${savedDate}"
+                                       onchange="markInterviewDateDirty(this)"
+                                       aria-label="지도${idx - 18}회 날짜"
+                                       class="border border-gray-300 rounded p-1 text-xs bg-white cursor-pointer hover:border-orange-500 focus:outline-none focus:border-orange-600 transition-colors"
+                                       style="width:140px;min-width:120px;padding:5px 3px;">
                             </td>
                         `;
                     } else {
@@ -3742,6 +3771,53 @@ const savedDate = Object.prototype.hasOwnProperty.call(dateCache, cloudKey)
             });
         }
         window.renderInterviewTable = renderInterviewTable;
+
+        function markInterviewDateDirty(input) {
+            if (input) {
+                const studentId = decodeURIComponent(input.dataset.studentId || '');
+                const studentName = decodeURIComponent(input.dataset.studentName || '');
+                const sessionIdx = Number(input.dataset.sessionIdx);
+                const cloudKey = `${studentId}_${studentName}_${sessionIdx}`;
+                if (input.value === (input.dataset.originalValue || '')) {
+                    pendingInterviewDates.delete(cloudKey);
+                } else {
+                    pendingInterviewDates.set(cloudKey, { studentId, studentName, sessionIdx, dateValue: input.value || '' });
+                }
+            }
+            const status = document.getElementById('interviewDateSaveStatus');
+            if (status) status.textContent = pendingInterviewDates.size ? '저장하지 않은 날짜 변경이 있습니다.' : '';
+        }
+        window.markInterviewDateDirty = markInterviewDateDirty;
+
+        async function saveAllInterviewDates() {
+            const button = document.getElementById('saveInterviewDatesButton');
+            const status = document.getElementById('interviewDateSaveStatus');
+            const items = Array.from(pendingInterviewDates.values());
+            if (!items.length) {
+                if (status) status.textContent = '저장할 변경사항이 없습니다.';
+                return;
+            }
+            if (!window.interviewDateStore || typeof window.interviewDateStore.saveMany !== 'function') {
+                if (status) status.textContent = '저장 기능을 불러오지 못했습니다.';
+                return;
+            }
+
+            if (button) { button.disabled = true; button.textContent = '저장 중…'; }
+            if (status) status.textContent = '지도교사 일자를 저장하고 있습니다.';
+            try {
+                await window.interviewDateStore.saveMany(items);
+                pendingInterviewDates.clear();
+                renderInterviewTable();
+                if (status) status.textContent = `지도교사 일자 ${items.length}건 저장 완료`;
+            } catch (error) {
+                console.error('면접 지도 일자 일괄 저장 오류:', error);
+                if (status) status.textContent = '저장하지 못했습니다.';
+                alert(`지도교사 일자를 저장하지 못했습니다. 로그인 및 Firestore 보안 규칙을 확인해 주세요.\n${error?.code || error?.message || ''}`);
+            } finally {
+                if (button) { button.disabled = false; button.textContent = '저장'; }
+            }
+        }
+        window.saveAllInterviewDates = saveAllInterviewDates;
 
         
 async function saveGradInterviewDate(studentId, studentName, sessionIdx, input, button) {
@@ -3802,44 +3878,6 @@ async function saveGradInterviewDate(studentId, studentName, sessionIdx, input, 
     }
 }
 window.saveGradInterviewDate = saveGradInterviewDate;
-
-async function saveInterviewDate(studentId, studentName, sessionIdx, dateValue, button) {
-    if (typeof window.saveInterviewDate !== "function") {
-        throw new Error("Firebase 저장 함수가 아직 준비되지 않았습니다. 페이지를 새로고침해 주세요.");
-    }
-    return window.saveInterviewDate(studentId, studentName, sessionIdx, dateValue, button);
-}
-
-// 모듈 스크립트와 동적 표 렌더링에 영향을 받지 않도록 이벤트 위임으로 저장 클릭을 처리합니다.
-const interviewTableBodyForSave = document.getElementById("interviewTableBody");
-if (interviewTableBodyForSave && !interviewTableBodyForSave.dataset.saveListenerAttached) {
-    interviewTableBodyForSave.dataset.saveListenerAttached = "true";
-    interviewTableBodyForSave.addEventListener("click", async (event) => {
-        const button = event.target.closest(".interview-date-save-button");
-        if (!button) return;
-        event.preventDefault();
-        event.stopPropagation();
-
-        const cell = button.closest("td");
-        const dateInput = cell?.querySelector('input[data-interview-date="true"]');
-        if (!dateInput) {
-            alert("날짜 입력칸을 찾을 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.");
-            return;
-        }
-
-        const studentId = decodeURIComponent(button.dataset.studentId || "");
-        const studentName = decodeURIComponent(button.dataset.studentName || "");
-        const sessionIdx = Number(button.dataset.sessionIdx);
-
-        try {
-            await saveInterviewDate(studentId, studentName, sessionIdx, dateInput.value, button);
-        } catch (error) {
-            console.error("면접 날짜 저장 클릭 처리 오류:", error);
-            alert(`저장 버튼 처리 중 오류가 발생했습니다: ${error?.message || error}`);
-        }
-    });
-}
-
 
         // =====================================================================
       // =====================================================================
