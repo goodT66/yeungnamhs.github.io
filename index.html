@@ -2045,7 +2045,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 } else if (susiScheduleError) {
                     susiTextList.innerHTML = `<p class="md:col-span-2 text-xs text-amber-700">수시 발표 일정을 불러오지 못했습니다. ${escapeHTML(susiScheduleError)}</p>`;
                 } else {
-                    const susiItems = (susiScheduleCache || []).filter(e => e.date === selectedCalendarDate).sort((a, b) => (a.time || '').localeCompare(b.time || '') || (a.university || '').localeCompare(b.university || '')).map(e => {
+                    const susiItems = (susiScheduleCache || []).filter(e => e.date === selectedCalendarDate).sort((a, b) => (a.university || '').localeCompare(b.university || '', 'ko')).map(e => {
                         const categoryText = (e.category || '').trim();
                         let categoryClass = 'text-gray-700';
                         if (categoryText.includes('1단계 합격')) categoryClass = 'text-blue-600';
