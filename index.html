@@ -3199,6 +3199,7 @@ function applyGradFilter() {
             window.classSusiEditStore.save(items).then(() => {
                 classSusiEditsDirty = false;
                 if (status) status.textContent = '저장되었습니다.';
+                alert('입력하신 내용 저장이 완료되었습니다');
             }).catch(error => {
                 console.error('수시 지원 반별 조회 입력값 저장 실패:', error);
                 if (status) status.textContent = '저장하지 못했습니다.';
