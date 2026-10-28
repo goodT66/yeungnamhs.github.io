@@ -3502,11 +3502,14 @@ function applyGradFilter() {
             
             filtered.forEach(row => {
                 const tr = document.createElement('tr');
-                const finalResult = String(row[18] || '').trim(); 
+                const firstStageResult = String(row[17] || '').trim();
+                const finalResult = String(row[18] || '').trim();
+                const isAccepted = value => /합격/.test(value) && !/불합격/.test(value);
+                const hasAcceptedResult = isAccepted(firstStageResult) || isAccepted(finalResult);
                 const rowIndex = classSusiData.indexOf(row);
                 
-                if(finalResult.includes('합격') && !finalResult.includes('불')) tr.classList.add('bg-blue-50');
-                if(finalResult.includes('불합격')) tr.classList.add('bg-red-50');
+                if (hasAcceptedResult) tr.classList.add('bg-blue-100');
+                else if (finalResult.includes('불합격')) tr.classList.add('bg-red-50');
 
                 let html = '';
                 classColOrder.forEach(idx => {
@@ -3564,6 +3567,15 @@ function applyGradFilter() {
                     html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
                 });
                 tr.innerHTML = html;
+                if (hasAcceptedResult) {
+                    Array.from(tr.children).forEach(cell => { cell.style.backgroundColor = '#dbeafe'; });
+                    [17, 18].forEach(columnIndex => {
+                        const cellIndex = classColOrder.indexOf(columnIndex);
+                        const cell = tr.children[cellIndex];
+                        const control = cell?.querySelector('select');
+                        if (control && isAccepted(control.value)) cell.style.backgroundColor = '#bfdbfe';
+                    });
+                }
                 tbody.appendChild(tr);
             });
         }
@@ -3574,7 +3586,9 @@ function applyGradFilter() {
             const values = [...options];
             if (selectedValue && selectedValue !== '-' && !values.includes(selectedValue)) values.push(selectedValue);
             const optionsHtml = [`<option value="">선택</option>`, ...values.map(value => `<option value="${escape(value)}"${value === selectedValue ? ' selected' : ''}>${escape(value)}</option>`)].join('');
-            return `<select aria-label="${label} 선택" onchange="handleClassSusiSelectChange(${rowIndex}, ${columnIndex}, this.value)" class="w-full min-w-20 rounded border border-gray-300 bg-white px-1 py-1 text-center focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-300">${optionsHtml}</select>`;
+            const isAccepted = (columnIndex === 17 || columnIndex === 18) && /합격/.test(selectedValue) && !/불합격/.test(selectedValue);
+            const acceptedClass = isAccepted ? 'font-bold text-blue-700 bg-blue-100' : '';
+            return `<select aria-label="${label} 선택" onchange="handleClassSusiSelectChange(${rowIndex}, ${columnIndex}, this.value)" class="w-full min-w-20 rounded border border-gray-300 bg-white px-1 py-1 text-center focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-300 ${acceptedClass}">${optionsHtml}</select>`;
         }
 
         function handleClassSusiSelectChange(rowIndex, columnIndex, value) {
