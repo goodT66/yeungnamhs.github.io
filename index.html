@@ -3809,6 +3809,7 @@ const displayedDate = pendingInterviewDates.has(cloudKey)
                 pendingInterviewDates.clear();
                 renderInterviewTable();
                 if (status) status.textContent = `지도교사 일자 ${items.length}건 저장 완료`;
+                alert('저장이 완료되었습니다');
             } catch (error) {
                 console.error('면접 지도 일자 일괄 저장 오류:', error);
                 if (status) status.textContent = '저장하지 못했습니다.';
