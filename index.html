@@ -3408,9 +3408,13 @@ function applyGradFilter() {
                             }
                         } else if (idx === 19) {
                             const firstStage = String(row[17] || '').trim();
+                            const finalStage = String(row[18] || '').trim();
                             if (firstStage === '불합격' || /불합격/.test(firstStage)) {
                                 if (row[19] !== '1단계 불합격') setClassSusiEdit(row, 19, '1단계 불합격');
                                 html += '<td><span class="font-semibold text-gray-600">1단계 불합격</span></td>';
+                            } else if (finalStage === '최초합격' || finalStage === '추가합격' || (/합격/.test(finalStage) && !/불합격/.test(finalStage))) {
+                                if (row[19] !== '-') setClassSusiEdit(row, 19, '-');
+                                html += '<td>-</td>';
                             } else {
                                 const selectedValue = /최저/.test(safeValue) ? '최저 미충족' : /2단계/.test(safeValue) ? '2단계 불합격' : /미응시/.test(safeValue) ? '미응시' : safeValue;
                                 html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['최저 미충족', '2단계 불합격', '미응시'], '불합격 사유')}</td>`;
@@ -3457,6 +3461,9 @@ function applyGradFilter() {
                     if (String(row[18] || '') === '1단계 불합격') setClassSusiEdit(row, 18, '');
                     if (String(row[19] || '') === '1단계 불합격') setClassSusiEdit(row, 19, '');
                 }
+            } else if (columnIndex === 18 && !/불합격/.test(String(row[17] || ''))) {
+                if (value === '최초합격' || value === '추가합격') setClassSusiEdit(row, 19, '-');
+                else if (String(row[19] || '') === '-') setClassSusiEdit(row, 19, '');
             }
             renderClassTable();
         }
