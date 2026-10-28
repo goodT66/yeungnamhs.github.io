@@ -550,9 +550,8 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                     <select id="classNumSelect" onchange="onClassNumChange()" class="border border-gray-300 rounded p-2 bg-white font-medium w-28">
                         <option value="">반 선택</option>
                     </select>
-                    <select id="classNameSelect" onchange="renderClassTable()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
-                        <option value="">이름 전체</option>
-                    </select>
+                    <input list="classNameList" type="text" id="classNameSearchInput" placeholder="이름 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-40" oninput="renderClassTable()">
+                    <datalist id="classNameList"></datalist>
                     <input list="classUnivList" id="classUnivInput" placeholder="대학명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-40" onchange="renderClassTable()" onkeyup="renderClassTable()">
                     <datalist id="classUnivList"></datalist>
 
@@ -3363,7 +3362,7 @@ function applyGradFilter() {
             if(!select) return;
             select.innerHTML = '<option value="">반 선택</option>';
             
-            document.getElementById('classNameSelect').innerHTML = '<option value="">이름 전체</option>';
+            document.getElementById('classNameSearchInput').value = '';
             document.getElementById('classUnivInput').value = '';
             document.getElementById('classMajorInput').value = '';
             
@@ -3390,15 +3389,16 @@ function applyGradFilter() {
             const g = gEl.value;
             const c = cEl.value;
 
-            const nameSelect = document.getElementById('classNameSelect');
+            const nameList = document.getElementById('classNameList');
             const univList = document.getElementById('classUnivList');
             const majorList = document.getElementById('classMajorList');
 
-            nameSelect.innerHTML = '<option value="">이름 전체</option>';
+            nameList.innerHTML = '';
             univList.innerHTML = '';
             majorList.innerHTML = '';
             document.getElementById('classUnivInput').value = '';
             document.getElementById('classMajorInput').value = '';
+            document.getElementById('classNameSearchInput').value = '';
 
             if (!g || !c) {
                 renderClassTable();
@@ -3415,7 +3415,7 @@ function applyGradFilter() {
                 }
             });
 
-            Array.from(names).sort().forEach(n => nameSelect.appendChild(new Option(n, n)));
+            Array.from(names).sort().forEach(n => { const opt = document.createElement('option'); opt.value = n; nameList.appendChild(opt); });
             Array.from(univs).sort().forEach(u => { const opt = document.createElement('option'); opt.value = u; univList.appendChild(opt); });
             Array.from(majors).sort().forEach(m => { const opt = document.createElement('option'); opt.value = m; majorList.appendChild(opt); });
 
@@ -3444,7 +3444,7 @@ function applyGradFilter() {
         function renderClassTable() {
             const gEl = document.getElementById('classGradeSelect');
             const cEl = document.getElementById('classNumSelect');
-            const nEl = document.getElementById('classNameSelect');
+            const nameSearchEl = document.getElementById('classNameSearchInput');
             const uEl = document.getElementById('classUnivInput');
             const mEl = document.getElementById('classMajorInput');
             const tbody = document.getElementById('classTableBody');
@@ -3453,7 +3453,7 @@ function applyGradFilter() {
 
             const g = gEl.value;
             const c = cEl.value;
-            const n = nEl.value;
+            const nameSearch = nameSearchEl.value.trim();
             const u = uEl.value.trim();
             const m = mEl.value.trim();
             
@@ -3470,7 +3470,7 @@ function applyGradFilter() {
                 const rowM = String(row[9] || '').trim();
 
                 if (rowG !== g || (c && rowC !== c)) return false;
-                if (n && rowN !== n) return false;
+                if (nameSearch && !rowN.toLocaleLowerCase().includes(nameSearch.toLocaleLowerCase())) return false;
                 if (u && !rowU.includes(u)) return false;
                 if (m && !rowM.includes(m)) return false;
                 
