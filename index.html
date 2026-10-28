@@ -1460,6 +1460,8 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         const SHEET_ID = '1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM';
         const MOCK_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
         const STUDENT_INFO_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=750853389`;
+        const PHOTO_LIST_SPREADSHEET_ID = '1z3F-iguU4iphMr_4cX6r2MAdhyxfViBh1bocMPWMmkI';
+        const PHOTO_LIST_CSV_URL = `https://docs.google.com/spreadsheets/d/${PHOTO_LIST_SPREADSHEET_ID}/export?format=csv&gid=1941785454`;
         const GRAD_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=졸업생`;
         const SUSI_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026수시`; 
         const INTERVIEW_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026면접`; 
@@ -4638,10 +4640,83 @@ function getLookupSelectedStudent(){
   if(!grade||!cls||!val)return null;const [no,name]=val.split('|');
   return studentLookupRows.find(s=>s.grade===grade&&s.cls===cls&&s.no===no&&s.name===name)||null;
 }
+let studentPhotoMap = null;
+let studentPhotoLoadPromise = null;
+
+async function loadStudentPhotoMap(){
+  if(studentPhotoMap) return studentPhotoMap;
+  if(studentPhotoLoadPromise) return studentPhotoLoadPromise;
+  studentPhotoLoadPromise=fetch(PHOTO_LIST_CSV_URL,{cache:'no-store'})
+    .then(r=>{if(!r.ok)throw new Error('사진 목록 시트 응답 오류');return r.text();})
+    .then(csv=>{
+      const rows=Papa.parse(csv,{skipEmptyLines:true}).data;
+      const clean=v=>String(v??'').trim();
+      const map={};
+      rows.slice(1).forEach(row=>{
+        const fileName=clean(row[1]);
+        const fileId=clean(row[2]);
+        if(!fileName || !fileId) return;
+
+        // 1학년: 10907김태엽.jpg → 1학년 09반 07번
+        // 3학년: 0905_(2).jpg → 3학년 09반 05번
+        const prefix=(fileName.match(/^(\d+)/)||[])[1] || '';
+        let grade='', cls='', no='';
+
+        if(/^1\d{4}$/.test(prefix)){
+          grade='1';
+          cls=String(Number(prefix.slice(1,3)));
+          no=String(Number(prefix.slice(3,5)));
+        }else if(/^\d{4}$/.test(prefix)){
+          grade='3';
+          cls=String(Number(prefix.slice(0,2)));
+          no=String(Number(prefix.slice(2,4)));
+        }else{
+          // 파일명 형식이 다르면 기존 목록의 학번 열을 보조적으로 사용
+          const studentId=clean(row[0]).replace(/\D/g,'');
+          if(studentId.length===5){
+            grade=studentId.slice(0,1);
+            cls=String(Number(studentId.slice(1,3)));
+            no=String(Number(studentId.slice(3,5)));
+          }
+        }
+
+        if(grade && cls && no) map[`${grade}${String(cls).padStart(2,'0')}${String(no).padStart(2,'0')}`]=fileId;
+      });
+      studentPhotoMap=map;
+      return map;
+    })
+    .catch(error=>{
+      studentPhotoLoadPromise=null;
+      console.warn('학생 사진 목록을 불러오지 못했습니다. 사진 목록 스프레드시트의 공유 권한을 확인해 주세요.',error);
+      return {};
+    });
+  return studentPhotoLoadPromise;
+}
+
+function getStudentPhotoFileId(student){
+  if(!student) return '';
+  const candidates=[
+    `${student.grade}${String(student.cls).padStart(2,'0')}${String(student.no).padStart(2,'0')}`,
+    `${student.grade}${student.cls}${student.no}`,
+    `${student.grade}${String(student.cls).padStart(2,'0')}${student.no}`
+  ];
+  for(const id of candidates){
+    const found=studentPhotoMap && studentPhotoMap[id];
+    if(found) return found;
+  }
+  return '';
+}
+
 function setLookupPhoto(photo){
   const box=document.getElementById('lookupStudentPhoto');if(!box)return;box.innerHTML='';
-  if(photo){let url=photo;const m=photo.match(/drive\.google\.com\/file\/d\/([^/]+)/);if(m)url=`https://drive.google.com/uc?export=view&id=${m[1]}`;
-    const img=document.createElement('img');img.src=url;img.alt='학생 사진';img.className='w-full h-full object-cover';img.onerror=()=>{box.innerHTML='<span class="text-5xl">👤</span><span class="text-xs mt-2">사진을 표시할 수 없습니다</span>';};box.appendChild(img);
+  if(photo){
+    let url=photo;
+    if(/^[\w-]{20,}$/.test(photo)) url=`https://drive.google.com/thumbnail?id=${encodeURIComponent(photo)}&sz=w500`;
+    const m=photo.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+    if(m)url=`https://drive.google.com/thumbnail?id=${encodeURIComponent(m[1])}&sz=w500`;
+    const img=document.createElement('img');img.src=url;img.alt='학생 사진';img.className='w-full h-full object-cover';
+    img.onerror=()=>{box.innerHTML='<span class="text-5xl">👤</span><span class="text-xs mt-2">사진을 표시할 수 없습니다</span>';};
+    box.appendChild(img);
   }else box.innerHTML='<span class="text-5xl">👤</span><span class="text-xs mt-2">학생 사진 없음</span>';
 }
 let lookupMockRows = [];
@@ -4732,6 +4807,12 @@ function renderStudentLookupCard(){
  document.querySelector('[data-info="grade9"]').textContent=s.grade9||'-';
  setLookupPhoto(s.photo);
  document.getElementById('studentLookupEmpty').classList.add('hidden');document.getElementById('studentLookupCard').classList.remove('hidden');refreshLookupMockExams();loadLookupSusiPlan();
+ loadStudentPhotoMap().then(()=>{
+   const selected=getLookupSelectedStudent();
+   if(!selected || selected.grade!==s.grade || selected.cls!==s.cls || selected.no!==s.no || selected.name!==s.name) return;
+   const fileId=getStudentPhotoFileId(s);
+   setLookupPhoto(fileId || s.photo || '');
+ });
 }
 
 </script>
@@ -4800,4 +4881,3 @@ loadMealForSelectedDate();
 
 </body>
 </html>
-
