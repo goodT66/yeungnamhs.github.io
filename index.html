@@ -3395,8 +3395,16 @@ function applyGradFilter() {
                     if (idx >= 17 && idx <= 20) {
                         const safeValue = String(val === '-' ? '' : val).replace(/&/g, '&amp;').replace(/\"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                         if (idx === 17) {
-                            const selectedValue = /불합격/.test(safeValue) ? '불합격' : /합격/.test(safeValue) ? '합격' : safeValue;
-                            html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['합격', '불합격'], '1단계')}</td>`;
+                            const admissionType = String(row[6] || '').trim();
+                            if (admissionType.includes('논술')) {
+                                if (row[17] !== '-') setClassSusiEdit(row, 17, '-');
+                                if (row[18] === '1단계 불합격') setClassSusiEdit(row, 18, '');
+                                if (row[19] === '1단계 불합격') setClassSusiEdit(row, 19, '');
+                                html += '<td>-</td>';
+                            } else {
+                                const selectedValue = /불합격/.test(safeValue) ? '불합격' : /합격/.test(safeValue) ? '합격' : safeValue;
+                                html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['합격', '불합격'], '1단계')}</td>`;
+                            }
                         } else if (idx === 18) {
                             const firstStage = String(row[17] || '').trim();
                             if (firstStage === '불합격' || /불합격/.test(firstStage)) {
