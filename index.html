@@ -555,6 +555,9 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                     <input list="classUnivList" id="classUnivInput" placeholder="대학명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-40" onchange="renderClassTable()" onkeyup="renderClassTable()">
                     <datalist id="classUnivList"></datalist>
 
+                    <input list="classAdmissionList" id="classAdmissionInput" placeholder="전형명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-48" oninput="renderClassTable()">
+                    <datalist id="classAdmissionList"></datalist>
+
                     <input list="classMajorList" id="classMajorInput" placeholder="학과명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-48" onchange="renderClassTable()" onkeyup="renderClassTable()">
                     <datalist id="classMajorList"></datalist>
                     <div class="ml-auto flex flex-wrap items-center gap-3">
@@ -3364,6 +3367,7 @@ function applyGradFilter() {
             
             document.getElementById('classNameSearchInput').value = '';
             document.getElementById('classUnivInput').value = '';
+            document.getElementById('classAdmissionInput').value = '';
             document.getElementById('classMajorInput').value = '';
             
             const tbody = document.getElementById('classTableBody');
@@ -3391,12 +3395,15 @@ function applyGradFilter() {
 
             const nameList = document.getElementById('classNameList');
             const univList = document.getElementById('classUnivList');
+            const admissionList = document.getElementById('classAdmissionList');
             const majorList = document.getElementById('classMajorList');
 
             nameList.innerHTML = '';
             univList.innerHTML = '';
+            admissionList.innerHTML = '';
             majorList.innerHTML = '';
             document.getElementById('classUnivInput').value = '';
+            document.getElementById('classAdmissionInput').value = '';
             document.getElementById('classMajorInput').value = '';
             document.getElementById('classNameSearchInput').value = '';
 
@@ -3405,18 +3412,20 @@ function applyGradFilter() {
                 return;
             }
 
-            const names = new Set(), univs = new Set(), majors = new Set();
+            const names = new Set(), univs = new Set(), admissions = new Set(), majors = new Set();
 
             classSusiData.forEach(row => {
                 if (String(row[1]).trim() === g && String(row[2]).trim() === c) {
                     if (row[4]) names.add(String(row[4]).trim()); 
                     if (row[5]) univs.add(String(row[5]).trim()); 
+                    if (row[7]) admissions.add(String(row[7]).trim());
                     if (row[9]) majors.add(String(row[9]).trim()); 
                 }
             });
 
             Array.from(names).sort().forEach(n => { const opt = document.createElement('option'); opt.value = n; nameList.appendChild(opt); });
             Array.from(univs).sort().forEach(u => { const opt = document.createElement('option'); opt.value = u; univList.appendChild(opt); });
+            Array.from(admissions).sort().forEach(a => { const opt = document.createElement('option'); opt.value = a; admissionList.appendChild(opt); });
             Array.from(majors).sort().forEach(m => { const opt = document.createElement('option'); opt.value = m; majorList.appendChild(opt); });
 
             renderClassTable();
@@ -3446,6 +3455,7 @@ function applyGradFilter() {
             const cEl = document.getElementById('classNumSelect');
             const nameSearchEl = document.getElementById('classNameSearchInput');
             const uEl = document.getElementById('classUnivInput');
+            const admissionEl = document.getElementById('classAdmissionInput');
             const mEl = document.getElementById('classMajorInput');
             const tbody = document.getElementById('classTableBody');
             
@@ -3455,6 +3465,7 @@ function applyGradFilter() {
             const c = cEl.value;
             const nameSearch = nameSearchEl.value.trim();
             const u = uEl.value.trim();
+            const admission = admissionEl.value.trim();
             const m = mEl.value.trim();
             
             if(!g) {
@@ -3467,11 +3478,13 @@ function applyGradFilter() {
                 const rowC = String(row[2] || '').trim();
                 const rowN = String(row[4] || '').trim();
                 const rowU = String(row[5] || '').trim();
+                const rowAdmission = String(row[7] || '').trim();
                 const rowM = String(row[9] || '').trim();
 
                 if (rowG !== g || (c && rowC !== c)) return false;
                 if (nameSearch && !rowN.toLocaleLowerCase().includes(nameSearch.toLocaleLowerCase())) return false;
                 if (u && !rowU.includes(u)) return false;
+                if (admission && !rowAdmission.toLocaleLowerCase().includes(admission.toLocaleLowerCase())) return false;
                 if (m && !rowM.includes(m)) return false;
                 
                 return true;
