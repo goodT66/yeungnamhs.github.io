@@ -30,6 +30,9 @@
         
         .lookup-card-left { margin-top: 0; }
         @media (min-width: 1280px) { .lookup-card-left { margin-top: 72px; } }
+        #lookupBasicInfo { font-size: 1rem; }
+        #lookupBasicInfo th, #lookupBasicInfo td { padding: 10px 8px; }
+        #lookupBasicInfo tr:first-child th, #lookupBasicInfo tr:first-child td { padding-top: 8px; padding-bottom: 8px; }
         .score-table { border-collapse: collapse; min-width: 800px; }
         .score-table th { background-color: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1; padding: 8px 4px; text-align: center; vertical-align: middle; }
         .score-table td { border: 1px solid #e2e8f0; padding: 10px 4px; text-align: center; white-space: nowrap; }
@@ -4555,7 +4558,7 @@ window.changeSusiPage = changeSusiPage;
               <button type="button" class="mt-2 border border-blue-300 text-blue-700 rounded-lg px-3 py-2 text-sm font-bold hover:bg-blue-50" onclick="alert('사진 업로드 기능은 시트 연결 단계에서 추가합니다.')">📷 사진 변경/업로드</button>
             </div>
             <div class="sm:col-span-3">
-              <table class="w-full text-sm border-collapse"><tbody id="lookupBasicInfo">
+              <table class="w-full text-base border-collapse"><tbody id="lookupBasicInfo">
                 <tr><th class="border border-slate-300 bg-slate-50 p-2 w-2/5">학년</th><td class="border border-slate-300 p-2 font-bold" data-info="grade">3학년</td></tr>
                 <tr><th class="border border-slate-300 bg-slate-50 p-2">반 / 번호</th><td class="border border-slate-300 p-2 font-bold" data-info="classNo">12 / 2</td></tr>
                 <tr><th class="border border-slate-300 bg-slate-50 p-2">성 명</th><td class="border border-slate-300 p-2 font-extrabold text-blue-600" data-info="name">김병준</td></tr>
