@@ -4843,6 +4843,25 @@ function renderLookupSusiRows(values=[]){
     });body.appendChild(tr);
   }
 }
+function getLookupClassSusiChoices(s){
+  if(!s || String(s.grade).replace(/\\D/g,'')!=='3' || !Array.isArray(classSusiData) || !classSusiData.length) return [];
+  const clean=value=>String(value??'').trim().replace(/\\s+/g,'');
+  const matched=classSusiData.filter(row=>
+    clean(row[1])===clean(s.grade) &&
+    clean(row[2])===clean(s.cls) &&
+    clean(row[3])===clean(s.no) &&
+    clean(row[4])===clean(s.name)
+  );
+  return matched.slice(0,6).map(row=>({
+    university:String(row[5]??'').trim(),
+    type:'',
+    detail:String(row[7]??'').trim(),
+    unit:String(row[9]??'').trim(),
+    recruitment:String(row[10]??'').trim(),
+    csat:String(row[12]??'').trim(),
+    date:String(row[15]??'').trim()
+  }));
+}
 async function loadLookupSusiPlan(){
   const s=getLookupSelectedStudent();if(!s)return;
   const status=document.getElementById('lookupSusiSaveStatus'); if(status)status.textContent='저장된 지원 희망 내용을 불러오는 중…';
@@ -4850,9 +4869,17 @@ async function loadLookupSusiPlan(){
   try{
     const saved=await window.studentSusiPlanStore.load(lookupSusiDocId(s));
     if(getLookupSelectedStudent()!==s && lookupSusiDocId(getLookupSelectedStudent()||{})!==lookupSusiDocId(s))return;
-    renderLookupSusiRows(saved&&Array.isArray(saved.choices)?saved.choices:[]);
-    if(status)status.textContent=saved?'저장된 지원 희망 내용을 불러왔습니다.':'아직 저장된 내용이 없습니다.';
-  }catch(e){console.error('지원 희망 불러오기 실패:',e);renderLookupSusiRows([]);if(status)status.textContent='저장된 내용을 불러오지 못했습니다. 입력 후 저장을 시도해 주세요.';}
+    const classChoices=getLookupClassSusiChoices(s);
+    const savedChoices=saved&&Array.isArray(saved.choices)?saved.choices:[];
+    const choices=classChoices.length ? classChoices.map((row,index)=>{
+      const savedRow=savedChoices[index]||{};
+      const merged={...row};
+      LOOKUP_SUSI_FIELDS.forEach(([key])=>{if(String(savedRow[key]??'').trim())merged[key]=savedRow[key];});
+      return merged;
+    }) : savedChoices;
+    renderLookupSusiRows(choices);
+    if(status)status.textContent=classChoices.length?'수시 지원 반별 조회 자료를 불러왔습니다.':saved?'저장된 지원 희망 내용을 불러왔습니다.':'아직 저장된 내용이 없습니다.';
+  }catch(e){console.error('지원 희망 불러오기 실패:',e);renderLookupSusiRows(getLookupClassSusiChoices(s));if(status)status.textContent='저장된 내용을 불러오지 못했습니다. 입력 후 저장을 시도해 주세요.';}
 }
 function printLookupStudentCard(){
   const card=document.getElementById('studentLookupCard');
