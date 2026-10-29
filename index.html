@@ -4854,8 +4854,8 @@ function getLookupClassSusiChoices(s){
   );
   return matched.slice(0,6).map(row=>({
     university:String(row[5]??'').trim(),
-    type:'',
-    detail:String(row[7]??'').trim(),
+    type:String(row[7]??'').trim(),
+    detail:'',
     unit:String(row[9]??'').trim(),
     recruitment:String(row[10]??'').trim(),
     csat:String(row[12]??'').trim(),
