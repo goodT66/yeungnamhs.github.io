@@ -30,6 +30,9 @@
         
         .lookup-card-left { margin-top: 0; }
         @media (min-width: 1280px) { .lookup-card-left { margin-top: 72px; } }
+        #lookupSusiRows { }
+        table:has(#lookupSusiRows) th:nth-child(6), table:has(#lookupSusiRows) td:nth-child(6) { width: 90px; min-width: 80px; }
+        table:has(#lookupSusiRows) th:nth-child(7), table:has(#lookupSusiRows) td:nth-child(7) { width: 260px; min-width: 240px; }
         #lookupBasicInfo { font-size: 1rem; }
         #lookupBasicInfo th, #lookupBasicInfo td { padding: 10px 8px; }
         #lookupBasicInfo tr:first-child th, #lookupBasicInfo tr:first-child td { padding-top: 8px; padding-bottom: 8px; }
@@ -3716,6 +3719,8 @@ const ivColOrder = [1, 5, 18, 19, 20, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16
                             if ([...tSelect.options].some(option => option.value === selectedTeacher)) tSelect.value = selectedTeacher;
                         }
                         if (window.getCurrentUser && window.getCurrentUser()) renderInterviewTable();
+                        const lookupStudent = typeof getLookupSelectedStudent === 'function' ? getLookupSelectedStudent() : null;
+                        if (lookupStudent && String(lookupStudent.grade).replace(/\\D/g,'') === '3' && typeof loadLookupSusiPlan === 'function') loadLookupSusiPlan();
                     },
                     error: function(error) {
                         if (requestSequence !== interviewFetchSequence) return;
@@ -4870,7 +4875,17 @@ function getLookupClassSusiChoices(s){
     unit:String(row[9]??'').trim(),
     recruitment:String(row[10]??'').trim(),
     csat:String(row[12]??'').trim(),
-    date:String(row[15]??'').trim()
+    date:(()=>{
+      const cleanId=value=>String(value??'').replace(/\\D/g,'');
+      const studentId=`${clean(s.grade)}${clean(s.cls).padStart(2,'0')}${clean(s.no).padStart(2,'0')}`;
+      const university=clean(row[5]);
+      const interview=(Array.isArray(interviewData)?interviewData:[]).find(item=>
+        clean(item[5])===clean(s.name) &&
+        clean(item[6])===university &&
+        (cleanId(item[1])===studentId || !cleanId(item[1]))
+      );
+      return String(interview?.[12]??'').trim();
+    })()
   }));
 }
 async function loadLookupSusiPlan(){
