@@ -31,9 +31,16 @@
         .lookup-card-left { margin-top: 0; }
         @media (min-width: 1280px) { .lookup-card-left { margin-top: 72px; } }
         #lookupSusiRows { }
-        table:has(#lookupSusiRows) th:nth-child(3), table:has(#lookupSusiRows) td:nth-child(3) { width: 150px; min-width: 120px; max-width: 180px; }
-        table:has(#lookupSusiRows) th:nth-child(6), table:has(#lookupSusiRows) td:nth-child(6) { width: 72px; min-width: 64px; max-width: 84px; }
-        table:has(#lookupSusiRows) th:nth-child(7), table:has(#lookupSusiRows) td:nth-child(7) { width: 340px; min-width: 300px; }
+        table:has(#lookupSusiRows).lookup-susi-third-grade { width:100%; min-width:0 !important; table-layout:fixed; }
+        table.lookup-susi-third-grade th:nth-child(1), table.lookup-susi-third-grade td:nth-child(1) { width:3%; }
+        table.lookup-susi-third-grade th:nth-child(2), table.lookup-susi-third-grade td:nth-child(2) { width:22%; }
+        table.lookup-susi-third-grade th:nth-child(3), table.lookup-susi-third-grade td:nth-child(3) { width:16%; }
+        table.lookup-susi-third-grade th:nth-child(5), table.lookup-susi-third-grade td:nth-child(5) { width:22%; }
+        table.lookup-susi-third-grade th:nth-child(6), table.lookup-susi-third-grade td:nth-child(6) { width:6%; }
+        table.lookup-susi-third-grade th:nth-child(7), table.lookup-susi-third-grade td:nth-child(7) { width:18%; }
+        table.lookup-susi-third-grade th:nth-child(8), table.lookup-susi-third-grade td:nth-child(8) { width:13%; }
+        table.lookup-susi-third-grade input, table.lookup-susi-third-grade textarea { box-sizing:border-box; width:100%; min-width:0 !important; max-width:100%; font-size:0.875rem; }
+        table.lookup-susi-third-grade td { overflow-wrap:anywhere; }
         #lookupBasicInfo { font-size: 1rem; }
         #lookupBasicInfo th, #lookupBasicInfo td { padding: 10px 8px; }
         #lookupBasicInfo tr:first-child th, #lookupBasicInfo tr:first-child td { padding-top: 8px; padding-bottom: 8px; }
@@ -4842,6 +4849,7 @@ function renderLookupSusiRows(values=[]){
   const student=getLookupSelectedStudent();
   const isThirdGrade=String(student?.grade??'').replace(/\\D/g,'')==='3';
   const table=body.closest('table');
+  if(table)table.classList.toggle('lookup-susi-third-grade',isThirdGrade);
   const detailHeader=table?.querySelector('thead th:nth-child(4)');
   if(detailHeader)detailHeader.style.display=isThirdGrade?'none':'';
   const saveButton=document.getElementById('lookupSusiSaveButton');
