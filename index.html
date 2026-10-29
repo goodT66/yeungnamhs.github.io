@@ -687,9 +687,9 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
             <strong class="text-sm font-bold text-blue-900">학생 모의고사 백분위 조회</strong>
             <select id="susiMockGrade" onchange="onSusiMockGradeChange()" class="border border-gray-300 rounded p-2 bg-white font-medium w-28"><option value="">학년</option></select>
             <select id="susiMockClass" onchange="onSusiMockClassChange()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium w-28"><option value="">반</option></select>
-            <select id="susiMockStudent" onchange="onSusiMockStudentChange()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">번호-이름</option></select>
+            <select id="susiMockStudent" onchange="onSusiMockStudentChange()" disabled class="h-10 box-border border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">번호-이름</option></select>
             
-            <div class="flex flex-col gap-1"><select id="susiMockExam" onchange="renderSusiMockAverage()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">모의고사 월</option></select><span id="susiMockLookupStatus" class="max-w-48 text-xs leading-4 text-gray-500" role="status">학년·반·학생과 모의고사 월을 선택하면 백분위가 표시됩니다.</span></div>
+            <div class="flex flex-col gap-1"><select id="susiMockExam" onchange="renderSusiMockAverage()" disabled class="h-10 box-border border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">모의고사 월</option></select><span id="susiMockLookupStatus" class="max-w-48 text-xs leading-4 text-gray-500" role="status">학년·반·학생과 모의고사 월을 선택하면 백분위가 표시됩니다.</span></div>
             <div class="flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2">
                 <span class="text-sm font-bold text-gray-700">국·수·탐 백분위 평균</span>
                 <strong id="susiMockAverageValue" class="text-xl font-black text-blue-700">-</strong>
