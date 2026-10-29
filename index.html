@@ -1461,7 +1461,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         const MOCK_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
         const STUDENT_INFO_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=750853389`;
         const PHOTO_LIST_SPREADSHEET_ID = '1z3F-iguU4iphMr_4cX6r2MAdhyxfViBh1bocMPWMmkI';
-        const PHOTO_LIST_CSV_URL = `https://docs.google.com/spreadsheets/d/${PHOTO_LIST_SPREADSHEET_ID}/export?format=csv&gid=1941785454`;
+        const PHOTO_LIST_API_URL = 'https://script.google.com/a/macros/yeungnam.hs.kr/s/AKfycbxHCKsc9cNZAaWGytujMZX0YTn7Aj_Dm_3xGgRAz71y9x0fqpcCNKpX56B-7tly6y7T/exec';
         const GRAD_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=졸업생`;
         const SUSI_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026수시`; 
         const INTERVIEW_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026면접`; 
@@ -4646,40 +4646,65 @@ let studentPhotoLoadPromise = null;
 async function loadStudentPhotoMap(){
   if(studentPhotoMap) return studentPhotoMap;
   if(studentPhotoLoadPromise) return studentPhotoLoadPromise;
-  studentPhotoLoadPromise=fetch(PHOTO_LIST_CSV_URL,{cache:'no-store'})
-    .then(r=>{if(!r.ok)throw new Error('사진 목록 시트 응답 오류');return r.text();})
-    .then(csv=>{
-      const rows=Papa.parse(csv,{skipEmptyLines:true}).data;
-      const clean=v=>String(v??'').trim().replace(/^\uFEFF/,'');
-      const map={};
-      const add=(grade,cls,no,fileId)=>{
-        const gradeNo=String(grade??'').replace(/\D/g,'');
-        const classNo=String(cls??'').replace(/\D/g,'');
-        const studentNo=String(no??'').replace(/\D/g,'');
-        const photoId=String(fileId??'').trim();
-        if(!gradeNo||!classNo||!studentNo||!photoId)return;
-        const key=`${gradeNo}${classNo.padStart(2,'0')}${studentNo.padStart(2,'0')}`;
-        map[key]=photoId;
-      };
 
-      // 사진목록 시트의 A~G열: 학년, 반, 번호, 파일명, 사진파일ID, 학급폴더명, 파일형식
-      rows.slice(1).forEach(row=>{
-        const grade=clean(row[0]);
-        const cls=clean(row[1]);
-        const no=clean(row[2]);
-        const fileId=clean(row[4]);
-        if(!fileId)return;
-        add(grade,cls,no,fileId);
+  studentPhotoLoadPromise = new Promise((resolve, reject) => {
+    if(!PHOTO_LIST_API_URL || PHOTO_LIST_API_URL.includes('여기에_배포한_')){
+      reject(new Error('학생 사진 API 주소가 설정되지 않았습니다. Apps Script 웹 앱 URL을 입력해 주세요.'));
+      return;
+    }
+
+    const callbackName = '__photoListCallback_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const script = document.createElement('script');
+    let finished = false;
+    const cleanup = () => {
+      if(finished) return;
+      finished = true;
+      clearTimeout(timeoutId);
+      script.remove();
+      try { delete window[callbackName]; } catch(e) { window[callbackName] = undefined; }
+    };
+    const timeoutId = setTimeout(() => {
+      cleanup();
+      reject(new Error('학생 사진 API 응답 시간이 초과되었습니다. 웹 앱 배포 권한과 로그인 상태를 확인해 주세요.'));
+    }, 15000);
+
+    window[callbackName] = payload => {
+      cleanup();
+      if(!payload || payload.error){
+        reject(new Error(payload && payload.error ? payload.error : '학생 사진 API 응답 형식이 올바르지 않습니다.'));
+        return;
+      }
+
+      const clean = v => String(v ?? '').trim().replace(/^\uFEFF/, '');
+      const map = {};
+      (Array.isArray(payload.rows) ? payload.rows : []).forEach(row => {
+        const gradeNo = clean(row.grade).replace(/\D/g, '');
+        const classNo = clean(row.classNo).replace(/\D/g, '');
+        const studentNo = clean(row.studentNo).replace(/\D/g, '');
+        const photoId = clean(row.fileId);
+        if(!gradeNo || !classNo || !studentNo || !photoId) return;
+        const key = `${gradeNo}${classNo.padStart(2,'0')}${studentNo.padStart(2,'0')}`;
+        map[key] = photoId;
       });
-            studentPhotoMap=map;
-      console.info('학생 사진 목록을 불러왔습니다. 매칭된 사진 수:',Object.keys(map).length);
-      return map;
-    })
-    .catch(error=>{
-      studentPhotoLoadPromise=null;
-      console.warn('학생 사진 목록을 불러오지 못했습니다. 사진 목록 스프레드시트의 공유 권한과 CSV 주소를 확인해 주세요.',error);
-      return {};
-    });
+
+      studentPhotoMap = map;
+      console.info('학생 사진 목록을 불러왔습니다. 매칭된 사진 수:', Object.keys(map).length);
+      resolve(map);
+    };
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('학생 사진 API를 불러오지 못했습니다. 웹 앱 URL과 배포 권한을 확인해 주세요.'));
+    };
+    script.src = PHOTO_LIST_API_URL + (PHOTO_LIST_API_URL.includes('?') ? '&' : '?')
+      + 'callback=' + encodeURIComponent(callbackName) + '&t=' + Date.now();
+    document.head.appendChild(script);
+  }).catch(error => {
+    studentPhotoLoadPromise = null;
+    console.warn('학생 사진 목록을 불러오지 못했습니다.', error);
+    return {};
+  });
+
   return studentPhotoLoadPromise;
 }
 function getStudentPhotoFileId(student){
