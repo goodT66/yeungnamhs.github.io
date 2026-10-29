@@ -424,19 +424,19 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                     <select id="studentSelect" onchange="renderMockData()" class="border border-gray-300 rounded-lg p-2 w-64 bg-white"><option value="">학생 선택</option></select>
                 </div>
                 <div class="flex flex-col lg:flex-row lg:items-center gap-4 mb-4 p-4 rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-sm">
-                    <div class="flex flex-wrap items-center gap-3 lg:flex-1">
-                        <span class="text-sm font-extrabold text-slate-700">📘 내신 등급</span>
+                    <img id="mockSelectedStudentPhoto" src="" alt="학생 사진" class="hidden w-28 h-28 rounded-xl object-cover border-2 border-white shadow-md flex-shrink-0" referrerpolicy="no-referrer">
+                    <h3 id="mockSelectedStudentTitle" class="text-2xl lg:text-4xl font-black text-slate-800 text-left flex-1">학생을 선택하면 성적 추이가 표시됩니다.</h3>
+                    <div class="flex flex-wrap items-center gap-3 flex-shrink-0">
+                        <span class="text-base font-extrabold text-slate-700 whitespace-nowrap">📘 내신 등급</span>
                         <div class="rounded-xl border-2 border-blue-300 bg-white px-4 py-3 flex items-center justify-center gap-3 shadow-sm min-w-[145px]">
-                            <span class="text-sm font-extrabold text-blue-700 whitespace-nowrap">5등급제</span>
-                            <span id="mockGrade5Value" class="text-2xl font-black text-blue-800">-</span>
+                            <span class="text-base font-extrabold text-blue-700 whitespace-nowrap">5등급제</span>
+                            <span id="mockGrade5Value" class="text-3xl font-black text-blue-800">-</span>
                         </div>
                         <div class="rounded-xl border-2 border-violet-300 bg-white px-4 py-3 flex items-center justify-center gap-3 shadow-sm min-w-[145px]">
-                            <span class="text-sm font-extrabold text-violet-700 whitespace-nowrap">9등급제</span>
-                            <span id="mockGrade9Value" class="text-2xl font-black text-violet-800">-</span>
+                            <span class="text-base font-extrabold text-violet-700 whitespace-nowrap">9등급제</span>
+                            <span id="mockGrade9Value" class="text-3xl font-black text-violet-800">-</span>
                         </div>
                     </div>
-                    <h3 id="mockSelectedStudentTitle" class="text-lg lg:text-xl font-black text-slate-800 text-center flex-1">학생을 선택하면 성적 추이가 표시됩니다.</h3>
-                    <img id="mockSelectedStudentPhoto" src="" alt="학생 사진" class="hidden w-28 h-28 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0" referrerpolicy="no-referrer">
                 </div>
                 <div class="sticky top-0 z-50 bg-white pt-4 pb-4 border-b border-gray-200 w-full mb-10 shadow-sm" style="height: 500px;">
                     <canvas id="scoreChart"></canvas>
