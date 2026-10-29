@@ -682,19 +682,25 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
             </div>
 
             <div id="susiResultContent" class="hidden">
-    <div id="susiStudentMockLookup" class="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
-        <strong class="text-sm font-bold text-blue-900">학생 모의고사 백분위 조회</strong>
-        <select id="susiMockGrade" onchange="onSusiMockGradeChange()" class="border border-gray-300 rounded p-2 bg-white font-medium w-28"><option value="">학년</option></select>
-        <select id="susiMockClass" onchange="onSusiMockClassChange()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium w-28"><option value="">반</option></select>
-        <select id="susiMockStudent" onchange="onSusiMockStudentChange()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">번호-이름</option></select>
-        <img id="susiMockStudentPhoto" src="" alt="학생 사진" class="hidden h-36 w-28 rounded border border-blue-200 bg-white object-cover">
-        <select id="susiMockExam" onchange="renderSusiMockAverage()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">모의고사 월</option></select>
-        <div class="flex items-center space-x-1 rounded-lg border border-blue-200 bg-white px-2 py-1 shadow-sm"><span class="pl-1 text-sm font-bold text-gray-700">수능 백분위</span><input type="number" id="susiCsatMin" oninput="updateSusiMajorList()" placeholder="최소" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-sm outline-none focus:border-blue-500"><span class="text-gray-500">~</span><input type="number" id="susiCsatMax" oninput="updateSusiMajorList()" placeholder="최대" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-sm outline-none focus:border-blue-500"></div>
-        <div class="ml-auto flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2">
-            <span class="text-sm font-bold text-gray-700">국·수·탐 백분위 평균</span>
-            <strong id="susiMockAverageValue" class="text-xl font-black text-blue-700">-</strong>
+    <div id="susiStudentMockLookup" class="mb-4 flex flex-col gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+        <div class="flex flex-wrap items-center gap-3">
+            <strong class="text-sm font-bold text-blue-900">학생 모의고사 백분위 조회</strong>
+            <select id="susiMockGrade" onchange="onSusiMockGradeChange()" class="border border-gray-300 rounded p-2 bg-white font-medium w-28"><option value="">학년</option></select>
+            <select id="susiMockClass" onchange="onSusiMockClassChange()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium w-28"><option value="">반</option></select>
+            <select id="susiMockStudent" onchange="onSusiMockStudentChange()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">번호-이름</option></select>
+            <img id="susiMockStudentPhoto" src="" alt="학생 사진" class="hidden h-36 w-28 rounded border border-blue-200 bg-white object-cover">
+            <select id="susiMockExam" onchange="renderSusiMockAverage()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">모의고사 월</option></select>
+            <div class="flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2">
+                <span class="text-sm font-bold text-gray-700">국·수·탐 백분위 평균</span>
+                <strong id="susiMockAverageValue" class="text-xl font-black text-blue-700">-</strong>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-3 rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700"><span>국어 <b id="susiMockKorValue" class="text-blue-700">-</b></span><span>수학 <b id="susiMockMathValue" class="text-blue-700">-</b></span><span>탐구1 <b id="susiMockInq1Value" class="text-blue-700">-</b></span><span>탐구2 <b id="susiMockInq2Value" class="text-blue-700">-</b></span></div>
         </div>
-        <div class="flex flex-wrap items-center gap-x-3 rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700"><span>국어 <b id="susiMockKorValue" class="text-blue-700">-</b></span><span>수학 <b id="susiMockMathValue" class="text-blue-700">-</b></span><span>탐구1 <b id="susiMockInq1Value" class="text-blue-700">-</b></span><span>탐구2 <b id="susiMockInq2Value" class="text-blue-700">-</b></span></div><span id="susiMockLookupStatus" class="w-full text-xs text-gray-500" role="status">학년·반·학생과 모의고사를 선택하면 값이 표시됩니다.</span>
+        <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center space-x-1 rounded-lg border border-blue-200 bg-white px-2 py-1 shadow-sm"><span class="pl-1 text-sm font-bold text-gray-700">수능 백분위 범위</span><input type="number" id="susiCsatMin" oninput="updateSusiMajorList()" placeholder="최소" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-sm outline-none focus:border-blue-500"><span class="text-gray-500">~</span><input type="number" id="susiCsatMax" oninput="updateSusiMajorList()" placeholder="최대" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-sm outline-none focus:border-blue-500"></div>
+            <p class="flex-1 min-w-64 text-sm text-gray-700">수능 백분위 범위를 설정하면, 그 범위 내에 70% 합격 백분위에 해당하는 대학교&amp;모집 단위가 필터링됩니다.</p>
+        </div>
+        <span id="susiMockLookupStatus" class="w-full text-xs text-gray-500" role="status">학년·반·학생과 모의고사 월을 선택하면 값이 표시됩니다.</span>
     </div>
     <div class="mb-4 flex flex-wrap gap-4 items-center bg-yellow-50 p-4 rounded-lg border border-yellow-200">
         <!-- 1. 연도 선택 -->
