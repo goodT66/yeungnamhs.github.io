@@ -122,10 +122,13 @@
           #studentLookupCard input::placeholder, #studentLookupCard textarea::placeholder { color:transparent !important; }
           #studentLookupCard th, #studentLookupCard td { overflow-wrap:anywhere !important; }
           #studentLookupCard .overflow-x-auto { overflow:visible !important; }
-          #studentLookupCard table { width:100% !important; min-width:0 !important; font-size:9pt !important; border-collapse:collapse !important; }
-          #studentLookupCard th, #studentLookupCard td { border:1px solid #555 !important; padding:4px !important; color:#111 !important; }
+          #studentLookupCard table { width:100% !important; min-width:0 !important; table-layout:auto !important; font-size:8pt !important; border-collapse:collapse !important; }
+          #studentLookupCard th, #studentLookupCard td { border:1px solid #555 !important; padding:3px !important; color:#111 !important; vertical-align:top !important; }
+          #studentLookupCard input, #studentLookupCard textarea { font-size:7.5pt !important; line-height:1.25 !important; }
+          #studentLookupCard textarea { height:auto !important; min-height:2.4em !important; white-space:pre-wrap !important; overflow:visible !important; }
+          #studentLookupCard .overflow-x-auto { width:100% !important; max-width:100% !important; }
           #studentLookupCard * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
-          @page { size:A4 portrait; margin:10mm; }
+          @page { size:A4 landscape; margin:8mm; }
         }
 
         /* 주요 메뉴 7개: 책 위에 붙인 포스트잇 디자인 (기존 기능/이벤트는 유지) */
