@@ -4855,7 +4855,7 @@ function renderLookupSusiRows(values=[]){
       else {input.type='text';input.className=valueClasses+' min-w-[90px]';}
       if(isThirdGrade&&(key==='university'||key==='unit'))input.classList.add('text-blue-700');
       if(isThirdGrade)input.readOnly=true;
-      input.dataset.susiField=key;input.dataset.susiRow=String(i);input.setAttribute('aria-label',`${i+1}지망 ${label}`);input.placeholder=label;input.value=String(row[key]??'');
+      input.dataset.susiField=key;input.dataset.susiRow=String(i);input.setAttribute('aria-label',`${i+1}지망 ${label}`);input.placeholder=(isThirdGrade&&(key==='csat'||key==='date'))?'':label;input.value=String(row[key]??'');
       td.appendChild(input);tr.appendChild(td);
     });body.appendChild(tr);
   }
@@ -4901,7 +4901,7 @@ async function loadLookupSusiPlan(){
     const choices=classChoices.length ? classChoices.map((row,index)=>{
       const savedRow=savedChoices[index]||{};
       const merged={...row};
-      LOOKUP_SUSI_FIELDS.forEach(([key])=>{if(String(savedRow[key]??'').trim())merged[key]=savedRow[key];});
+      LOOKUP_SUSI_FIELDS.forEach(([key])=>{if(String(savedRow[key]??'').trim() && !(String(s.grade).replace(/\\D/g,'')==='3' && (key==='csat'||key==='date')))merged[key]=savedRow[key];});
       return merged;
     }) : savedChoices;
     renderLookupSusiRows(choices);
