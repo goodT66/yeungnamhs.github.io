@@ -4547,7 +4547,7 @@ window.changeSusiPage = changeSusiPage;
       <div id="studentLookupCard" class="hidden bg-white rounded-xl border border-slate-300 shadow-sm p-4 sm:p-6">
         <div class="bg-school rounded-md text-white text-center text-xl sm:text-2xl font-black py-3 px-4 mb-5">대학 진학 상담 카드</div>
         <div class="grid grid-cols-1 xl:grid-cols-12 gap-5 mb-5">
-          <div class="xl:col-span-5 grid grid-cols-1 sm:grid-cols-5 gap-4 items-start">
+          <div class="xl:col-span-5 xl:mt-[60px] grid grid-cols-1 sm:grid-cols-5 gap-4 items-start">
             <div class="sm:col-span-2 flex flex-col items-center">
               <div id="lookupStudentPhoto" class="w-36 h-48 border border-slate-200 bg-slate-100 flex flex-col items-center justify-center text-slate-400 rounded-sm overflow-hidden"><span class="text-5xl">👤</span><span class="text-xs mt-2">학생 사진</span></div>
               <button type="button" class="mt-2 border border-blue-300 text-blue-700 rounded-lg px-3 py-2 text-sm font-bold hover:bg-blue-50" onclick="alert('사진 업로드 기능은 시트 연결 단계에서 추가합니다.')">📷 사진 변경/업로드</button>
@@ -4568,7 +4568,7 @@ window.changeSusiPage = changeSusiPage;
               <select id="lookupMockExam" onchange="renderLookupMockScore()" class="border border-slate-300 rounded-md px-3 py-2 text-sm font-bold bg-white max-w-full" aria-label="모의고사 종류 선택" disabled><option value="">모의고사 종류 불러오는 중...</option></select>
             </div>
             <p id="lookupMockStatus" class="text-xs text-slate-500 text-center mb-2" role="status"></p>
-            <div class="overflow-x-auto"><table class="score-table w-full text-sm"><thead><tr><th>영역</th><th>국어</th><th>수학</th><th>영어</th><th>한국사</th><th>탐구1</th><th>탐구2</th></tr></thead><tbody>
+            <div class="overflow-x-auto"><table class="score-table w-full text-base"><thead><tr><th>영역</th><th>국어</th><th>수학</th><th>영어</th><th>한국사</th><th>탐구1</th><th>탐구2</th></tr></thead><tbody>
               <tr><th>과목명</th><td id="lookupMockKorSubject">-</td><td id="lookupMockMathSubject">-</td><td>공통</td><td>필수</td><td id="lookupMockInq1Subject">-</td><td id="lookupMockInq2Subject">-</td></tr>
               <tr><th>표준점수</th><td id="lookupMockKorStd">-</td><td id="lookupMockMathStd">-</td><td>-</td><td>-</td><td id="lookupMockInq1Std">-</td><td id="lookupMockInq2Std">-</td></tr>
               <tr><th>백분위</th><td id="lookupMockKorPtc">-</td><td id="lookupMockMathPtc">-</td><td>-</td><td>-</td><td id="lookupMockInq1Ptc">-</td><td id="lookupMockInq2Ptc">-</td></tr>
