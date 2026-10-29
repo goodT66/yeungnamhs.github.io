@@ -4830,14 +4830,25 @@ const LOOKUP_SUSI_FIELDS = [
 function lookupSusiDocId(s){return `${s.grade}_${String(s.cls).padStart(2,'0')}_${String(s.no).padStart(2,'0')}`;}
 function renderLookupSusiRows(values=[]){
   const body=document.getElementById('lookupSusiRows'); if(!body)return; body.innerHTML='';
+  const student=getLookupSelectedStudent();
+  const isThirdGrade=String(student?.grade??'').replace(/\\D/g,'')==='3';
+  const table=body.closest('table');
+  const detailHeader=table?.querySelector('thead th:nth-child(4)');
+  if(detailHeader)detailHeader.style.display=isThirdGrade?'none':'';
+  const saveButton=document.getElementById('lookupSusiSaveButton');
+  if(saveButton)saveButton.style.display=isThirdGrade?'none':'';
   for(let i=0;i<6;i++){
     const row=values[i]||{}; const tr=document.createElement('tr');
-    const n=document.createElement('td'); n.className='border border-slate-300 p-2 text-center font-bold'; n.textContent=String(i+1); tr.appendChild(n);
+    const n=document.createElement('td'); n.className='border border-slate-300 p-2 text-center font-bold text-base'; n.textContent=String(i+1); tr.appendChild(n);
     LOOKUP_SUSI_FIELDS.forEach(([key,label])=>{
+      if(isThirdGrade&&key==='detail')return;
       const td=document.createElement('td');td.className='border border-slate-300 p-1';
       const input=document.createElement(key==='csat'?'textarea':'input');
-      if(key==='csat'){input.rows=2;input.className='w-full min-w-[150px] border border-slate-200 rounded p-2 resize-y';}
-      else {input.type='text';input.className='w-full min-w-[90px] border border-slate-200 rounded p-2';}
+      const valueClasses='w-full border border-slate-200 rounded p-2 text-base font-bold';
+      if(key==='csat'){input.rows=2;input.className=valueClasses+' min-w-[150px] resize-y';}
+      else {input.type='text';input.className=valueClasses+' min-w-[90px]';}
+      if(isThirdGrade&&(key==='university'||key==='unit'))input.classList.add('text-blue-700');
+      if(isThirdGrade)input.readOnly=true;
       input.dataset.susiField=key;input.dataset.susiRow=String(i);input.setAttribute('aria-label',`${i+1}지망 ${label}`);input.placeholder=label;input.value=String(row[key]??'');
       td.appendChild(input);tr.appendChild(td);
     });body.appendChild(tr);
@@ -4906,6 +4917,7 @@ function renderStudentLookupCard(){
  document.querySelector('[data-info="grade5"]').textContent=s.grade5||'-';
  document.querySelector('[data-info="grade9"]').textContent=s.grade9||'-';
  setLookupPhoto(s.photo);
+ const susiSaveButton=document.getElementById('lookupSusiSaveButton');if(susiSaveButton)susiSaveButton.style.display=String(s.grade).replace(/\\D/g,'')==='3'?'none':'';
  document.getElementById('studentLookupEmpty').classList.add('hidden');document.getElementById('studentLookupCard').classList.remove('hidden');refreshLookupMockExams();loadLookupSusiPlan();
  loadStudentPhotoMap().then(()=>{
    const selected=getLookupSelectedStudent();
