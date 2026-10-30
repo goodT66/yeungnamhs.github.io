@@ -765,7 +765,33 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         </div>
     </div>
     
-<div class="mb-2 px-1 text-xs leading-relaxed text-gray-500 flex items-baseline gap-1 whitespace-nowrap overflow-x-auto"><span><span class="font-bold text-gray-700">지원 위치 기준</span> (차이 = 학생 평균 백분위 - 대학 기준 백분위)</span><span class="font-semibold text-blue-700">위험 -8 미만 · 소신 -3 이상~0 미만 · 적정 0 이상~+5 미만 · 안정 +5 이상</span></div><div id="susiPagination" class="flex flex-wrap items-center justify-between gap-2 mb-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
+<div class="mb-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800">
+    <div class="mb-3">
+        <div class="font-bold text-base text-gray-900">지원 위치 분류 기준</div>
+        <p class="mt-1 text-xs text-gray-600">학생 평균 백분위와 대학 기준 백분위의 차이로 지원 위치를 분류합니다.</p>
+    </div>
+    <div class="grid grid-cols-[minmax(90px,1fr)_minmax(145px,1fr)_minmax(220px,2fr)] gap-x-4">
+        <div class="border-b border-gray-300 pb-2 font-semibold text-gray-600">지원 분류</div>
+        <div class="border-b border-gray-300 pb-2 font-semibold text-gray-600">백분위 차이</div>
+        <div class="border-b border-gray-300 pb-2 font-semibold text-gray-600">의미</div>
+        <div class="border-b border-gray-200 py-2 font-bold">🚨 위험</div>
+        <div class="border-b border-gray-200 py-2 font-bold">-8 미만</div>
+        <div class="border-b border-gray-200 py-2">합격 가능성이 낮은 도전 지원</div>
+        <div class="border-b border-gray-200 py-2 font-bold">📈 상향</div>
+        <div class="border-b border-gray-200 py-2 font-bold">-8 이상 ~ -3 미만</div>
+        <div class="border-b border-gray-200 py-2">다소 높은 목표에 도전하는 지원</div>
+        <div class="border-b border-gray-200 py-2 font-bold">🎯 소신</div>
+        <div class="border-b border-gray-200 py-2 font-bold">-3 이상 ~ 0 미만</div>
+        <div class="border-b border-gray-200 py-2">내 성적보다 조금 높은 수준의 지원</div>
+        <div class="border-b border-gray-200 py-2 font-bold">⚖️ 적정</div>
+        <div class="border-b border-gray-200 py-2 font-bold">0 이상 ~ +5 미만</div>
+        <div class="border-b border-gray-200 py-2">내 성적에 적합한 지원</div>
+        <div class="py-2 font-bold">🛡️ 안정</div>
+        <div class="py-2 font-bold">+5 이상</div>
+        <div class="py-2">합격 가능성이 높은 안정 지원</div>
+    </div>
+    <p class="mt-2 text-xs text-gray-500">* 백분위 차이 = 학생 평균 백분위 - 대학 기준 백분위</p>
+</div><div id="susiPagination" class="flex flex-wrap items-center justify-between gap-2 mb-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
     <span id="susiPageSummary" class="text-sm text-gray-600">조회 결과 없음</span><span id="susiRecommendationSummary" class="hidden min-w-0 flex-1 px-2 text-sm text-right text-gray-700"></span>
     <div class="flex items-center gap-2"><button id="susiPrevPage" type="button" onclick="changeSusiPage(-1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">이전</button><span id="susiPageNumber" class="min-w-16 text-center text-sm font-semibold text-gray-700">0 / 0</span><button id="susiNextPage" type="button" onclick="changeSusiPage(1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">다음</button></div>
 </div>    <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다. <span class="ml-2 inline-flex items-center gap-1"><i class="inline-block h-3 w-3 rounded-sm border border-amber-300 bg-amber-100"></i>음영: 선택 학생 평균 ±1 백분위</span></p>
