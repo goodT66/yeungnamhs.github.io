@@ -583,7 +583,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                     </select>
                     <input list="classNameList" type="text" id="classNameSearchInput" placeholder="이름 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-40" oninput="renderClassTable()">
                     <datalist id="classNameList"></datalist>
-                    <input list="classUnivList" id="classUnivInput" placeholder="대학명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-40" onchange="renderClassTable()" onkeyup="renderClassTable()">
+                    <input list="classUnivList" id="classUnivInput" placeholder="대학명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-32" onchange="renderClassTable()" onkeyup="renderClassTable()">
                     <datalist id="classUnivList"></datalist>
 
                     <input list="classAdmissionList" id="classAdmissionInput" placeholder="전형명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-48" oninput="renderClassTable()">
@@ -719,9 +719,10 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
             <strong class="text-sm font-bold text-blue-900">학생 모의고사 백분위 조회</strong>
             <select id="susiMockGrade" onchange="onSusiMockGradeChange()" class="border border-gray-300 rounded p-2 bg-white font-medium w-28"><option value="">학년</option></select>
             <select id="susiMockClass" onchange="onSusiMockClassChange()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium w-28"><option value="">반</option></select>
-            <select id="susiMockStudent" onchange="onSusiMockStudentChange()" disabled class="h-10 box-border border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">번호-이름</option></select>
-            <div class="flex flex-col gap-1 self-start"><select id="susiMockExam" onchange="renderSusiMockAverage()" disabled class="h-10 box-border border border-gray-300 rounded p-2 bg-white font-medium w-36 min-w-0"><option value="">모의고사 월</option></select><span id="susiMockLookupStatus" class="max-w-48 text-xs leading-4 text-gray-500" role="status">학년·반·학생과 모의고사 월을 선택하면 백분위가 표시됩니다.</span></div>
+            <select id="susiMockStudent" onchange="onSusiMockStudentChange()" disabled class="h-10 box-border border border-gray-300 rounded p-2 bg-white font-medium w-40 min-w-0"><option value="">번호-이름</option></select>
+            <select id="susiMockExam" onchange="renderSusiMockAverage()" disabled class="h-10 box-border border border-gray-300 rounded p-2 bg-white font-medium w-32 min-w-0"><option value="">모의고사 월</option></select>
         </div>
+        <span id="susiMockLookupStatus" class="text-xs leading-4 text-gray-500" role="status">학년·반·학생과 모의고사 월을 선택하면 백분위가 표시됩니다.</span>
         <div class="flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2">
                 <span class="text-sm font-bold text-gray-700">국·수·탐 백분위 평균</span>
@@ -734,7 +735,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         <div class="min-w-0">
         <div class="flex flex-wrap content-start items-center gap-3 min-w-0">
         <!-- 1. 연도 선택 -->
-        <select id="susiYearSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
+        <select id="susiYearSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-28">
             <option value="">연도 전체</option>
         </select>
         
@@ -746,10 +747,10 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
 
         <!-- 3. 모집단위 검색 및 드롭다운 (Datalist 적용) -->
         <div class="relative flex shrink-0 items-center gap-2 whitespace-nowrap">
-            <input type="text" id="susiMajorInput" list="susiMajorList" oninput="renderSusiResultTable()" placeholder="모집단위 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-48 bg-white"><datalist id="susiMajorList"></datalist>
-            <select id="susiPositionSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-36"><option value="">지원 위치 전체</option><option value="위험">위험</option><option value="상향">상향</option><option value="소신">소신</option><option value="적정">적정</option><option value="안정">안정</option></select>
+            <input type="text" id="susiMajorInput" list="susiMajorList" oninput="renderSusiResultTable()" placeholder="모집단위 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-40 bg-white"><datalist id="susiMajorList"></datalist>
+            <select id="susiPositionSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32"><option value="">지원 위치 전체</option><option value="위험">위험</option><option value="상향">상향</option><option value="소신">소신</option><option value="적정">적정</option><option value="안정">안정</option></select>
         </div>
-        <div class="flex shrink-0 items-center gap-1 rounded-lg border border-blue-200 bg-white px-2 py-2 shadow-sm whitespace-nowrap"><span class="text-sm font-bold text-gray-700 whitespace-nowrap">수능 백분위 범위</span><input type="number" id="susiCsatMin" oninput="updateSusiMajorList()" placeholder="최소" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-base font-semibold outline-none focus:border-blue-500"><span class="text-gray-500">~</span><input type="number" id="susiCsatMax" oninput="updateSusiMajorList()" placeholder="최대" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-base font-semibold outline-none focus:border-blue-500"></div>
+        <div class="flex shrink-0 items-center gap-1 rounded-lg border border-blue-200 bg-white px-2 py-2 shadow-sm whitespace-nowrap"><span class="text-xs font-bold text-gray-700 whitespace-nowrap">수능 백분위 범위</span><input type="number" id="susiCsatMin" oninput="updateSusiMajorList()" placeholder="최소" step="0.1" class="w-12 rounded border border-gray-300 p-1 text-center text-sm font-semibold outline-none focus:border-blue-500"><span class="text-gray-500">~</span><input type="number" id="susiCsatMax" oninput="updateSusiMajorList()" placeholder="최대" step="0.1" class="w-12 rounded border border-gray-300 p-1 text-center text-sm font-semibold outline-none focus:border-blue-500"></div>
 </div>
             </div>
         </div>
@@ -759,7 +760,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         <span class="text-[10px] text-gray-500">* 백분위 차이 = 학생 평균 백분위 - 대학 기준 백분위</span>
     </div>
     <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:11px; line-height:1.2;">
-        <colgroup><col style="width:12%;"><col style="width:14%;"><col style="width:74%;"></colgroup>
+        <colgroup><col style="width:20%;"><col style="width:22%;"><col style="width:58%;"></colgroup>
         <thead>
             <tr style="color:#4b5563; text-align:left;">
                 <th style="padding:2px 6px; border-bottom:1px solid #cbd5e1;">지원 분류</th>
