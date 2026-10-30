@@ -748,9 +748,9 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         <!-- 3. 모집단위 검색 및 드롭다운 (Datalist 적용) -->
         <div class="relative flex shrink-0 items-center gap-2 whitespace-nowrap">
             <input type="text" id="susiMajorInput" list="susiMajorList" oninput="renderSusiResultTable()" placeholder="모집단위 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-40 bg-white"><datalist id="susiMajorList"></datalist>
-            <select id="susiPositionSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32"><option value="">지원 위치 전체</option><option value="위험">위험</option><option value="상향">상향</option><option value="소신">소신</option><option value="적정">적정</option><option value="안정">안정</option></select>
-        </div>
+            <select id="susiPositionSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-36"><option value="">지원 위치 전체</option><option value="위험">위험</option><option value="상향">상향</option><option value="소신">소신</option><option value="적정">적정</option><option value="안정">안정</option></select>
         <div class="flex shrink-0 items-center gap-1 rounded-lg border border-blue-200 bg-white px-2 py-2 shadow-sm whitespace-nowrap"><span class="text-xs font-bold text-gray-700 whitespace-nowrap">수능 백분위 범위</span><input type="number" id="susiCsatMin" oninput="updateSusiMajorList()" placeholder="최소" step="0.1" class="w-12 rounded border border-gray-300 p-1 text-center text-sm font-semibold outline-none focus:border-blue-500"><span class="text-gray-500">~</span><input type="number" id="susiCsatMax" oninput="updateSusiMajorList()" placeholder="최대" step="0.1" class="w-12 rounded border border-gray-300 p-1 text-center text-sm font-semibold outline-none focus:border-blue-500"></div>
+        </div>
 </div>
             </div>
         </div>
