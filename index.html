@@ -751,7 +751,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
             <input type="text" id="susiMajorInput" list="susiMajorList" oninput="renderSusiResultTable()" placeholder="모집단위 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-52 bg-white"><datalist id="susiMajorList"></datalist>
             <select id="susiPositionSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-40 shrink-0"><option value="">지원 위치 전체</option><option value="위험">위험</option><option value="상향">상향</option><option value="소신">소신</option><option value="적정">적정</option><option value="안정">안정</option></select>
         <div class="flex shrink-0 items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 shadow-sm whitespace-nowrap"><span class="text-sm font-bold text-gray-700 whitespace-nowrap">수능 백분위 범위</span><input type="number" id="susiCsatMin" oninput="updateSusiMajorList()" placeholder="최소" step="0.1" class="w-16 rounded border border-gray-300 p-1.5 text-center text-base font-semibold outline-none focus:border-blue-500"><span class="text-gray-500">~</span><input type="number" id="susiCsatMax" oninput="updateSusiMajorList()" placeholder="최대" step="0.1" class="w-16 rounded border border-gray-300 p-1.5 text-center text-base font-semibold outline-none focus:border-blue-500"></div>
-        <img id="susiMockStudentPhoto" alt="선택한 학생 사진" class="hidden w-44 h-56 shrink-0 self-start object-cover rounded-lg border border-slate-200 shadow-sm bg-white">
+        <img id="susiMockStudentPhoto" alt="선택한 학생 사진" class="hidden relative -top-16 w-44 h-56 shrink-0 self-start object-cover rounded-lg border border-slate-200 shadow-sm bg-white">
         </div>
 </div>
             </div>
