@@ -746,41 +746,22 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
             <select id="susiPositionSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-36"><option value="">지원 위치 전체</option><option value="위험">위험</option><option value="상향">상향</option><option value="소신">소신</option><option value="적정">적정</option><option value="안정">안정</option></select>
         </div>
         <div class="flex items-center space-x-1 rounded-lg border border-blue-200 bg-white px-2 py-1 shadow-sm"><span class="pl-1 text-sm font-bold text-gray-700">수능 백분위 범위</span><input type="number" id="susiCsatMin" oninput="updateSusiMajorList()" placeholder="최소" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-base font-semibold outline-none focus:border-blue-500"><span class="text-gray-500">~</span><input type="number" id="susiCsatMax" oninput="updateSusiMajorList()" placeholder="최대" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-base font-semibold outline-none focus:border-blue-500"></div>
-        <p class="w-80 shrink-0 text-[10px] leading-6 text-gray-700">수능 백분위 범위를 설정하면,<br>그 범위 내에 70% 합격 백분위에 해당하는 대학교&amp;모집 단위가 필터링됩니다.</p>
-        
-        <!-- 우측 정렬 그룹: 수능 백분위 + 검색결과 + 엑셀 다운로드 -->
-        <div class="ml-auto flex flex-wrap items-center gap-3">
-<!-- 5. 검색 결과 및 엑셀 다운로드 버튼 -->
-            <div class="flex items-center text-sm text-gray-700 font-bold bg-white px-3 py-2 rounded border border-gray-200 shadow-sm">
-                검색 결과: <span id="susiResultCount" class="text-yellow-600 text-lg mx-1">0</span>건
-
-                
-                <button onclick="downloadSusiExcel()" class="ml-4 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded shadow text-xs transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    엑셀 다운로드
-                </button>
-            </div>
-        </div>
-    </div>
-    
-<div class="mb-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-800">
+<div class="w-full min-w-0 xl:w-[46%] xl:ml-auto rounded-lg border border-yellow-200 bg-white px-3 py-2 text-xs text-gray-800">
     <div class="mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span class="font-bold text-sm text-gray-900">지원 위치 분류 기준</span>
         <span class="text-[10px] text-gray-500">* 백분위 차이 = 학생 평균 백분위 - 대학 기준 백분위</span>
     </div>
-    <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:12px; line-height:1.25;">
+    <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:11px; line-height:1.2;">
         <colgroup><col style="width:12%;"><col style="width:20%;"><col style="width:68%;"></colgroup>
         <thead>
             <tr style="color:#4b5563; text-align:left;">
-                <th style="padding:3px 6px; border-bottom:1px solid #cbd5e1;">지원 분류</th>
+                <th style="padding:2px 6px; border-bottom:1px solid #cbd5e1;">지원 분류</th>
                 <th style="padding:3px 6px; border-bottom:1px solid #cbd5e1;">백분위 차이</th>
                 <th style="padding:3px 6px; border-bottom:1px solid #cbd5e1;">의미</th>
             </tr>
         </thead>
         <tbody>
-            <tr><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; text-align:left;"><span style="display:inline-block; min-width:64px; padding:5px 12px; border-radius:8px; font-size:12px; font-weight:800; line-height:1.2; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.18); background:#dc2626; color:#ffffff; border:1px solid #b91c1c;">위험</span></td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; font-weight:700;">-8 미만</td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb;">합격 가능성이 낮은 도전 지원</td></tr>
+            <tr><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; text-align:left;"><span style="display:inline-block; min-width:58px; padding:3px 10px; border-radius:8px; font-size:12px; font-weight:800; line-height:1.2; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.18); background:#dc2626; color:#ffffff; border:1px solid #b91c1c;">위험</span></td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; font-weight:700;">-8 미만</td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb;">합격 가능성이 낮은 도전 지원</td></tr>
             <tr><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; text-align:left;"><span style="display:inline-block; min-width:64px; padding:5px 12px; border-radius:8px; font-size:12px; font-weight:800; line-height:1.2; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.18); background:#fde047; color:#713f12; border:1px solid #eab308;">상향</span></td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; font-weight:700;">-8 이상 ~ -3 미만</td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb;">다소 높은 목표에 도전하는 지원</td></tr>
             <tr><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; text-align:left;"><span style="display:inline-block; min-width:64px; padding:5px 12px; border-radius:8px; font-size:12px; font-weight:800; line-height:1.2; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.18); background:#ddd6fe; color:#4c1d95; border:1px solid #a78bfa;">소신</span></td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; font-weight:700;">-3 이상 ~ 0 미만</td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb;">내 성적보다 조금 높은 수준의 지원</td></tr>
             <tr><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; text-align:left;"><span style="display:inline-block; min-width:64px; padding:5px 12px; border-radius:8px; font-size:12px; font-weight:800; line-height:1.2; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.18); background:#bef264; color:#14532d; border:1px solid #84cc16;">적정</span></td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; font-weight:700;">0 이상 ~ +5 미만</td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb;">내 성적에 적합한 지원</td></tr>
@@ -788,7 +769,9 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         </tbody>
     </table>
     
-</div><div id="susiPagination" class="flex flex-wrap items-center justify-between gap-2 mb-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+</div>
+    </div>
+    <div id="susiPagination" class="flex flex-wrap items-center justify-between gap-2 mb-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
     <span id="susiPageSummary" class="text-sm text-gray-600">조회 결과 없음</span><span id="susiRecommendationSummary" class="hidden min-w-0 flex-1 px-2 text-sm text-right text-gray-700"></span>
     <div class="flex items-center gap-2"><button id="susiPrevPage" type="button" onclick="changeSusiPage(-1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">이전</button><span id="susiPageNumber" class="min-w-16 text-center text-sm font-semibold text-gray-700">0 / 0</span><button id="susiNextPage" type="button" onclick="changeSusiPage(1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">다음</button></div>
 </div>    <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다. <span class="ml-2 inline-flex items-center gap-1"><i class="inline-block h-3 w-3 rounded-sm border border-amber-300 bg-amber-100"></i>음영: 선택 학생 평균 ±1 백분위</span></p>
