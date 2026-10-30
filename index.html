@@ -711,24 +711,24 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
             </div>
 
             <div id="susiResultContent" class="hidden">
-    <div id="susiStudentMockLookup" class="mb-4 flex flex-col gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
-        <div class="flex flex-wrap items-start gap-3">
+    <div id="susiStudentMockLookup" class="flex flex-col gap-3">
+        <div class="flex flex-wrap items-center gap-3">
             <strong class="text-sm font-bold text-blue-900">학생 모의고사 백분위 조회</strong>
             <select id="susiMockGrade" onchange="onSusiMockGradeChange()" class="border border-gray-300 rounded p-2 bg-white font-medium w-28"><option value="">학년</option></select>
             <select id="susiMockClass" onchange="onSusiMockClassChange()" disabled class="border border-gray-300 rounded p-2 bg-white font-medium w-28"><option value="">반</option></select>
             <select id="susiMockStudent" onchange="onSusiMockStudentChange()" disabled class="h-10 box-border border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">번호-이름</option></select>
-            
             <div class="flex flex-col gap-1 self-start"><select id="susiMockExam" onchange="renderSusiMockAverage()" disabled class="h-10 box-border border border-gray-300 rounded p-2 bg-white font-medium min-w-48"><option value="">모의고사 월</option></select><span id="susiMockLookupStatus" class="max-w-48 text-xs leading-4 text-gray-500" role="status">학년·반·학생과 모의고사 월을 선택하면 백분위가 표시됩니다.</span></div>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2">
                 <span class="text-sm font-bold text-gray-700">국·수·탐 백분위 평균</span>
                 <strong id="susiMockAverageValue" class="text-xl font-black text-blue-700">-</strong>
             </div>
             <div class="flex flex-wrap items-center gap-x-3 rounded-lg border border-blue-200 bg-white px-4 py-2 text-base font-semibold text-gray-700"><span>국어 <b id="susiMockKorValue" class="text-blue-700">-</b></span><span>수학 <b id="susiMockMathValue" class="text-blue-700">-</b></span><span>영어 등급 <b id="susiMockEngGradeValue" class="text-blue-700">-</b></span><span>한국사 등급 <b id="susiMockHistGradeValue" class="text-blue-700">-</b></span><span>탐구1 <b id="susiMockInq1Value" class="text-blue-700">-</b></span><span>탐구2 <b id="susiMockInq2Value" class="text-blue-700">-</b></span></div>
-            
         </div>
-        
     </div>
-    <div class="mb-4 flex flex-nowrap gap-3 items-center overflow-x-auto bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+    <div class="mb-4 flex flex-col gap-3 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+        <div class="flex flex-wrap items-center justify-between gap-3">
         <!-- 1. 연도 선택 -->
         <select id="susiYearSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-32">
             <option value="">연도 전체</option>
@@ -770,7 +770,8 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
     </table>
     
 </div>
-    </div>
+            </div>
+</div>
     <div id="susiPagination" class="flex flex-wrap items-center justify-between gap-2 mb-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
     <span id="susiPageSummary" class="text-sm text-gray-600">조회 결과 없음</span><span id="susiRecommendationSummary" class="hidden min-w-0 flex-1 px-2 text-sm text-right text-gray-700"></span>
     <div class="flex items-center gap-2"><button id="susiPrevPage" type="button" onclick="changeSusiPage(-1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">이전</button><span id="susiPageNumber" class="min-w-16 text-center text-sm font-semibold text-gray-700">0 / 0</span><button id="susiNextPage" type="button" onclick="changeSusiPage(1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">다음</button></div>
