@@ -742,7 +742,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
 
         <!-- 3. 모집단위 검색 및 드롭다운 (Datalist 적용) -->
         <div class="relative">
-            <select id="susiMajorInput" onchange="renderSusiResultTable()" class="border border-gray-300 rounded p-2 font-medium w-48 bg-white"><option value="">모집단위 전체</option></select>
+            <input type="text" id="susiMajorInput" list="susiMajorList" oninput="renderSusiResultTable()" placeholder="모집단위 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-48 bg-white"><datalist id="susiMajorList"></datalist>
             <select id="susiPositionSelect" onchange="updateSusiMajorList()" class="border border-gray-300 rounded p-2 bg-white font-medium w-36"><option value="">지원 위치 전체</option><option value="위험">위험</option><option value="상향">상향</option><option value="소신">소신</option><option value="적정">적정</option><option value="안정">안정</option></select>
         </div>
         <div class="flex items-center space-x-1 rounded-lg border border-blue-200 bg-white px-2 py-1 shadow-sm"><span class="pl-1 text-sm font-bold text-gray-700">수능 백분위 범위</span><input type="number" id="susiCsatMin" oninput="updateSusiMajorList()" placeholder="최소" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-base font-semibold outline-none focus:border-blue-500"><span class="text-gray-500">~</span><input type="number" id="susiCsatMax" oninput="updateSusiMajorList()" placeholder="최대" step="0.1" class="w-16 rounded border border-gray-300 p-1 text-center text-base font-semibold outline-none focus:border-blue-500"></div>
@@ -4202,6 +4202,7 @@ function scheduleSusiMajorListUpdate() { clearTimeout(susiMajorSearchTimer); sus
 function updateSusiMajorList() {
     const selectedUniv = document.getElementById('susiUnivInput').value.trim();
     const majorInput = document.getElementById('susiMajorInput');
+    const majorList = document.getElementById('susiMajorList');
     const year = document.getElementById('susiYearSelect').value;
     const minValue = document.getElementById('susiCsatMin').value;
     const maxValue = document.getElementById('susiCsatMax').value;
@@ -4213,7 +4214,7 @@ function updateSusiMajorList() {
         currentSusiMajorUniversity = selectedUniv;
     }
     const previousMajor = majorInput.value;
-    majorInput.innerHTML = '<option value="">모집단위 전체</option>';
+    majorList.innerHTML = '';
     const universityIsExact = susiKnownUniversitySet.has(selectedUniv);
     const majorSet = new Set();
     getSusiCandidateRows(year, universityIsExact ? selectedUniv : '').forEach(row => {
@@ -4226,9 +4227,13 @@ function updateSusiMajorList() {
         majorSet.add(meta.major);
     });
     const optionsFragment = document.createDocumentFragment();
-    Array.from(majorSet).sort().forEach(major => optionsFragment.appendChild(new Option(major, major)));
-    majorInput.appendChild(optionsFragment);
-    if (previousMajor && majorSet.has(previousMajor)) majorInput.value = previousMajor;
+    Array.from(majorSet).sort().forEach(major => {
+        const option = document.createElement('option');
+        option.value = major;
+        optionsFragment.appendChild(option);
+    });
+    majorList.appendChild(optionsFragment);
+    majorInput.value = previousMajor;
     renderSusiResultTable();
 }
 window.updateSusiMajorList = updateSusiMajorList;
