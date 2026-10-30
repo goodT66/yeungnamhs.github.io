@@ -4451,14 +4451,14 @@ function renderSusiResultPage(page) {
         susiColOrder.forEach(idx => {
             if (idx === 'position') {
                 const position = getSusiSupportPosition(row, studentAverage);
-                const badgeClass = {
-                    '안정': 'bg-green-700 text-white',
-                    '소신': 'bg-violet-200 text-violet-950',
-                    '적정': 'bg-lime-300 text-green-950',
-                    '상향': 'bg-yellow-300 text-yellow-950',
-                    '위험': 'bg-red-600 text-white'
-                }[position] || '';
-                html += position === '-' ? '<td class="text-center text-gray-400">-</td>' : `<td class="text-center"><span class="inline-flex min-w-16 items-center justify-center rounded-md px-3 py-1.5 text-sm font-extrabold shadow-sm ${badgeClass}">${position}</span></td>`;
+                const badgeStyle = {
+                    '안정': 'background:#15803d;color:#ffffff;border:1px solid #166534;',
+                    '소신': 'background:#ddd6fe;color:#4c1d95;border:1px solid #a78bfa;',
+                    '적정': 'background:#bef264;color:#14532d;border:1px solid #84cc16;',
+                    '상향': 'background:#fde047;color:#713f12;border:1px solid #eab308;',
+                    '위험': 'background:#dc2626;color:#ffffff;border:1px solid #b91c1c;'
+                }[position] || 'background:#e5e7eb;color:#111827;border:1px solid #9ca3af;';
+                html += position === '-' ? '<td class="text-center text-gray-400">-</td>' : `<td class="text-center" style="padding:6px 4px !important;"><span style="display:inline-block;min-width:64px;padding:7px 14px;border-radius:8px;font-size:14px;font-weight:800;line-height:1.2;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.18);${badgeStyle}">${position}</span></td>`;
                 return;
             }
             const val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
