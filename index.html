@@ -765,32 +765,29 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         </div>
     </div>
     
-<div class="mb-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800">
-    <div class="mb-3">
-        <div class="font-bold text-base text-gray-900">지원 위치 분류 기준</div>
-        <p class="mt-1 text-xs text-gray-600">학생 평균 백분위와 대학 기준 백분위의 차이로 지원 위치를 분류합니다.</p>
+<div class="mb-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-800">
+    <div class="mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <span class="font-bold text-sm text-gray-900">지원 위치 분류 기준</span>
+        <span class="text-xs text-gray-600">학생 평균 백분위와 대학 기준 백분위의 차이로 분류합니다.</span>
     </div>
-    <div class="grid grid-cols-[minmax(90px,1fr)_minmax(145px,1fr)_minmax(220px,2fr)] gap-x-4">
-        <div class="border-b border-gray-300 pb-2 font-semibold text-gray-600">지원 분류</div>
-        <div class="border-b border-gray-300 pb-2 font-semibold text-gray-600">백분위 차이</div>
-        <div class="border-b border-gray-300 pb-2 font-semibold text-gray-600">의미</div>
-        <div class="border-b border-gray-200 py-2 font-bold">🚨 위험</div>
-        <div class="border-b border-gray-200 py-2 font-bold">-8 미만</div>
-        <div class="border-b border-gray-200 py-2">합격 가능성이 낮은 도전 지원</div>
-        <div class="border-b border-gray-200 py-2 font-bold">📈 상향</div>
-        <div class="border-b border-gray-200 py-2 font-bold">-8 이상 ~ -3 미만</div>
-        <div class="border-b border-gray-200 py-2">다소 높은 목표에 도전하는 지원</div>
-        <div class="border-b border-gray-200 py-2 font-bold">🎯 소신</div>
-        <div class="border-b border-gray-200 py-2 font-bold">-3 이상 ~ 0 미만</div>
-        <div class="border-b border-gray-200 py-2">내 성적보다 조금 높은 수준의 지원</div>
-        <div class="border-b border-gray-200 py-2 font-bold">⚖️ 적정</div>
-        <div class="border-b border-gray-200 py-2 font-bold">0 이상 ~ +5 미만</div>
-        <div class="border-b border-gray-200 py-2">내 성적에 적합한 지원</div>
-        <div class="py-2 font-bold">🛡️ 안정</div>
-        <div class="py-2 font-bold">+5 이상</div>
-        <div class="py-2">합격 가능성이 높은 안정 지원</div>
-    </div>
-    <p class="mt-2 text-xs text-gray-500">* 백분위 차이 = 학생 평균 백분위 - 대학 기준 백분위</p>
+    <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:12px; line-height:1.25;">
+        <colgroup><col style="width:22%;"><col style="width:25%;"><col style="width:53%;"></colgroup>
+        <thead>
+            <tr style="color:#4b5563; text-align:left;">
+                <th style="padding:3px 6px; border-bottom:1px solid #cbd5e1;">지원 분류</th>
+                <th style="padding:3px 6px; border-bottom:1px solid #cbd5e1;">백분위 차이</th>
+                <th style="padding:3px 6px; border-bottom:1px solid #cbd5e1;">의미</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; font-weight:700;">🚨 위험</td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; font-weight:700;">-8 미만</td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb;">합격 가능성이 낮은 도전 지원</td></tr>
+            <tr><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; font-weight:700;">📈 상향</td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; font-weight:700;">-8 이상 ~ -3 미만</td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb;">다소 높은 목표에 도전하는 지원</td></tr>
+            <tr><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; font-weight:700;">🎯 소신</td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; font-weight:700;">-3 이상 ~ 0 미만</td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb;">내 성적보다 조금 높은 수준의 지원</td></tr>
+            <tr><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; font-weight:700;">⚖️ 적정</td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb; font-weight:700;">0 이상 ~ +5 미만</td><td style="padding:3px 6px; border-bottom:1px solid #e5e7eb;">내 성적에 적합한 지원</td></tr>
+            <tr><td style="padding:3px 6px; font-weight:700;">🛡️ 안정</td><td style="padding:3px 6px; font-weight:700;">+5 이상</td><td style="padding:3px 6px;">합격 가능성이 높은 안정 지원</td></tr>
+        </tbody>
+    </table>
+    <p class="mt-1 text-[10px] text-gray-500">* 백분위 차이 = 학생 평균 백분위 - 대학 기준 백분위</p>
 </div><div id="susiPagination" class="flex flex-wrap items-center justify-between gap-2 mb-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
     <span id="susiPageSummary" class="text-sm text-gray-600">조회 결과 없음</span><span id="susiRecommendationSummary" class="hidden min-w-0 flex-1 px-2 text-sm text-right text-gray-700"></span>
     <div class="flex items-center gap-2"><button id="susiPrevPage" type="button" onclick="changeSusiPage(-1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">이전</button><span id="susiPageNumber" class="min-w-16 text-center text-sm font-semibold text-gray-700">0 / 0</span><button id="susiNextPage" type="button" onclick="changeSusiPage(1)" class="rounded border border-gray-300 bg-white px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40">다음</button></div>
