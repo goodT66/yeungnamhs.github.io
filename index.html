@@ -4233,20 +4233,18 @@ function updateSusiMajorList() {
     majorInput.innerHTML = '<option value="">모집단위 전체</option>';
     const universityIsExact = susiKnownUniversitySet.has(selectedUniv);
     const majorSet = new Set();
-    if (selectedUniv) {
-        getSusiCandidateRows(year, universityIsExact ? selectedUniv : '').forEach(row => {
-            const meta = getSusiRowMeta(row);
-            const universityMatches = universityIsExact ? meta.university === selectedUniv : meta.university.includes(selectedUniv);
-            if (!universityMatches || (year && meta.year !== year) || !meta.major) return;
-            if (minCsat !== -Infinity && (!Number.isFinite(meta.percentile) || meta.percentile < minCsat)) return;
-            if (maxCsat !== Infinity && (!Number.isFinite(meta.percentile) || meta.percentile > maxCsat)) return;
-            if (selectedPosition && getSusiSupportPosition(row, selectedSusiMockAverage) !== selectedPosition) return;
-            majorSet.add(meta.major);
-        });
-        const optionsFragment = document.createDocumentFragment();
-        Array.from(majorSet).sort().forEach(major => optionsFragment.appendChild(new Option(major, major)));
-        majorInput.appendChild(optionsFragment);
-    }
+    getSusiCandidateRows(year, universityIsExact ? selectedUniv : '').forEach(row => {
+        const meta = getSusiRowMeta(row);
+        const universityMatches = !selectedUniv || (universityIsExact ? meta.university === selectedUniv : meta.university.includes(selectedUniv));
+        if (!universityMatches || (year && meta.year !== year) || !meta.major) return;
+        if (minCsat !== -Infinity && (!Number.isFinite(meta.percentile) || meta.percentile < minCsat)) return;
+        if (maxCsat !== Infinity && (!Number.isFinite(meta.percentile) || meta.percentile > maxCsat)) return;
+        if (selectedPosition && getSusiSupportPosition(row, selectedSusiMockAverage) !== selectedPosition) return;
+        majorSet.add(meta.major);
+    });
+    const optionsFragment = document.createDocumentFragment();
+    Array.from(majorSet).sort().forEach(major => optionsFragment.appendChild(new Option(major, major)));
+    majorInput.appendChild(optionsFragment);
     if (previousMajor && majorSet.has(previousMajor)) majorInput.value = previousMajor;
     renderSusiResultTable();
 }
