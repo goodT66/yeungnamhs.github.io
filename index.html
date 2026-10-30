@@ -4452,13 +4452,13 @@ function renderSusiResultPage(page) {
             if (idx === 'position') {
                 const position = getSusiSupportPosition(row, studentAverage);
                 const badgeClass = {
-                    '안정': 'bg-emerald-100 text-emerald-800',
-                    '소신': 'bg-violet-100 text-violet-800',
-                    '적정': 'bg-blue-100 text-blue-800',
-                    '상향': 'bg-amber-100 text-amber-800',
-                    '위험': 'bg-rose-100 text-rose-800'
+                    '안정': 'bg-green-700 text-white',
+                    '소신': 'bg-violet-200 text-violet-950',
+                    '적정': 'bg-lime-300 text-green-950',
+                    '상향': 'bg-yellow-300 text-yellow-950',
+                    '위험': 'bg-red-600 text-white'
                 }[position] || '';
-                html += position === '-' ? '<td class="text-center text-gray-400">-</td>' : `<td class="text-center"><span class="inline-block rounded px-2 py-0.5 text-xs font-bold ${badgeClass}">${position}</span></td>`;
+                html += position === '-' ? '<td class="text-center text-gray-400">-</td>' : `<td class="text-center"><span class="inline-flex min-w-16 items-center justify-center rounded-md px-3 py-1.5 text-sm font-extrabold shadow-sm ${badgeClass}">${position}</span></td>`;
                 return;
             }
             const val = row[idx] !== undefined && row[idx] !== null && row[idx] !== '' ? row[idx] : '-';
