@@ -489,12 +489,21 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                                 <th rowspan="2" class="w-24">월(고사명)</th>
                                 <th rowspan="2" class="whitespace-nowrap bg-amber-50 text-amber-700">
                                     <div>최저 충족 여부</div>
-                                    <select id="mockCutoffCount" class="mt-1 w-full rounded border border-amber-300 bg-white px-1 py-1 text-xs font-bold text-gray-700" onchange="window.updateMockCutoffCount(this.value)" aria-label="최저 충족 과목 수 기준">
-                                        <option value="1">1개</option>
-                                        <option value="2" selected>2개 합</option>
-                                        <option value="3">3개 합</option>
-                                        <option value="4">4개 합</option>
-                                    </select>
+                                    <div class="mt-1 flex items-center gap-1">
+                                        <select id="mockCutoffCount" class="w-1/2 min-w-0 rounded border border-amber-300 bg-white px-1 py-1 text-xs font-bold text-gray-700" onchange="window.updateMockCutoffCount(this.value)" aria-label="최저 충족 과목 수 기준">
+                                            <option value="1">1개</option>
+                                            <option value="2" selected>2개 합</option>
+                                            <option value="3">3개 합</option>
+                                            <option value="4">4개 합</option>
+                                        </select>
+                                        <select id="mockInquiryMode" class="w-1/2 min-w-0 rounded border border-amber-300 bg-white px-1 py-1 text-xs font-bold text-gray-700" onchange="window.updateMockInquiryMode(this.value)" aria-label="탐구 반영 방식">
+                                            <option value="top1" selected>상위1</option>
+                                            <option value="scienceAvg">과탐평균</option>
+                                            <option value="scienceFloor">과탐절사</option>
+                                            <option value="both">탐탐</option>
+                                            <option value="scienceOne">과탐1</option>
+                                        </select>
+                                    </div>
                                 </th>
                                 <th rowspan="2" class="text-emerald-700 bg-emerald-50 whitespace-nowrap">국수탐 백분위 평균</th>
                                 <th colspan="4" class="text-red-600 bg-red-50">국어</th><th colspan="4" class="text-blue-600 bg-blue-50">수학</th>
@@ -2760,40 +2769,73 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         window.renderMockData = renderMockData;
 
         let mockCutoffCount = 2;
+        let mockInquiryMode = 'top1';
 
         function renderMockScoreTable(records) {
             const tbody = document.getElementById('scoreTableBody');
             if (!tbody) return;
             tbody.innerHTML = '';
             [...records].reverse().forEach(r => {
+                const validGrade = value => {
+                    const grade = Number(value);
+                    return Number.isFinite(grade) && grade > 0 ? grade : null;
+                };
+                const sciencePattern = /물리|화학|생명과학|지구과학/;
+                const inquiry1Name = String(r.inq1Sub ?? '').trim();
+                const inquiry2Name = String(r.inq2Sub ?? '').trim();
+                const inquiry1Grade = validGrade(r.inq1Grd);
+                const inquiry2Grade = validGrade(r.inq2Grd);
+                const inquiry1Science = sciencePattern.test(inquiry1Name);
+                const inquiry2Science = sciencePattern.test(inquiry2Name);
+                const mathSubject = String(r.mathSubject ?? '').replace(/\\s/g, '');
+                const mathLabel = mathSubject.includes('미적분') ? '미'
+                    : mathSubject.includes('기하') ? '기'
+                    : (mathSubject.includes('확률과통계') || mathSubject.includes('확통')) ? '확통' : '수';
+
+                let inquiryItems = [];
+                let inquiryNotSatisfied = false;
+                if (mockInquiryMode === 'scienceAvg' || mockInquiryMode === 'scienceFloor') {
+                    if (inquiry1Science && inquiry2Science && inquiry1Grade !== null && inquiry2Grade !== null) {
+                        const average = (inquiry1Grade + inquiry2Grade) / 2;
+                        inquiryItems = [{
+                            subject: '과탐',
+                            grade: mockInquiryMode === 'scienceFloor' ? Math.floor(average) : average,
+                            order: 4
+                        }];
+                    }
+                } else if (mockInquiryMode === 'both') {
+                    if (inquiry1Grade !== null) inquiryItems.push({ subject: inquiry1Name.charAt(0), grade: inquiry1Grade, order: 4 });
+                    if (inquiry2Grade !== null) inquiryItems.push({ subject: inquiry2Name.charAt(0), grade: inquiry2Grade, order: 5 });
+                } else if (mockInquiryMode === 'scienceOne') {
+                    const eligible = [
+                        { subject: inquiry1Name.charAt(0), grade: inquiry1Grade, isScience: inquiry1Science },
+                        { subject: inquiry2Name.charAt(0), grade: inquiry2Grade, isScience: inquiry2Science }
+                    ].filter(item => item.isScience && item.grade !== null)
+                     .sort((a, b) => a.grade - b.grade);
+                    if (eligible.length) inquiryItems = [{ subject: eligible[0].subject, grade: eligible[0].grade, order: 4 }];
+                    else inquiryNotSatisfied = true;
+                } else {
+                    const eligible = [
+                        { subject: inquiry1Name.charAt(0), grade: inquiry1Grade },
+                        { subject: inquiry2Name.charAt(0), grade: inquiry2Grade }
+                    ].filter(item => item.subject && item.grade !== null).sort((a, b) => a.grade - b.grade);
+                    if (eligible.length) inquiryItems = [{ subject: eligible[0].subject, grade: eligible[0].grade, order: 4 }];
+                }
+
                 const gradeItems = [
-                    { subject: '국', grade: r.korGrd, order: 1 },
-                    { subject: (() => {
-                        const mathSubject = String(r.mathSubject ?? '').replace(/\\s/g, '');
-                        if (mathSubject.includes('미적분')) return '미';
-                        if (mathSubject.includes('기하')) return '기';
-                        if (mathSubject.includes('확률과통계') || mathSubject.includes('확통')) return '확통';
-                        return '수';
-                    })(), grade: r.mathGrd, order: 2 },
-                    { subject: '영', grade: r.engGrd, order: 3 },
-                    { subject: Number(r.inq1Grd) > 0 && Number(r.inq2Grd) > 0
-                        ? (Number(r.inq1Grd) <= Number(r.inq2Grd) ? r.inq1Sub : r.inq2Sub)
-                        : (Number(r.inq1Grd) > 0 ? r.inq1Sub : r.inq2Sub),
-                      grade: [r.inq1Grd, r.inq2Grd]
-                        .map(value => Number(value))
-                        .filter(value => Number.isFinite(value) && value > 0)
-                        .sort((a, b) => a - b)[0],
-                      order: 4 }
-                ].map(item => ({
-                    subject: item.subject,
-                    grade: Number(item.grade),
-                    order: item.order
-                })).filter(item => item.subject && Number.isFinite(item.grade) && item.grade > 0)
-                  .sort((a, b) => a.order - b.order);
+                    { subject: '국', grade: validGrade(r.korGrd), order: 1 },
+                    { subject: mathLabel, grade: validGrade(r.mathGrd), order: 2 },
+                    { subject: '영', grade: validGrade(r.engGrd), order: 3 },
+                    ...inquiryItems
+                ].filter(item => item.subject && item.grade !== null && item.grade !== undefined)
+                 .sort((a, b) => a.order - b.order);
                 const selectedGrades = gradeItems.slice(0, mockCutoffCount);
-                const cutoffValue = selectedGrades.length === mockCutoffCount
-                    ? `${selectedGrades.map(item => item.subject).join(',')} ${selectedGrades.reduce((sum, item) => sum + item.grade, 0)}등급`
-                    : '-';
+                const totalGrade = selectedGrades.reduce((sum, item) => sum + item.grade, 0);
+                const formattedTotal = Number.isInteger(totalGrade) ? String(totalGrade) : totalGrade.toFixed(2).replace(/0+$/, '').replace(/\\.$/, '');
+                const cutoffValue = inquiryNotSatisfied ? '미충족'
+                    : selectedGrades.length === mockCutoffCount
+                        ? `${selectedGrades.map(item => item.subject).join(',')} ${formattedTotal}등급`
+                        : '-';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td>${r.title}</td>
                 <td class="text-amber-700 font-bold bg-amber-50/40">${cutoffValue}</td>
@@ -2809,6 +2851,11 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
 
         window.updateMockCutoffCount = function(value) {
             mockCutoffCount = Number(value) || 2;
+            if (Array.isArray(currentMockRecords)) renderMockScoreTable(currentMockRecords);
+        };
+
+        window.updateMockInquiryMode = function(value) {
+            mockInquiryMode = value || 'top1';
             if (Array.isArray(currentMockRecords)) renderMockScoreTable(currentMockRecords);
         };
 
