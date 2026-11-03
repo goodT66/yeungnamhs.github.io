@@ -583,10 +583,31 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                 </div>
                 </div>
                 <div id="gradJeongsiTabContent" class="hidden">
-                    <div class="text-center py-16 bg-gray-50 border border-gray-200 rounded-xl">
-                        <div class="text-4xl mb-3">📊</div>
-                        <h4 class="text-xl font-bold text-gray-800 mb-2">졸업생 정시 결과</h4>
-                        <p class="text-gray-500">정시 결과 데이터 연결 예정입니다.</p>
+                    <div class="mb-4 flex flex-wrap gap-4 items-center bg-green-50 p-4 rounded-lg border border-green-200">
+                        <select id="gradJeongsiFilterYear" class="border border-gray-300 rounded p-2 bg-white font-medium" onchange="applyGradJeongsiFilter()">
+                            <option value="">연도 전체</option>
+                        </select>
+                        <select id="gradJeongsiFilterUniv" class="border border-gray-300 rounded p-2 bg-white max-w-xs font-medium" onchange="applyGradJeongsiFilter()">
+                            <option value="">대학명 전체</option>
+                        </select>
+                        <input type="text" id="gradJeongsiFilterMajor" placeholder="전형-모집단위 검색" class="border border-gray-300 rounded p-2 w-56 font-medium" onkeyup="applyGradJeongsiFilter()">
+                        <select id="gradJeongsiFilterResult" class="border border-gray-300 rounded p-2 bg-white font-medium" onchange="applyGradJeongsiFilter()">
+                            <option value="">최종결과 전체</option>
+                        </select>
+                        <div class="ml-auto text-sm text-gray-700 font-bold bg-white px-3 py-2 rounded border border-gray-200 shadow-sm">
+                            검색 결과: <span id="gradJeongsiCount" class="text-blue-600 text-lg">0</span>건
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
+                    <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 65vh;">
+                        <table class="grad-table text-sm w-full">
+                            <thead class="sticky top-0 z-10 shadow-sm bg-gray-50">
+                                <tr id="gradJeongsiTableHeaderRow"></tr>
+                            </thead>
+                            <tbody id="gradJeongsiTableBody">
+                                <tr><td colspan="11" class="text-center py-10 text-gray-500">정시 결과 데이터를 불러오는 중입니다...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -1556,6 +1577,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         const PHOTO_LIST_SPREADSHEET_ID = '1z3F-iguU4iphMr_4cX6r2MAdhyxfViBh1bocMPWMmkI';
         const PHOTO_LIST_API_URL = 'https://script.google.com/a/macros/yeungnam.hs.kr/s/AKfycbxHCKsc9cNZAaWGytujMZX0YTn7Aj_Dm_3xGgRAz71y9x0fqpcCNKpX56B-7tly6y7T/exec';
         const GRAD_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=졸업생`;
+        const GRAD_JEONGSI_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1123384481`;
         const SUSI_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026수시`; 
         const INTERVIEW_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026면접`; 
         const SUSI_RESULT_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1822882619`;
@@ -2989,6 +3011,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         // =====================================================================
         function switchGradResultTab(tab) {
             const isSusi = tab === 'susi';
+            if (!isSusi && !gradJeongsiDataLoaded) fetchGradJeongsiData();
             document.getElementById('gradSusiTabContent')?.classList.toggle('hidden', !isSusi);
             document.getElementById('gradJeongsiTabContent')?.classList.toggle('hidden', isSusi);
             const susiButton = document.getElementById('gradSusiTab');
@@ -3005,6 +3028,149 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     : 'px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 transition-colors';
                 jeongsiButton.setAttribute('aria-selected', !isSusi ? 'true' : 'false');
             }
+        }
+
+        let rawGradJeongsiData = [];
+        let filteredGradJeongsiData = [];
+        let gradJeongsiDataLoaded = false;
+        let gradJeongsiSortCol = null;
+        let gradJeongsiIsAscending = true;
+        const gradJeongsiColOrder = [0, 1, 2, 3, 4, 5, 6, 8, 9, 12, 15];
+        const gradJeongsiColLabels = {
+            0: '연도', 1: '학번', 2: '학년', 3: '반', 4: '번호', 5: '이름',
+            6: '대학교', 8: '모집 시기', 9: '전형-모집 단위', 12: '결과', 15: '후보 순위'
+        };
+
+        async function fetchGradJeongsiData() {
+            const tbody = document.getElementById('gradJeongsiTableBody');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="11" class="text-center py-10 text-gray-500">정시 결과 데이터를 불러오는 중입니다...</td></tr>';
+            try {
+                const response = await fetch(`${GRAD_JEONGSI_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' });
+                if (!response.ok) throw new Error('네트워크 오류');
+                const csvText = await response.text();
+                Papa.parse(csvText, {
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        const rows = results.data || [];
+                        if (rows.length <= 1) {
+                            if (tbody) tbody.innerHTML = '<tr><td colspan="11" class="text-center py-10 text-gray-500">졸업생 정시 결과 데이터가 없습니다.</td></tr>';
+                            gradJeongsiDataLoaded = true;
+                            return;
+                        }
+                        rawGradJeongsiData = rows.slice(1);
+                        populateGradJeongsiFilters();
+                        renderGradJeongsiHeaders();
+                        applyGradJeongsiFilter();
+                        gradJeongsiDataLoaded = true;
+                    },
+                    error: (error) => { throw error; }
+                });
+            } catch (error) {
+                console.error('졸업생 정시 결과 데이터 로드 실패:', error);
+                if (tbody) tbody.innerHTML = '<tr><td colspan="11" class="text-center py-10 text-red-500">정시 결과 데이터를 불러오지 못했습니다. Google Sheets 공개 설정과 네트워크를 확인해 주세요.</td></tr>';
+            }
+        }
+
+        function populateGradJeongsiFilters() {
+            const yearSelect = document.getElementById('gradJeongsiFilterYear');
+            const univSelect = document.getElementById('gradJeongsiFilterUniv');
+            const resultSelect = document.getElementById('gradJeongsiFilterResult');
+            const selectedYear = yearSelect?.value || '';
+            const selectedUniv = univSelect?.value || '';
+            const selectedResult = resultSelect?.value || '';
+            const years = [...new Set(rawGradJeongsiData.map(row => String(row[0] || '').trim()).filter(Boolean))].sort((a,b) => Number(b)-Number(a));
+            const universities = [...new Set(rawGradJeongsiData.map(row => String(row[6] || '').trim()).filter(Boolean))].sort();
+            const results = [...new Set(rawGradJeongsiData.map(row => String(row[12] || '').trim()).filter(Boolean))].sort();
+            if (yearSelect) {
+                yearSelect.innerHTML = '<option value="">연도 전체</option>';
+                years.forEach(value => yearSelect.add(new Option(value + '년', value)));
+                yearSelect.value = years.includes(selectedYear) ? selectedYear : '';
+            }
+            if (univSelect) {
+                univSelect.innerHTML = '<option value="">대학명 전체</option>';
+                universities.forEach(value => univSelect.add(new Option(value, value)));
+                univSelect.value = universities.includes(selectedUniv) ? selectedUniv : '';
+            }
+            if (resultSelect) {
+                resultSelect.innerHTML = '<option value="">최종결과 전체</option>';
+                results.forEach(value => resultSelect.add(new Option(value, value)));
+                resultSelect.value = results.includes(selectedResult) ? selectedResult : '';
+            }
+        }
+
+        function renderGradJeongsiHeaders() {
+            const row = document.getElementById('gradJeongsiTableHeaderRow');
+            if (!row) return;
+            row.innerHTML = gradJeongsiColOrder.map(index => {
+                const active = gradJeongsiSortCol === index ? (gradJeongsiIsAscending ? ' ▲' : ' ▼') : '';
+                return `<th onclick="setGradJeongsiSort(${index})" class="cursor-pointer select-none hover:bg-blue-100 whitespace-nowrap" title="클릭하면 오름차순/내림차순 정렬">${gradJeongsiColLabels[index]}<span class="sort-icon">${active}</span></th>`;
+            }).join('');
+        }
+
+        function applyGradJeongsiFilter() {
+            const year = document.getElementById('gradJeongsiFilterYear')?.value || '';
+            const university = document.getElementById('gradJeongsiFilterUniv')?.value || '';
+            const major = (document.getElementById('gradJeongsiFilterMajor')?.value || '').trim().toLowerCase();
+            const result = document.getElementById('gradJeongsiFilterResult')?.value || '';
+            filteredGradJeongsiData = rawGradJeongsiData.filter(row =>
+                (!year || String(row[0] || '').trim() === year) &&
+                (!university || String(row[6] || '').trim() === university) &&
+                (!major || String(row[9] || '').toLowerCase().includes(major)) &&
+                (!result || String(row[12] || '').trim() === result)
+            );
+            renderGradJeongsiTable();
+        }
+
+        function setGradJeongsiSort(colIndex) {
+            if (gradJeongsiSortCol === colIndex) gradJeongsiIsAscending = !gradJeongsiIsAscending;
+            else { gradJeongsiSortCol = colIndex; gradJeongsiIsAscending = true; }
+            renderGradJeongsiHeaders();
+            renderGradJeongsiTable();
+        }
+
+        function renderGradJeongsiTable() {
+            const tbody = document.getElementById('gradJeongsiTableBody');
+            if (!tbody) return;
+            const data = [...filteredGradJeongsiData];
+            if (gradJeongsiSortCol !== null) {
+                data.sort((a,b) => {
+                    const av = String(a[gradJeongsiSortCol] ?? '').trim();
+                    const bv = String(b[gradJeongsiSortCol] ?? '').trim();
+                    if (!av || av === '-') return 1;
+                    if (!bv || bv === '-') return -1;
+                    const an = Number(av), bn = Number(bv);
+                    if (av !== '' && bv !== '' && Number.isFinite(an) && Number.isFinite(bn))
+                        return gradJeongsiIsAscending ? an-bn : bn-an;
+                    return gradJeongsiIsAscending ? av.localeCompare(bv, 'ko') : bv.localeCompare(av, 'ko');
+                });
+            }
+            const count = document.getElementById('gradJeongsiCount');
+            if (count) count.textContent = data.length;
+            const shown = data.slice(0, 100);
+            tbody.innerHTML = '';
+            if (!data.length) {
+                tbody.innerHTML = '<tr><td colspan="11" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
+                return;
+            }
+            shown.forEach(row => {
+                const tr = document.createElement('tr');
+                const result = String(row[12] || '').trim();
+                if (result.includes('합격') && !result.includes('불합격')) tr.classList.add('bg-blue-50');
+                if (result.includes('불합격')) tr.classList.add('bg-red-50');
+                tr.innerHTML = gradJeongsiColOrder.map(index => {
+                    let value = row[index] !== undefined && row[index] !== null && row[index] !== '' ? String(row[index]) : '-';
+                    if (index === 5 && value !== '-') value = blindName(value);
+                    let cls = '';
+                    if (index === 12) {
+                        if (value.includes('불합격')) cls = 'font-black text-red-700 text-base';
+                        else if (value.includes('합격')) cls = 'font-black text-blue-700 text-base';
+                        else cls = 'font-bold text-gray-800 text-base';
+                    } else if (index === 15) cls = 'font-bold text-gray-900 text-base bg-yellow-50/50';
+                    else if (index === 5 || index === 6) cls = 'font-bold text-gray-800';
+                    return `<td class="${cls}">${escapeHtmlGrad(value)}</td>`;
+                }).join('');
+                tbody.appendChild(tr);
+            });
         }
 
         let rawGradData = [];
