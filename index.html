@@ -2827,21 +2827,21 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         }
         window.renderSubjectTrend = renderSubjectTrend;
 
-        // 버튼 영역에 이벤트 위임을 한 번만 등록하여 학생 선택 및 그래프 재생성 후에도 클릭을 처리합니다.
-        const subjectTrendButtonArea = document.getElementById('subjectTrendButtons');
-        if (subjectTrendButtonArea && !subjectTrendButtonArea.dataset.clickHandlerBound) {
-            subjectTrendButtonArea.dataset.clickHandlerBound = 'true';
-            subjectTrendButtonArea.addEventListener('click', function(event) {
-                const button = event.target.closest('[data-subject-trend]');
-                if (!button || !subjectTrendButtonArea.contains(button)) return;
+        // 버튼이 동적으로 다시 그려지거나 화면에 늦게 생성되어도 클릭을 처리하도록 문서 단계에서 감지합니다.
+        if (!document.documentElement.dataset.subjectTrendClickBound) {
+            document.documentElement.dataset.subjectTrendClickBound = 'true';
+            document.addEventListener('click', function(event) {
+                const button = event.target.closest('#subjectTrendButtons [data-subject-trend]');
+                if (!button) return;
                 event.preventDefault();
+                event.stopPropagation();
                 const subject = button.getAttribute('data-subject-trend');
-                try {
-                    renderSubjectTrend(subject);
-                } catch (error) {
-                    console.error('과목별 성적 추이 그래프 표시 오류:', error);
+                if (typeof window.renderSubjectTrend === 'function') {
+                    window.renderSubjectTrend(subject);
+                } else {
+                    console.error('renderSubjectTrend 함수가 아직 준비되지 않았습니다.');
                 }
-            });
+            }, true);
         }
 
         // =====================================================================
