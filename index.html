@@ -3177,7 +3177,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const buttons = GRAD_SUMMARY_UNIVERSITIES.map(university => {
                 const universityRows = rows.filter(row => matchesGradSummaryUniversity(row[6], university.name));
                 const acceptedCount = universityRows.filter(row => {
-                    const result = String(row[12] || '').replace(/\\s+/g, '');
+                    const result = String(row[12] || '').replace(/\s+/g, '');
                     return result.includes('합격') && !result.includes('불합격');
                 }).length;
                 const active = gradJeongsiSummarySelection === university.name;
@@ -3197,7 +3197,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             ];
             const groups = categories.map(category => {
                 const values = subjectRows.filter(row => {
-                    const result = String(row[12] || '').replace(/\\s+/g, '');
+                    const result = String(row[12] || '').replace(/\s+/g, '');
                     if (category.key === '불합격') return result.includes('불합격');
                     const extra = result.includes('충원') || result.includes('추가');
                     if (category.key === '추가합격') return !result.includes('불합격') && result.includes('합격') && extra;
@@ -3214,7 +3214,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             let domainMax = Math.min(100, Math.ceil(Math.max(...allValues) / 5) * 5 + 5);
             if (domainMax <= domainMin) { domainMin = Math.max(0, domainMin - 5); domainMax = Math.min(100, domainMax + 5); }
             const span = domainMax - domainMin || 1;
-            const format = value => Number(value).toFixed(1).replace(/\\.0$/, '');
+            const format = value => Number(value).toFixed(1).replace(/\.0$/, '');
             const rangeBar = (group, top) => {
                 if (!group.values.length) return '';
                 const left = ((group.min - domainMin) / span) * 100;
