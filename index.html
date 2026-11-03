@@ -591,6 +591,12 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                         <select id="gradJeongsiFilterUniv" class="border border-gray-300 rounded p-2 bg-white max-w-xs font-medium" onchange="applyGradJeongsiFilter()">
                             <option value="">대학명 전체</option>
                         </select>
+                        <select id="gradJeongsiFilterGroup" class="border border-gray-300 rounded p-2 bg-white font-medium" onchange="applyGradJeongsiFilter()">
+                            <option value="">모집 시기 전체</option>
+                            <option value="가군">가군</option>
+                            <option value="나군">나군</option>
+                            <option value="다군">다군</option>
+                        </select>
                         <input type="text" id="gradJeongsiFilterMajor" placeholder="전형-모집단위 검색" class="border border-gray-300 rounded p-2 w-56 font-medium" onkeyup="applyGradJeongsiFilter()">
                         <select id="gradJeongsiFilterResult" class="border border-gray-300 rounded p-2 bg-white font-medium" onchange="applyGradJeongsiFilter()">
                             <option value="">최종결과 전체</option>
@@ -3102,6 +3108,8 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const resultSelect = document.getElementById('gradJeongsiFilterResult');
             const selectedYear = yearSelect?.value || '';
             const selectedUniv = univSelect?.value || '';
+            const groupSelect = document.getElementById('gradJeongsiFilterGroup');
+            const selectedGroup = groupSelect?.value || '';
             const selectedResult = resultSelect?.value || '';
             const years = [...new Set(rawGradJeongsiData.map(row => String(row[0] || '').trim()).filter(Boolean))].sort((a,b) => Number(b)-Number(a));
             const universities = [...new Set(rawGradJeongsiData.map(row => String(row[6] || '').trim()).filter(Boolean))].sort();
@@ -3150,12 +3158,17 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         function applyGradJeongsiFilter() {
             const year = document.getElementById('gradJeongsiFilterYear')?.value || '';
             const university = document.getElementById('gradJeongsiFilterUniv')?.value || '';
+            const group = document.getElementById('gradJeongsiFilterGroup')?.value || '';
             const major = (document.getElementById('gradJeongsiFilterMajor')?.value || '').trim().toLowerCase();
             const result = document.getElementById('gradJeongsiFilterResult')?.value || '';
             gradJeongsiCurrentPage = 0;
             renderGradJeongsiUniversitySummary();
             filteredGradJeongsiData = rawGradJeongsiData.filter(row => {
                 if (year && String(row[0] || '').trim() !== year) return false;
+                if (group) {
+                    const recruitmentGroup = String(row[8] || '').replace(/\\s+/g, '');
+                    if (!recruitmentGroup.includes(group)) return false;
+                }
                 if (gradJeongsiSummarySelection) {
                     return matchesGradSummaryUniversity(row[6], gradJeongsiSummarySelection);
                 }
