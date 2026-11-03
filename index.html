@@ -612,7 +612,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                                 <tr id="gradJeongsiTableHeaderRow"></tr>
                             </thead>
                             <tbody id="gradJeongsiTableBody">
-                                <tr><td colspan="28" class="text-center py-10 text-gray-500">정시 결과 데이터를 불러오는 중입니다...</td></tr>
+                                <tr><td colspan="29" class="text-center py-10 text-gray-500">정시 결과 데이터를 불러오는 중입니다...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -3051,9 +3051,9 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         let gradJeongsiCurrentPage = 0;
         const gradJeongsiPageSize = 150;
         let gradJeongsiSummarySelection = null;
-        const gradJeongsiColOrder = [0, 1, 5, 6, 8, 9, 12, 15, ...Array.from({length: 20}, (_, i) => 100 + i)];
+        const gradJeongsiColOrder = [200, 0, 1, 5, 6, 8, 9, 12, 15, ...Array.from({length: 20}, (_, i) => 100 + i)];
         const gradJeongsiColLabels = {
-            0: '연도', 1: '학번', 5: '이름',
+            200: '성적연도', 0: '졸업연도', 1: '학번', 5: '이름',
             6: '대학교', 8: '모집 시기', 9: '전형-모집 단위', 12: '결과', 15: '후보 순위'
         };
         const gradSuneungColLabels = [
@@ -3066,7 +3066,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
 
         async function fetchGradJeongsiData() {
             const tbody = document.getElementById('gradJeongsiTableBody');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="28" class="text-center py-10 text-gray-500">정시 결과 및 졸업생 수능 성적 데이터를 불러오는 중입니다...</td></tr>';
+            if (tbody) tbody.innerHTML = '<tr><td colspan="29" class="text-center py-10 text-gray-500">정시 결과 및 졸업생 수능 성적 데이터를 불러오는 중입니다...</td></tr>';
             try {
                 const [jeongsiResponse, suneungResponse] = await Promise.all([
                     fetch(`${GRAD_JEONGSI_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' }),
@@ -3112,7 +3112,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const selectedYear = yearSelect?.value || '';
             const selectedUniv = univSelect?.value || '';
             const selectedResult = resultSelect?.value || '';
-            const years = [...new Set(rawGradJeongsiData.map(row => String(row[0] || '').trim()).filter(Boolean))].sort((a,b) => Number(b)-Number(a));
+            const years = [...new Set(rawGradJeongsiData.map(row => String(row[16] || '').trim()).filter(Boolean))].sort((a,b) => Number(b)-Number(a));
             const universities = [...new Set(rawGradJeongsiData.map(row => String(row[6] || '').trim()).filter(Boolean))].sort();
             const normalizeResult = value => {
                 const normalized = String(value || '').replace(/\s+/g, '');
@@ -3123,7 +3123,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             };
             const results = [...new Set(rawGradJeongsiData.map(row => normalizeResult(row[12])).filter(Boolean))].sort();
             if (yearSelect) {
-                yearSelect.innerHTML = '<option value="">연도 전체</option>';
+                yearSelect.innerHTML = '<option value="">성적연도 전체</option>';
                 years.forEach(value => yearSelect.add(new Option(value + '년', value)));
                 yearSelect.value = years.includes(selectedYear) ? selectedYear : '';
             }
@@ -3165,7 +3165,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             gradJeongsiCurrentPage = 0;
             renderGradJeongsiUniversitySummary();
             filteredGradJeongsiData = rawGradJeongsiData.filter(row => {
-                if (year && String(row[0] || '').trim() !== year) return false;
+                if (year && String(row[16] || '').trim() !== year) return false;
                 if (group) {
                     const recruitmentGroup = String(row[8] || '').replace(/\\s+/g, '');
                     if (!recruitmentGroup.includes(group)) return false;
@@ -3206,7 +3206,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const box = document.getElementById('gradJeongsiUniversitySummary');
             if (!box) return;
             const year = document.getElementById('gradJeongsiFilterYear')?.value || '';
-            const rows = rawGradJeongsiData.filter(row => !year || String(row[0] || '').trim() === year);
+            const rows = rawGradJeongsiData.filter(row => !year || String(row[16] || '').trim() === year);
             const buttons = GRAD_SUMMARY_UNIVERSITIES.map(university => {
                 const universityRows = rows.filter(row => matchesGradSummaryUniversity(row[6], university.name));
                 const acceptedCount = universityRows.filter(row => {
@@ -3284,8 +3284,8 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                         if (resultOrder !== 0) return resultOrder;
                     }
                     if (gradJeongsiSortCol !== null) {
-                        const av = String(gradJeongsiSortCol >= 100 ? (a._suneung?.[gradJeongsiSortCol - 100] ?? '') : (a[gradJeongsiSortCol] ?? '')).trim();
-                        const bv = String(gradJeongsiSortCol >= 100 ? (b._suneung?.[gradJeongsiSortCol - 100] ?? '') : (b[gradJeongsiSortCol] ?? '')).trim();
+                        const av = String(gradJeongsiSortCol >= 200 ? (gradJeongsiSortCol === 200 ? (a[16] ?? '') : (a._suneung?.[gradJeongsiSortCol - 100] ?? '')) : (a[gradJeongsiSortCol] ?? '')).trim();
+                        const bv = String(gradJeongsiSortCol >= 200 ? (gradJeongsiSortCol === 200 ? (b[16] ?? '') : (b._suneung?.[gradJeongsiSortCol - 100] ?? '')) : (b[gradJeongsiSortCol] ?? '')).trim();
                         if (!av || av === '-') return 1;
                         if (!bv || bv === '-') return -1;
                         const an = Number(av), bn = Number(bv);
@@ -3319,7 +3319,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 if (result.includes('합격') && !result.includes('불합격')) tr.classList.add('bg-blue-50');
                 if (result.includes('불합격')) tr.classList.add('bg-red-50');
                 tr.innerHTML = gradJeongsiColOrder.map(index => {
-                    const cellValue = index >= 100 ? row._suneung?.[index - 100] : row[index];
+                    const cellValue = index === 200 ? row[16] : (index >= 100 ? row._suneung?.[index - 100] : row[index]);
                     let value = cellValue !== undefined && cellValue !== null && cellValue !== '' ? String(cellValue) : '-';
                     if (index === 5 && value !== '-') value = blindName(value);
                     let cls = '';
