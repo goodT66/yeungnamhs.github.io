@@ -3157,9 +3157,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             filteredGradJeongsiData = rawGradJeongsiData.filter(row => {
                 if (year && String(row[0] || '').trim() !== year) return false;
                 if (gradJeongsiSummarySelection) {
-                    if (!matchesGradSummaryUniversity(row[6], gradJeongsiSummarySelection)) return false;
-                    const status = normalizeGradJeongsiResult(row[12]);
-                    return status === '합격' || status === '추가합격';
+                    return matchesGradSummaryUniversity(row[6], gradJeongsiSummarySelection);
                 }
                 if (university && String(row[6] || '').trim() !== university) return false;
                 if (major && !String(row[9] || '').toLowerCase().includes(major)) return false;
@@ -3260,16 +3258,30 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const tbody = document.getElementById('gradJeongsiTableBody');
             if (!tbody) return;
             const data = [...filteredGradJeongsiData];
-            if (gradJeongsiSortCol !== null) {
+            if (gradJeongsiSummarySelection || gradJeongsiSortCol !== null) {
                 data.sort((a,b) => {
-                    const av = String(gradJeongsiSortCol >= 100 ? (a._suneung?.[gradJeongsiSortCol - 100] ?? '') : (a[gradJeongsiSortCol] ?? '')).trim();
-                    const bv = String(gradJeongsiSortCol >= 100 ? (b._suneung?.[gradJeongsiSortCol - 100] ?? '') : (b[gradJeongsiSortCol] ?? '')).trim();
-                    if (!av || av === '-') return 1;
-                    if (!bv || bv === '-') return -1;
-                    const an = Number(av), bn = Number(bv);
-                    if (av !== '' && bv !== '' && Number.isFinite(an) && Number.isFinite(bn))
-                        return gradJeongsiIsAscending ? an-bn : bn-an;
-                    return gradJeongsiIsAscending ? av.localeCompare(bv, 'ko') : bv.localeCompare(av, 'ko');
+                    if (gradJeongsiSummarySelection) {
+                        const rank = value => {
+                            const status = normalizeGradJeongsiResult(value);
+                            if (status === '합격') return 0;
+                            if (status === '추가합격') return 1;
+                            if (status === '불합격') return 2;
+                            return 3;
+                        };
+                        const resultOrder = rank(a[12]) - rank(b[12]);
+                        if (resultOrder !== 0) return resultOrder;
+                    }
+                    if (gradJeongsiSortCol !== null) {
+                        const av = String(gradJeongsiSortCol >= 100 ? (a._suneung?.[gradJeongsiSortCol - 100] ?? '') : (a[gradJeongsiSortCol] ?? '')).trim();
+                        const bv = String(gradJeongsiSortCol >= 100 ? (b._suneung?.[gradJeongsiSortCol - 100] ?? '') : (b[gradJeongsiSortCol] ?? '')).trim();
+                        if (!av || av === '-') return 1;
+                        if (!bv || bv === '-') return -1;
+                        const an = Number(av), bn = Number(bv);
+                        if (av !== '' && bv !== '' && Number.isFinite(an) && Number.isFinite(bn))
+                            return gradJeongsiIsAscending ? an-bn : bn-an;
+                        return gradJeongsiIsAscending ? av.localeCompare(bv, 'ko') : bv.localeCompare(av, 'ko');
+                    }
+                    return 0;
                 });
             }
             const count = document.getElementById('gradJeongsiCount');
