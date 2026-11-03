@@ -3105,7 +3105,14 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const selectedResult = resultSelect?.value || '';
             const years = [...new Set(rawGradJeongsiData.map(row => String(row[0] || '').trim()).filter(Boolean))].sort((a,b) => Number(b)-Number(a));
             const universities = [...new Set(rawGradJeongsiData.map(row => String(row[6] || '').trim()).filter(Boolean))].sort();
-            const results = [...new Set(rawGradJeongsiData.map(row => String(row[12] || '').trim()).filter(Boolean))].sort();
+            const normalizeResult = value => {
+                const normalized = String(value || '').replace(/\s+/g, '');
+                if (normalized.includes('불')) return '불합격';
+                if (normalized.includes('충원') || normalized.includes('추가')) return '추가합격';
+                if (normalized.includes('합격')) return '합격';
+                return String(value || '').trim();
+            };
+            const results = [...new Set(rawGradJeongsiData.map(row => normalizeResult(row[12])).filter(Boolean))].sort();
             if (yearSelect) {
                 yearSelect.innerHTML = '<option value="">연도 전체</option>';
                 years.forEach(value => yearSelect.add(new Option(value + '년', value)));
@@ -3132,6 +3139,14 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             }).join('');
         }
 
+        function normalizeGradJeongsiResult(value) {
+            const normalized = String(value || '').replace(/\s+/g, '');
+            if (normalized.includes('불')) return '불합격';
+            if (normalized.includes('충원') || normalized.includes('추가')) return '추가합격';
+            if (normalized.includes('합격')) return '합격';
+            return String(value || '').trim();
+        }
+
         function applyGradJeongsiFilter() {
             const year = document.getElementById('gradJeongsiFilterYear')?.value || '';
             const university = document.getElementById('gradJeongsiFilterUniv')?.value || '';
@@ -3139,12 +3154,18 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const result = document.getElementById('gradJeongsiFilterResult')?.value || '';
             gradJeongsiCurrentPage = 0;
             renderGradJeongsiUniversitySummary();
-            filteredGradJeongsiData = rawGradJeongsiData.filter(row =>
-                (!year || String(row[0] || '').trim() === year) &&
-                (!university || String(row[6] || '').trim() === university) &&
-                (!major || String(row[9] || '').toLowerCase().includes(major)) &&
-                (!result || String(row[12] || '').trim() === result)
-            );
+            filteredGradJeongsiData = rawGradJeongsiData.filter(row => {
+                if (year && String(row[0] || '').trim() !== year) return false;
+                if (gradJeongsiSummarySelection) {
+                    if (!matchesGradSummaryUniversity(row[6], gradJeongsiSummarySelection)) return false;
+                    const status = normalizeGradJeongsiResult(row[12]);
+                    return status === '합격' || status === '추가합격';
+                }
+                if (university && String(row[6] || '').trim() !== university) return false;
+                if (major && !String(row[9] || '').toLowerCase().includes(major)) return false;
+                if (result && normalizeGradJeongsiResult(row[12]) !== result) return false;
+                return true;
+            });
             renderGradJeongsiTable();
         }
 
@@ -3165,7 +3186,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
 
         function selectGradJeongsiSummary(university) {
             gradJeongsiSummarySelection = gradJeongsiSummarySelection === university ? null : university;
-            renderGradJeongsiUniversitySummary();
+            applyGradJeongsiFilter();
         }
         window.selectGradJeongsiSummary = selectGradJeongsiSummary;
 
@@ -3177,8 +3198,8 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const buttons = GRAD_SUMMARY_UNIVERSITIES.map(university => {
                 const universityRows = rows.filter(row => matchesGradSummaryUniversity(row[6], university.name));
                 const acceptedCount = universityRows.filter(row => {
-                    const result = String(row[12] || '').replace(/\s+/g, '');
-                    return result.includes('합격') && !result.includes('불합격');
+                    const result = normalizeGradJeongsiResult(row[12]);
+                    return result === '합격' || result === '추가합격';
                 }).length;
                 const active = gradJeongsiSummarySelection === university.name;
                 return `<button type="button" onclick="selectGradJeongsiSummary('${escapeHtmlGrad(university.name)}')" class="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm cursor-pointer transition" style="${active ? 'background-color:#3730a3;border-color:#312e81;color:#fff;' : 'background-color:#eef2ff;border-color:#c7d2fe;color:#374151;'}"><span class="font-semibold">${escapeHtmlGrad(university.name)}</span><strong style="color:${active ? '#fff' : '#1d4ed8'}">${acceptedCount}건</strong></button>`;
