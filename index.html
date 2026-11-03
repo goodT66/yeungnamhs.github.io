@@ -3113,6 +3113,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             }[majorName] || [];
             if (!aliases.length) return false;
             if (majorName === '의예과·의학과') return aliases.includes(unit);
+            if (majorName === '약학과') return ['약학과', '약학부', '약학과(6년제)', '약학대학'].includes(unit);
             return aliases.some(alias => unit.includes(alias));
         }
         function isGradEssayAdmission(row) {
