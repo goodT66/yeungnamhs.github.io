@@ -5062,7 +5062,7 @@ function renderLookupSusiRows(values=[]){
       if(isThirdGrade&&key==='detail')return;
       const td=document.createElement('td');td.className='border border-slate-300 p-1';
       const input=document.createElement(key==='csat'?'textarea':'input');
-      const valueClasses='w-full border border-slate-200 rounded p-2 text-base font-bold';
+      const valueClasses='w-full border-0 bg-transparent rounded-none p-2 text-lg font-bold text-center focus:outline-none focus:ring-0';
       if(key==='csat'){input.rows=2;input.className=valueClasses+' min-w-[150px] resize-y';}
       else {input.type='text';input.className=valueClasses+' min-w-[90px]';}
       if(isThirdGrade&&(key==='university'||key==='unit'))input.classList.add('text-blue-700');
