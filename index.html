@@ -2759,37 +2759,39 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         window.renderMockData = renderMockData;
 
         function renderSubjectTrend(subject) {
-            const sid = document.getElementById('studentSelect').value;
-            if (!sid || !studentMap.has(sid) || !chartInstance) {
+            const sid = document.getElementById('studentSelect')?.value || '';
+            const info = studentMap.get(sid);
+            if (!sid || !info || !Array.isArray(info.records) || !chartInstance) {
                 console.warn('과목별 성적 추이를 표시할 학생 또는 그래프가 없습니다.', { sid, chartReady: !!chartInstance });
                 return;
             }
-            const info = studentMap.get(sid);
+
             const configs = {
-                kor: { label: '국어 백분위', key: 'korPtc', subjectKey: 'korSubject', color: '#ef4444', format: 'percentile' },
-                math: { label: '수학 백분위', key: 'mathPtc', subjectKey: 'mathSubject', color: '#3b82f6', format: 'percentile' },
+                kor: { label: '국어 백분위', key: 'korPtc', color: '#ef4444', format: 'percentile' },
+                math: { label: '수학 백분위', key: 'mathPtc', color: '#3b82f6', format: 'percentile' },
                 eng: { label: '영어 등급', key: 'engGrd', color: '#8b5cf6', format: 'grade' },
                 hist: { label: '한국사 등급', key: 'histGrd', color: '#f59e0b', format: 'grade' },
-                inq1: { label: '탐구1 백분위', key: 'inq1Ptc', subjectKey: 'inq1Sub', color: '#10b981', format: 'percentile' },
-                inq2: { label: '탐구2 백분위', key: 'inq2Ptc', subjectKey: 'inq2Sub', color: '#a855f7', format: 'percentile' }
+                inq1: { label: '탐구1 백분위', key: 'inq1Ptc', color: '#10b981', format: 'percentile' },
+                inq2: { label: '탐구2 백분위', key: 'inq2Ptc', color: '#a855f7', format: 'percentile' }
             };
             const config = configs[subject];
             if (!config) return;
 
-            // 해당 과목 버튼을 누를 때마다 그래프 선을 표시하거나 제거합니다.
+            // 버튼을 다시 누르면 해당 과목 선만 제거하고, 처음 누르면 기존 평균 그래프에 추가합니다.
             if (selectedSubjectTrends.has(subject)) selectedSubjectTrends.delete(subject);
             else selectedSubjectTrends.add(subject);
 
-            chartInstance.data.datasets = chartInstance.data.datasets.filter(dataset => !dataset.subjectTrendKey);
-            selectedSubjectTrends.forEach(key => {
+            const baseDatasets = chartInstance.data.datasets.filter(dataset => !dataset.subjectTrendKey);
+            const subjectDatasets = Array.from(selectedSubjectTrends).map(key => {
                 const item = configs[key];
                 const values = info.records.map(record => {
                     const raw = record[item.key];
-                    if (raw === null || raw === undefined || raw === '' || raw === '-') return null;
-                    const value = parseFloat(raw);
+                    if (raw === null || raw === undefined || String(raw).trim() === '' || String(raw).trim() === '-') return null;
+                    const normalized = String(raw).replace(/,/g, '').replace(/%/g, '').trim();
+                    const value = Number(normalized);
                     return Number.isFinite(value) ? value : null;
                 });
-                chartInstance.data.datasets.push({
+                return {
                     subjectTrendKey: key,
                     label: item.label,
                     data: values,
@@ -2797,16 +2799,25 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     backgroundColor: item.color,
                     borderWidth: 3,
                     pointRadius: 5,
+                    pointHoverRadius: 7,
+                    fill: false,
+                    tension: 0.2,
                     spanGaps: false,
                     yAxisID: item.format === 'grade' ? 'gradeAxis' : 'y'
-                });
+                };
             });
 
+            chartInstance.data.datasets = [...baseDatasets, ...subjectDatasets];
             const hasGradeTrend = Array.from(selectedSubjectTrends).some(key => configs[key].format === 'grade');
             chartInstance.options.scales = chartInstance.options.scales || {};
-            chartInstance.options.scales.y = chartInstance.options.scales.y || {
-                type: 'linear', display: true, position: 'left', min: 0, max: 100,
-                ticks: { stepSize: 10 }, grid: { drawOnChartArea: true }
+            chartInstance.options.scales.y = {
+                ...(chartInstance.options.scales.y || {}),
+                type: 'linear',
+                display: true,
+                position: 'left',
+                min: 0,
+                max: 100,
+                ticks: { ...(chartInstance.options.scales.y?.ticks || {}), stepSize: 10 }
             };
             chartInstance.options.scales.gradeAxis = {
                 type: 'linear',
