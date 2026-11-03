@@ -2705,6 +2705,10 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     maintainAspectRatio: false, 
                     plugins: { 
                         title: { display: false },
+                        legend: {
+                            // 그래프 상단 범례 클릭으로 데이터 선을 추가하거나 숨기지 않습니다.
+                            onClick: function() {}
+                        },
                         datalabels: {
                             display: function(context) { return context.dataset.label === '국수탐 평균'; },
                             align: 'top', anchor: 'end', color: '#10b981', font: { weight: '900', size: 14 },
