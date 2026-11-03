@@ -3108,8 +3108,6 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const resultSelect = document.getElementById('gradJeongsiFilterResult');
             const selectedYear = yearSelect?.value || '';
             const selectedUniv = univSelect?.value || '';
-            const groupSelect = document.getElementById('gradJeongsiFilterGroup');
-            const selectedGroup = groupSelect?.value || '';
             const selectedResult = resultSelect?.value || '';
             const years = [...new Set(rawGradJeongsiData.map(row => String(row[0] || '').trim()).filter(Boolean))].sort((a,b) => Number(b)-Number(a));
             const universities = [...new Set(rawGradJeongsiData.map(row => String(row[6] || '').trim()).filter(Boolean))].sort();
