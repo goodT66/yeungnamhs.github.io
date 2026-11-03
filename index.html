@@ -3222,16 +3222,14 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const subjectRows = yearRows.filter(row => matchesGradSummaryUniversity(row[6], universityName));
             const categories = [
                 { key: '불합격', label: '불합격', color: '#ef4444' },
-                { key: '합격', label: '합격', color: '#2563eb' },
-                { key: '추가합격', label: '추가합격', color: '#eab308' }
+                { key: '합격', label: '합격', color: '#2563eb' }
             ];
             const groups = categories.map(category => {
                 const values = subjectRows.filter(row => {
-                    const result = String(row[12] || '').replace(/\s+/g, '');
+                    const result = String(row[12] || '').replace(/\\s+/g, '');
                     if (category.key === '불합격') return result.includes('불합격');
-                    const extra = result.includes('충원') || result.includes('추가');
-                    if (category.key === '추가합격') return !result.includes('불합격') && result.includes('합격') && extra;
-                    return result.includes('합격') && !result.includes('불합격') && !extra;
+                    // 최초합격과 추가합격을 모두 '합격' 범위에 포함합니다.
+                    return result.includes('합격') && !result.includes('불합격');
                 }).map(row => {
                     const value = Number(String(row._suneung?.[1] ?? '').replace(/,/g, '').trim());
                     return Number.isFinite(value) && value > 0 ? value : null;
@@ -3262,7 +3260,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 guides.push(`<span style="position:absolute;top:4px;left:${position}%;height:105px;border-left:1px solid #9ca3af;opacity:.65;"></span><span style="position:absolute;top:112px;left:${position}%;transform:translateX(-50%);font-size:11px;font-weight:800;color:#111827;">${value}</span>`);
             }
             const summary = groups.map(group => `<div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-gray-200 bg-white px-3 py-2"><div class="flex items-center gap-2 text-sm font-bold" style="color:${group.color}"><i style="display:inline-block;width:14px;height:5px;border-radius:999px;background:${group.color}"></i>${group.label}</div><div class="text-sm font-bold text-gray-900">${group.values.length ? `${format(group.min)}~${format(group.max)} · ${group.values.length}명` : '백분위 자료 없음'}</div></div>`).join('');
-            return `<section class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-2"><h4 class="font-bold text-gray-800">${escapeHtmlGrad(universityName)} 국수탐 평균 백분위 범위</h4><span class="text-xs text-gray-500">검은 점은 개별 학생의 백분위</span></div><div style="position:relative;height:132px;border-radius:10px;background:#f3f4f6;overflow:visible;">${guides.join('')}${rangeBar(groups[0], 12)}${rangeBar(groups[1], 42)}${rangeBar(groups[2], 72)}</div><div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">${summary}</div></section>`;
+            return `<section class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-2"><h4 class="font-bold text-gray-800">${escapeHtmlGrad(universityName)} 국수탐 평균 백분위 범위</h4><span class="text-xs text-gray-500">검은 점은 개별 학생의 백분위</span></div><div style="position:relative;height:132px;border-radius:10px;background:#f3f4f6;overflow:visible;">${guides.join('')}${rangeBar(groups[0], 12)}${rangeBar(groups[1], 72)}</div><div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">${summary}</div></section>`;
         }
 
         function renderGradJeongsiTable() {
