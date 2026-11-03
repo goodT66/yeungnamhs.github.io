@@ -2766,19 +2766,29 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             if (!tbody) return;
             tbody.innerHTML = '';
             [...records].reverse().forEach(r => {
-                const grades = [r.korGrd, r.mathGrd, r.engGrd, [r.inq1Grd, r.inq2Grd]
-                    .map(value => Number(value))
-                    .filter(value => Number.isFinite(value) && value > 0)
-                    .sort((a, b) => a - b)[0]]
-                    .map(value => Number(value))
-                    .filter(value => Number.isFinite(value) && value > 0)
-                    .sort((a, b) => a - b);
-                const cutoffValue = grades.length >= mockCutoffCount
-                    ? (mockCutoffCount === 1 ? grades[0] : grades.slice(0, mockCutoffCount).reduce((sum, grade) => sum + grade, 0))
+                const gradeItems = [
+                    { subject: r.korSubject, grade: r.korGrd },
+                    { subject: r.mathSubject, grade: r.mathGrd },
+                    { subject: '영어', grade: r.engGrd },
+                    { subject: Number(r.inq1Grd) > 0 && Number(r.inq2Grd) > 0
+                        ? (Number(r.inq1Grd) <= Number(r.inq2Grd) ? r.inq1Sub : r.inq2Sub)
+                        : (Number(r.inq1Grd) > 0 ? r.inq1Sub : r.inq2Sub),
+                      grade: [r.inq1Grd, r.inq2Grd]
+                        .map(value => Number(value))
+                        .filter(value => Number.isFinite(value) && value > 0)
+                        .sort((a, b) => a - b)[0] }
+                ].map(item => ({
+                    subject: String(item.subject ?? '').trim().charAt(0),
+                    grade: Number(item.grade)
+                })).filter(item => item.subject && Number.isFinite(item.grade) && item.grade > 0)
+                  .sort((a, b) => a.grade - b.grade);
+                const selectedGrades = gradeItems.slice(0, mockCutoffCount);
+                const cutoffValue = selectedGrades.length === mockCutoffCount
+                    ? `${selectedGrades.map(item => item.subject).join(',')} ${selectedGrades.reduce((sum, item) => sum + item.grade, 0)}등급`
                     : '-';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td>${r.title}</td>
-                <td class="text-amber-700 font-bold bg-amber-50/40">${cutoffValue === '-' ? '-' : cutoffValue + '등급'}</td>
+                <td class="text-amber-700 font-bold bg-amber-50/40">${cutoffValue}</td>
                 <td class="text-emerald-700 font-bold bg-emerald-50/40">${r.avg !== '' && r.avg !== null && r.avg !== undefined ? r.avg : '-'}</td>
                 <td>${r.korSubject}</td><td>${r.korStd}</td><td>${r.korPtc ?? '-'}</td><td class="text-red-600 font-bold">${r.korGrd}</td>
                 <td>${r.mathSubject}</td><td>${r.mathStd}</td><td>${r.mathPtc ?? '-'}</td><td class="text-blue-600 font-bold">${r.mathGrd}</td>
