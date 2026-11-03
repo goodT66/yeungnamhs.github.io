@@ -5039,7 +5039,7 @@ function renderLookupMockScore(){
 }
 async function refreshLookupMockExams(){
  const sel=document.getElementById('lookupMockExam'),status=document.getElementById('lookupMockStatus');sel.disabled=true;sel.innerHTML='<option value="">모의고사 종류 불러오는 중...</option>';
- try{await loadLookupMockRows();const exams=[...new Set(lookupCurrentMockRows().map(r=>r.exam).filter(Boolean))];sel.innerHTML='<option value="">모의고사 선택</option>';exams.forEach(e=>sel.add(new Option(e,e)));sel.disabled=!exams.length;if(!exams.length){status.textContent='선택한 학생의 성적을 찾지 못했습니다. 학번과 이름 형식을 확인해 주세요.';return;}sel.value=exams[0];renderLookupMockScore();}catch(e){sel.innerHTML='<option value="">성적 자료를 불러오지 못했습니다</option>';status.textContent='모의고사 시트를 읽지 못했습니다. 시트 공유 권한을 확인해 주세요.';}
+ try{await loadLookupMockRows();const exams=[...new Set(lookupCurrentMockRows().map(r=>r.exam).filter(Boolean))].sort((a,b)=>{const getKey=value=>{const match=String(value).match(/(\\d{4})\\D*(\\d{1,2})\\s*월?/);return match?Number(match[1])*100+Number(match[2]):0;};return getKey(b)-getKey(a);});sel.innerHTML='<option value="">모의고사 선택</option>';exams.forEach(e=>sel.add(new Option(e,e)));sel.disabled=!exams.length;if(!exams.length){status.textContent='선택한 학생의 성적을 찾지 못했습니다. 학번과 이름 형식을 확인해 주세요.';return;}sel.value=exams[0];renderLookupMockScore();}catch(e){sel.innerHTML='<option value="">성적 자료를 불러오지 못했습니다</option>';status.textContent='모의고사 시트를 읽지 못했습니다. 시트 공유 권한을 확인해 주세요.';}
 }
 const LOOKUP_SUSI_FIELDS = [
   ['university','대학교'],['type','전형 유형'],['detail','세부 전형'],['unit','모집 단위'],['recruitment','모집 인원'],['csat','최저학력기준'],['date','면접/논술 일자']
