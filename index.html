@@ -3230,7 +3230,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 return { ...category, values, min: values.length ? Math.min(...values) : null, max: values.length ? Math.max(...values) : null };
             });
             const allValues = groups.flatMap(group => group.values);
-            if (!allValues.length) return `<div class="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">${escapeHtmlGrad(universityName)} 자료에서 표시할 국수탐 평균 백분위가 없습니다.</div>`;
+            if (!allValues.length) return `<div class="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-blue-600">${escapeHtmlGrad(universityName)} 자료에서 표시할 국수탐 평균 백분위가 없습니다.<br>재수생, N수생의 경우 대학수학능력시험 성적 결과가 없으므로, 표시되지 않습니다.</div>`;
             let domainMin = Math.max(0, Math.floor(Math.min(...allValues) / 5) * 5 - 5);
             let domainMax = Math.min(100, Math.ceil(Math.max(...allValues) / 5) * 5 + 5);
             if (domainMax <= domainMin) { domainMin = Math.max(0, domainMin - 5); domainMax = Math.min(100, domainMax + 5); }
