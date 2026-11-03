@@ -296,7 +296,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                 <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">📈</span><span class="min-w-0 leading-snug">개별 모의고사 성적</span>
             </button>
             <button type="button" onclick="openGradView()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-violet-200 bg-violet-50 text-violet-900 text-left text-xl xl:text-2xl font-extrabold shadow-sm hover:bg-violet-100 hover:border-violet-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-violet-300 transition duration-150">
-                <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">🎓</span><span class="min-w-0 leading-snug">졸업생 수시 결과</span>
+                <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">🎓</span><span class="min-w-0 leading-snug">졸업생 수시/정시 결과</span>
             </button>
             <button type="button" onclick="openSusiResultView()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-left text-xl xl:text-2xl font-extrabold shadow-sm hover:bg-amber-100 hover:border-amber-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-amber-300 transition duration-150">
                 <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">📝</span><span class="min-w-0 leading-snug whitespace-nowrap" style="white-space:nowrap;">정시 입결 조회</span>
@@ -529,9 +529,15 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         <!-- [화면 3] 졸업생 수시 결과 화면 -->
         <div id="gradView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-red-500">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
-                <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    <span class="text-3xl">🎓</span> 졸업생 수시 결과 조회
-                </h3>
+                <div class="flex flex-wrap items-center gap-4">
+                    <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <span class="text-3xl">🎓</span> 졸업생 결과 조회
+                    </h3>
+                    <div class="flex flex-wrap items-center gap-2" role="tablist" aria-label="졸업생 결과 구분">
+                        <button type="button" id="gradSusiTab" role="tab" aria-selected="true" onclick="switchGradResultTab('susi')" class="px-4 py-2 rounded-lg border border-red-600 bg-red-600 text-white font-bold shadow-sm transition-colors">졸업생 수시 결과</button>
+                        <button type="button" id="gradJeongsiTab" role="tab" aria-selected="false" onclick="switchGradResultTab('jeongsi')" class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 transition-colors">졸업생 정시 결과</button>
+                    </div>
+                </div>
                 <button onclick="showMainDashboard()" class="mt-4 sm:mt-0 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
                     <span>◀</span> 메인 화면으로
                 </button>
@@ -541,6 +547,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                 <p class="text-gray-600">우측 상단의 [교사 인증 (Google 로그인)] 버튼을 클릭해 주세요.</p>
             </div>
             <div id="gradContent" class="hidden">
+                <div id="gradSusiTabContent">
                 <div id="gradUniversitySummary" class="mb-3 p-3 bg-white border border-green-200 rounded-lg shadow-sm" aria-live="polite"></div>
                 <div class="mb-4 flex flex-wrap gap-4 items-center bg-green-50 p-4 rounded-lg border border-green-200">
                     <select id="filterYear" class="border border-gray-300 rounded p-2 bg-white font-medium" onchange="applyGradFilter()">
@@ -573,6 +580,14 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                             <tr><td colspan="16" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>
                         </tbody>
                     </table>
+                </div>
+                </div>
+                <div id="gradJeongsiTabContent" class="hidden">
+                    <div class="text-center py-16 bg-gray-50 border border-gray-200 rounded-xl">
+                        <div class="text-4xl mb-3">📊</div>
+                        <h4 class="text-xl font-bold text-gray-800 mb-2">졸업생 정시 결과</h4>
+                        <p class="text-gray-500">정시 결과 데이터 연결 예정입니다.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2972,6 +2987,26 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         // =====================================================================
         // [기능 2] 졸업생 수시 결과 스크립트
         // =====================================================================
+        function switchGradResultTab(tab) {
+            const isSusi = tab === 'susi';
+            document.getElementById('gradSusiTabContent')?.classList.toggle('hidden', !isSusi);
+            document.getElementById('gradJeongsiTabContent')?.classList.toggle('hidden', isSusi);
+            const susiButton = document.getElementById('gradSusiTab');
+            const jeongsiButton = document.getElementById('gradJeongsiTab');
+            if (susiButton) {
+                susiButton.className = isSusi
+                    ? 'px-4 py-2 rounded-lg border border-red-600 bg-red-600 text-white font-bold shadow-sm transition-colors'
+                    : 'px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 transition-colors';
+                susiButton.setAttribute('aria-selected', isSusi ? 'true' : 'false');
+            }
+            if (jeongsiButton) {
+                jeongsiButton.className = !isSusi
+                    ? 'px-4 py-2 rounded-lg border border-red-600 bg-red-600 text-white font-bold shadow-sm transition-colors'
+                    : 'px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 transition-colors';
+                jeongsiButton.setAttribute('aria-selected', !isSusi ? 'true' : 'false');
+            }
+        }
+
         let rawGradData = [];
         let filteredGradData = [];
         let gradHeaders = [];
