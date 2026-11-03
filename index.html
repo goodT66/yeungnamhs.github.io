@@ -2808,7 +2808,16 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     pointHoverRadius: config.type === 'bar' ? 0 : 7,
                     fill: false,
                     tension: 0.2,
-                    spanGaps: false
+                    spanGaps: false,
+                    datalabels: {
+                        display: true,
+                        align: 'top',
+                        anchor: 'end',
+                        offset: 4,
+                        color: config.color,
+                        font: { weight: '900', size: 12 },
+                        formatter: function(value) { return value; }
+                    }
                 });
                 selectedSubjectTrends.add(subject);
             }
