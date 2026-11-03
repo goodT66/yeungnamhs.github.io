@@ -583,6 +583,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                 </div>
                 </div>
                 <div id="gradJeongsiTabContent" class="hidden">
+                    <div id="gradJeongsiUniversitySummary" class="mb-3 p-3 bg-white border border-green-200 rounded-lg shadow-sm" aria-live="polite"></div>
                     <div class="mb-4 flex flex-wrap gap-4 items-center bg-green-50 p-4 rounded-lg border border-green-200">
                         <select id="gradJeongsiFilterYear" class="border border-gray-300 rounded p-2 bg-white font-medium" onchange="applyGradJeongsiFilter()">
                             <option value="">연도 전체</option>
@@ -605,9 +606,14 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                                 <tr id="gradJeongsiTableHeaderRow"></tr>
                             </thead>
                             <tbody id="gradJeongsiTableBody">
-                                <tr><td colspan="11" class="text-center py-10 text-gray-500">정시 결과 데이터를 불러오는 중입니다...</td></tr>
+                                <tr><td colspan="28" class="text-center py-10 text-gray-500">정시 결과 데이터를 불러오는 중입니다...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-center gap-3 mt-3 mb-2">
+                        <button type="button" id="gradJeongsiPrevPage" onclick="changeGradJeongsiPage(-1)" class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">이전</button>
+                        <span id="gradJeongsiPageInfo" class="text-sm font-semibold text-gray-700">0~0 / 총 0건 · 1 / 1페이지</span>
+                        <button type="button" id="gradJeongsiNextPage" onclick="changeGradJeongsiPage(1)" class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">다음</button>
                     </div>
                 </div>
             </div>
@@ -3036,6 +3042,9 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         let gradJeongsiDataLoaded = false;
         let gradJeongsiSortCol = null;
         let gradJeongsiIsAscending = true;
+        let gradJeongsiCurrentPage = 0;
+        const gradJeongsiPageSize = 150;
+        let gradJeongsiSummarySelection = null;
         const gradJeongsiColOrder = [0, 1, 5, 6, 8, 9, 12, 15, ...Array.from({length: 20}, (_, i) => 100 + i)];
         const gradJeongsiColLabels = {
             0: '연도', 1: '학번', 5: '이름',
@@ -3078,6 +3087,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 });
                 populateGradJeongsiFilters();
                 renderGradJeongsiHeaders();
+                renderGradJeongsiUniversitySummary();
                 applyGradJeongsiFilter();
                 gradJeongsiDataLoaded = true;
             } catch (error) {
@@ -3127,6 +3137,8 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const university = document.getElementById('gradJeongsiFilterUniv')?.value || '';
             const major = (document.getElementById('gradJeongsiFilterMajor')?.value || '').trim().toLowerCase();
             const result = document.getElementById('gradJeongsiFilterResult')?.value || '';
+            gradJeongsiCurrentPage = 0;
+            renderGradJeongsiUniversitySummary();
             filteredGradJeongsiData = rawGradJeongsiData.filter(row =>
                 (!year || String(row[0] || '').trim() === year) &&
                 (!university || String(row[6] || '').trim() === university) &&
@@ -3139,8 +3151,88 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         function setGradJeongsiSort(colIndex) {
             if (gradJeongsiSortCol === colIndex) gradJeongsiIsAscending = !gradJeongsiIsAscending;
             else { gradJeongsiSortCol = colIndex; gradJeongsiIsAscending = true; }
+            gradJeongsiCurrentPage = 0;
             renderGradJeongsiHeaders();
             renderGradJeongsiTable();
+        }
+
+        function changeGradJeongsiPage(direction) {
+            const pageCount = Math.max(1, Math.ceil(filteredGradJeongsiData.length / gradJeongsiPageSize));
+            gradJeongsiCurrentPage = Math.min(pageCount - 1, Math.max(0, gradJeongsiCurrentPage + direction));
+            renderGradJeongsiTable();
+        }
+        window.changeGradJeongsiPage = changeGradJeongsiPage;
+
+        function selectGradJeongsiSummary(university) {
+            gradJeongsiSummarySelection = gradJeongsiSummarySelection === university ? null : university;
+            renderGradJeongsiUniversitySummary();
+        }
+        window.selectGradJeongsiSummary = selectGradJeongsiSummary;
+
+        function renderGradJeongsiUniversitySummary() {
+            const box = document.getElementById('gradJeongsiUniversitySummary');
+            if (!box) return;
+            const year = document.getElementById('gradJeongsiFilterYear')?.value || '';
+            const rows = rawGradJeongsiData.filter(row => !year || String(row[0] || '').trim() === year);
+            const buttons = GRAD_SUMMARY_UNIVERSITIES.map(university => {
+                const universityRows = rows.filter(row => matchesGradSummaryUniversity(row[6], university.name));
+                const acceptedCount = universityRows.filter(row => {
+                    const result = String(row[12] || '').replace(/\\s+/g, '');
+                    return result.includes('합격') && !result.includes('불합격');
+                }).length;
+                const active = gradJeongsiSummarySelection === university.name;
+                return `<button type="button" onclick="selectGradJeongsiSummary('${escapeHtmlGrad(university.name)}')" class="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm cursor-pointer transition" style="${active ? 'background-color:#3730a3;border-color:#312e81;color:#fff;' : 'background-color:#eef2ff;border-color:#c7d2fe;color:#374151;'}"><span class="font-semibold">${escapeHtmlGrad(university.name)}</span><strong style="color:${active ? '#fff' : '#1d4ed8'}">${acceptedCount}건</strong></button>`;
+            });
+            const yearLabel = year ? `${escapeHtmlGrad(year)}학년도` : '전체 연도';
+            const chart = gradJeongsiSummarySelection ? renderGradJeongsiPercentileRangeChart(rows, gradJeongsiSummarySelection) : '';
+            box.innerHTML = `<div class="flex flex-wrap items-center gap-2"><strong class="text-gray-800 mr-1">${yearLabel} 주요 대학 정시 합격 현황</strong>${buttons.join('')}<span class="ml-2 text-sm font-semibold text-blue-700">* 대학 버튼을 누르면 지원자(불합격 포함)와 합격자의 국수탐 평균 백분위 범위를 확인할 수 있습니다.</span></div>${chart}`;
+        }
+
+        function renderGradJeongsiPercentileRangeChart(yearRows, universityName) {
+            const subjectRows = yearRows.filter(row => matchesGradSummaryUniversity(row[6], universityName));
+            const categories = [
+                { key: '불합격', label: '불합격', color: '#ef4444' },
+                { key: '합격', label: '합격', color: '#2563eb' },
+                { key: '추가합격', label: '추가합격', color: '#eab308' }
+            ];
+            const groups = categories.map(category => {
+                const values = subjectRows.filter(row => {
+                    const result = String(row[12] || '').replace(/\\s+/g, '');
+                    if (category.key === '불합격') return result.includes('불합격');
+                    const extra = result.includes('충원') || result.includes('추가');
+                    if (category.key === '추가합격') return !result.includes('불합격') && result.includes('합격') && extra;
+                    return result.includes('합격') && !result.includes('불합격') && !extra;
+                }).map(row => {
+                    const value = Number(String(row._suneung?.[1] ?? '').replace(/,/g, '').trim());
+                    return Number.isFinite(value) && value > 0 ? value : null;
+                }).filter(value => value !== null);
+                return { ...category, values, min: values.length ? Math.min(...values) : null, max: values.length ? Math.max(...values) : null };
+            });
+            const allValues = groups.flatMap(group => group.values);
+            if (!allValues.length) return `<div class="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">${escapeHtmlGrad(universityName)} 자료에서 표시할 국수탐 평균 백분위가 없습니다.</div>`;
+            let domainMin = Math.max(0, Math.floor(Math.min(...allValues) / 5) * 5 - 5);
+            let domainMax = Math.min(100, Math.ceil(Math.max(...allValues) / 5) * 5 + 5);
+            if (domainMax <= domainMin) { domainMin = Math.max(0, domainMin - 5); domainMax = Math.min(100, domainMax + 5); }
+            const span = domainMax - domainMin || 1;
+            const format = value => Number(value).toFixed(1).replace(/\\.0$/, '');
+            const rangeBar = (group, top) => {
+                if (!group.values.length) return '';
+                const left = ((group.min - domainMin) / span) * 100;
+                const right = ((group.max - domainMin) / span) * 100;
+                const width = Math.max(1.5, right - left);
+                const dots = group.values.map(value => {
+                    const position = ((value - domainMin) / span) * 100;
+                    return `<span title="${group.label}: ${format(value)}" style="position:absolute;top:${top - 1}px;left:${position}%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#111827;border:1px solid #fff;box-shadow:0 0 0 1px #111827;z-index:3;"></span>`;
+                }).join('');
+                return `<span style="position:absolute;top:${top + 9}px;left:${left}%;transform:translateX(-50%);font-size:12px;font-weight:900;color:${group.color};background:#fff;padding:0 2px;z-index:4;">${format(group.min)}</span><span title="${group.label}: ${format(group.min)}~${format(group.max)}" style="position:absolute;top:${top}px;left:${left}%;width:${width}%;min-width:3px;height:6px;border-radius:999px;background:${group.color};z-index:2;"></span>${dots}<span style="position:absolute;top:${top + 9}px;left:${right}%;transform:translateX(-50%);font-size:12px;font-weight:900;color:${group.color};background:#fff;padding:0 2px;z-index:4;">${format(group.max)}</span>`;
+            };
+            const guides = [];
+            for (let value = Math.ceil(domainMin / 5) * 5; value <= domainMax; value += 5) {
+                const position = ((value - domainMin) / span) * 100;
+                guides.push(`<span style="position:absolute;top:4px;left:${position}%;height:105px;border-left:1px solid #9ca3af;opacity:.65;"></span><span style="position:absolute;top:112px;left:${position}%;transform:translateX(-50%);font-size:11px;font-weight:800;color:#111827;">${value}</span>`);
+            }
+            const summary = groups.map(group => `<div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-gray-200 bg-white px-3 py-2"><div class="flex items-center gap-2 text-sm font-bold" style="color:${group.color}"><i style="display:inline-block;width:14px;height:5px;border-radius:999px;background:${group.color}"></i>${group.label}</div><div class="text-sm font-bold text-gray-900">${group.values.length ? `${format(group.min)}~${format(group.max)} · ${group.values.length}명` : '백분위 자료 없음'}</div></div>`).join('');
+            return `<section class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-2"><h4 class="font-bold text-gray-800">${escapeHtmlGrad(universityName)} 국수탐 평균 백분위 범위</h4><span class="text-xs text-gray-500">검은 점은 개별 학생의 백분위</span></div><div style="position:relative;height:132px;border-radius:10px;background:#f3f4f6;overflow:visible;">${guides.join('')}${rangeBar(groups[0], 12)}${rangeBar(groups[1], 42)}${rangeBar(groups[2], 72)}</div><div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">${summary}</div></section>`;
         }
 
         function renderGradJeongsiTable() {
@@ -3161,7 +3253,16 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             }
             const count = document.getElementById('gradJeongsiCount');
             if (count) count.textContent = data.length;
-            const shown = data;
+            const pageCount = Math.max(1, Math.ceil(data.length / gradJeongsiPageSize));
+            gradJeongsiCurrentPage = Math.min(gradJeongsiCurrentPage, pageCount - 1);
+            const startIndex = gradJeongsiCurrentPage * gradJeongsiPageSize;
+            const shown = data.slice(startIndex, startIndex + gradJeongsiPageSize);
+            const pageInfo = document.getElementById('gradJeongsiPageInfo');
+            const previousButton = document.getElementById('gradJeongsiPrevPage');
+            const nextButton = document.getElementById('gradJeongsiNextPage');
+            if (pageInfo) pageInfo.textContent = `${data.length ? startIndex + 1 : 0}~${Math.min(startIndex + gradJeongsiPageSize, data.length)} / 총 ${data.length}건 · ${gradJeongsiCurrentPage + 1} / ${pageCount}페이지`;
+            if (previousButton) previousButton.disabled = gradJeongsiCurrentPage === 0;
+            if (nextButton) nextButton.disabled = gradJeongsiCurrentPage >= pageCount - 1;
             tbody.innerHTML = '';
             if (!data.length) {
                 tbody.innerHTML = '<tr><td colspan="28" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
