@@ -53,6 +53,14 @@
         .grad-table th { background-color: #f0fdf4; font-weight: bold; border: 1px solid #bbf7d0; padding: 12px 8px; text-align: center; white-space: nowrap; cursor: pointer; transition: background 0.2s; user-select: none; }
         .grad-table th:hover { background-color: #dcfce7; }
         .grad-table td { border: 1px solid #e2e8f0; padding: 10px 8px; text-align: center; white-space: nowrap; }
+        /* 졸업생 정시 결과: 성적연도부터 전형-모집단위까지 7개 열 고정 */
+        #gradJeongsiTableScroll .grad-table th:nth-child(-n+7),
+        #gradJeongsiTableScroll .grad-table td:nth-child(-n+7) { position: sticky; }
+        #gradJeongsiTableScroll .grad-table thead th:nth-child(-n+7) { z-index: 30; background-color: #f0fdf4; }
+        #gradJeongsiTableScroll .grad-table tbody td:nth-child(-n+7) { z-index: 10; background-color: #fff; }
+        #gradJeongsiTableScroll .grad-table tbody tr.bg-blue-50 td:nth-child(-n+7) { background-color: #eff6ff; }
+        #gradJeongsiTableScroll .grad-table tbody tr.bg-red-50 td:nth-child(-n+7) { background-color: #fef2f2; }
+        #gradJeongsiTableScroll .grad-table tbody tr:hover td:nth-child(-n+7) { background-color: #f8fafc; }
         .grad-table tr:hover td { background-color: #f8fafc; }        /* 수시 입결 표는 모집단위가 길어도 다른 열 너비를 밀어내지 않도록 제한 */
         #classView .grad-table { table-layout: fixed; min-width: 2105px; }
         #classView .grad-table th, #classView .grad-table td { white-space: normal; overflow-wrap: anywhere; word-break: keep-all; line-height: 1.35; }
@@ -606,7 +614,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                         </div>
                     </div>
                     <p class="text-sm text-gray-500 mb-2 font-medium">* 표의 제목을 클릭하시면 <span class="font-bold">오름차순/내림차순 정렬</span>이 가능합니다.</p>
-                    <div class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 65vh;">
+                    <div id="gradJeongsiTableScroll" class="w-full overflow-x-auto pb-4 border border-gray-200 rounded-lg shadow-inner" style="max-height: 65vh;">
                         <table class="grad-table text-sm w-full">
                             <thead class="sticky top-0 z-10 shadow-sm bg-gray-50">
                                 <tr id="gradJeongsiTableHeaderRow"></tr>
@@ -3148,6 +3156,23 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             }).join('');
         }
 
+        function updateGradJeongsiStickyColumns() {
+            const table = document.querySelector('#gradJeongsiTableScroll .grad-table');
+            const headerCells = table?.querySelectorAll('thead th');
+            if (!table || !headerCells?.length) return;
+            let left = 0;
+            const offsets = [];
+            for (let i = 0; i < 7; i++) {
+                offsets[i] = left;
+                left += headerCells[i].getBoundingClientRect().width;
+            }
+            table.querySelectorAll('tr').forEach(tr => {
+                Array.from(tr.children).slice(0, 7).forEach((cell, index) => {
+                    cell.style.left = `${offsets[index]}px`;
+                });
+            });
+        }
+
         function normalizeGradJeongsiResult(value) {
             const normalized = String(value || '').replace(/\s+/g, '');
             if (normalized.includes('불')) return '불합격';
@@ -3335,6 +3360,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 }).join('');
                 tbody.appendChild(tr);
             });
+            updateGradJeongsiStickyColumns();
         }
 
         let rawGradData = [];
