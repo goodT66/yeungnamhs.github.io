@@ -3218,14 +3218,13 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             renderGradJeongsiUniversitySummary();
             filteredGradJeongsiData = rawGradJeongsiData.filter(row => {
                 if (year && String(row[16] || '').trim() !== year) return false;
-                if (group) {
-                    const recruitmentGroup = String(row[8] || '').replace(/\\s+/g, '');
-                    if (!recruitmentGroup.includes(group)) return false;
-                }
-                if (gradJeongsiSummarySelection) {
-                    return matchesGradSummaryUniversity(row[6], gradJeongsiSummarySelection);
-                }
+                if (gradJeongsiSummarySelection && !matchesGradSummaryUniversity(row[6], gradJeongsiSummarySelection)) return false;
                 if (university && String(row[6] || '').trim() !== university) return false;
+                if (group) {
+                    const recruitmentGroup = String(row[8] || '').replace(/\s+/g, '');
+                    const selectedGroup = String(group).replace(/\s+/g, '');
+                    if (!recruitmentGroup.includes(selectedGroup)) return false;
+                }
                 if (major && !String(row[9] || '').toLowerCase().includes(major)) return false;
                 if (result && normalizeGradJeongsiResult(row[12]) !== result) return false;
                 return true;
