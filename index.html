@@ -53,10 +53,12 @@
         .grad-table th { background-color: #f0fdf4; font-weight: bold; border: 1px solid #bbf7d0; padding: 12px 8px; text-align: center; white-space: nowrap; cursor: pointer; transition: background 0.2s; user-select: none; }
         .grad-table th:hover { background-color: #dcfce7; }
         .grad-table td { border: 1px solid #e2e8f0; padding: 10px 8px; text-align: center; white-space: nowrap; }
-        /* 졸업생 정시 결과: 성적연도부터 전형-모집단위까지 7개 열 고정 */
+        /* 졸업생 정시 결과: 제목 행 세로 고정 및 왼쪽 7개 열 가로 고정 */
+        #gradJeongsiTableScroll .grad-table thead { position: sticky; top: 0; z-index: 40; }
+        #gradJeongsiTableScroll .grad-table thead th { position: sticky; top: 0; z-index: 40; background-color: #f0fdf4; }
         #gradJeongsiTableScroll .grad-table th:nth-child(-n+7),
         #gradJeongsiTableScroll .grad-table td:nth-child(-n+7) { position: sticky; }
-        #gradJeongsiTableScroll .grad-table thead th:nth-child(-n+7) { z-index: 30; background-color: #f0fdf4; }
+        #gradJeongsiTableScroll .grad-table thead th:nth-child(-n+7) { top: 0; z-index: 50; background-color: #f0fdf4; }
         #gradJeongsiTableScroll .grad-table tbody td:nth-child(-n+7) { z-index: 10; background-color: #fff; }
         #gradJeongsiTableScroll .grad-table tbody tr.bg-blue-50 td:nth-child(-n+7) { background-color: #eff6ff; }
         #gradJeongsiTableScroll .grad-table tbody tr.bg-red-50 td:nth-child(-n+7) { background-color: #fef2f2; }
