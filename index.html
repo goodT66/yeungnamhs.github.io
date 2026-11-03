@@ -472,12 +472,12 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                 </div>
                 <p class="mt-5 mb-2 text-base font-bold text-gray-700">*과목별 성적 추이 버튼을 클릭하시면 과목별 성적 변화를 그래프로 보실 수 있습니다.</p>
                 <div id="subjectTrendButtons" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 my-5 w-full">
-                    <button type="button" onclick="renderSubjectTrend('kor')" style="background:#fee2e2;color:#991b1b;border-color:#f87171" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">국어 월별 성적 추이</button>
-                    <button type="button" onclick="renderSubjectTrend('math')" style="background:#dbeafe;color:#1e40af;border-color:#60a5fa" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">수학 월별 성적 추이</button>
-                    <button type="button" onclick="renderSubjectTrend('eng')" style="background:#ede9fe;color:#5b21b6;border-color:#a78bfa" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">영어 월별 성적 추이</button>
-                    <button type="button" onclick="renderSubjectTrend('hist')" style="background:#fef3c7;color:#92400e;border-color:#fbbf24" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">한국사 월별 성적 추이</button>
-                    <button type="button" onclick="renderSubjectTrend('inq1')" style="background:#d1fae5;color:#065f46;border-color:#34d399" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">탐구1 월별 성적 추이</button>
-                    <button type="button" onclick="renderSubjectTrend('inq2')" style="background:#fae8ff;color:#86198f;border-color:#e879f9" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">탐구2 월별 성적 추이</button>
+                    <button type="button" data-subject-trend="kor" style="background:#fee2e2;color:#991b1b;border-color:#f87171" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">국어 월별 성적 추이</button>
+                    <button type="button" data-subject-trend="math" style="background:#dbeafe;color:#1e40af;border-color:#60a5fa" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">수학 월별 성적 추이</button>
+                    <button type="button" data-subject-trend="eng" style="background:#ede9fe;color:#5b21b6;border-color:#a78bfa" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">영어 월별 성적 추이</button>
+                    <button type="button" data-subject-trend="hist" style="background:#fef3c7;color:#92400e;border-color:#fbbf24" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">한국사 월별 성적 추이</button>
+                    <button type="button" data-subject-trend="inq1" style="background:#d1fae5;color:#065f46;border-color:#34d399" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">탐구1 월별 성적 추이</button>
+                    <button type="button" data-subject-trend="inq2" style="background:#fae8ff;color:#86198f;border-color:#e879f9" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">탐구2 월별 성적 추이</button>
                 </div>
                 <div id="tableContainer" class="hidden w-full overflow-x-auto pb-4">
                     <table class="score-table w-full text-sm">
@@ -2736,6 +2736,14 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 }
             });
             document.getElementById('tableContainer').classList.remove('hidden');
+
+            // 과목별 성적 추이 버튼을 현재 그래프 인스턴스에 직접 연결합니다.
+            document.querySelectorAll('[data-subject-trend]').forEach(button => {
+                button.onclick = function() {
+                    renderSubjectTrend(this.getAttribute('data-subject-trend'));
+                };
+            });
+
             const tbody = document.getElementById('scoreTableBody'); 
             if(!tbody) return;
             tbody.innerHTML = '';
@@ -2755,7 +2763,10 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
 
         function renderSubjectTrend(subject) {
             const sid = document.getElementById('studentSelect').value;
-            if (!sid || !studentMap.has(sid) || !chartInstance) return;
+            if (!sid || !studentMap.has(sid) || !chartInstance) {
+                console.warn('과목별 성적 추이를 표시할 학생 또는 그래프가 없습니다.', { sid, chartReady: !!chartInstance });
+                return;
+            }
             const info = studentMap.get(sid);
             const configs = {
                 kor: { label: '국어 백분위', key: 'korPtc', subjectKey: 'korSubject', color: '#ef4444', format: 'percentile' },
