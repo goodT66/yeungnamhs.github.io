@@ -3235,10 +3235,19 @@ function selectGradSummary(type, key) {
                 const right = ((group.max - domainMin) / span) * 100;
                 const labelColor = key === '추가합격' ? '#854d0e' : color;
                 const labelStyle = (position, value, isStart, extraOffset = 0) => `<span style="position:absolute;top:${top + height + 2 + extraOffset}px;left:${position}%;transform:${position < 5 ? 'translateX(0)' : position > 95 ? 'translateX(-100%)' : 'translateX(-50%)'};font-size:13px;font-weight:900;line-height:16px;color:${labelColor};background:#fff;padding:0 2px;border-radius:3px;white-space:nowrap;z-index:3;">${format(value)}</span>`;
-                if (group.grades.length === 1) return `${labelStyle(left, group.min)}<span title="${group.label}: ${format(group.min)}" style="position:absolute;top:${top - 2}px;left:${left}%;transform:translateX(-50%);width:10px;height:10px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 0 0 1px ${color};z-index:2;"></span>`;
+                if (group.grades.length === 1) {
+                    const isDottedGroup = key === '합격-기타' || key === '추가합격';
+                    return `${labelStyle(left, group.min)}<span title="${group.label}: ${format(group.min)}" style="position:absolute;top:${top - 2}px;left:${left}%;transform:translateX(-50%);width:10px;height:10px;border-radius:50%;background:${isDottedGroup ? '#111827' : color};border:2px solid #fff;box-shadow:0 0 0 1px ${isDottedGroup ? '#111827' : color};z-index:2;"></span>`;
+                }
                 const splitStyle = key.startsWith('합격-') ? 'box-shadow:0 0 0 3px #f3f4f6;' : '';
                 const labelsTooClose = width < 4;
-                return `${labelStyle(left, group.min, true)}<span title="${group.label}: ${format(group.min)}~${format(group.max)}" style="position:absolute;top:${top}px;left:${left}%;width:${width}%;min-width:3px;height:${height}px;border-radius:999px;background:${color};z-index:2;${splitStyle}"></span>${labelStyle(right, group.max, false, labelsTooClose ? 16 : 0)}`;
+                const gradeDots = (key === '합격-기타' || key === '추가합격')
+                    ? group.grades.map(grade => {
+                        const position = ((grade - domainMin) / span) * 100;
+                        return `<span title="${group.label}: ${format(grade)}등급" style="position:absolute;top:${top - 1}px;left:${position}%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#111827;border:1px solid #fff;box-shadow:0 0 0 1px #111827;z-index:3;"></span>`;
+                    }).join('')
+                    : '';
+                return `${labelStyle(left, group.min, true)}<span title="${group.label}: ${format(group.min)}~${format(group.max)}" style="position:absolute;top:${top}px;left:${left}%;width:${width}%;min-width:3px;height:${height}px;border-radius:999px;background:${color};z-index:2;${splitStyle}"></span>${gradeDots}${labelStyle(right, group.max, false, labelsTooClose ? 16 : 0)}`;
             };
             const rangeSummary = groups.map(group => `<div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-gray-200 bg-white px-3 py-2"><div class="flex items-center gap-2 text-base font-bold whitespace-nowrap" style="color:${group.color}"><i style="display:inline-block;width:14px;height:5px;border-radius:999px;background:${group.color}"></i>${group.label}</div><div class="text-sm font-bold text-gray-900 whitespace-nowrap">${group.grades.length ? `${format(group.min)}~${format(group.max)} · ${group.grades.length}명` : '등급 자료 없음'}</div></div>`).join('');
             const passBoundaries = isUniversity ? groups.filter(group => group.grades.length && (group.key === '합격-기타' || group.key === '합격-논술')).flatMap(group => [group.min, group.max].map(value => { const position = ((value - domainMin) / span) * 100; return `<span title="${group.label} 경계 ${format(value)}" style="position:absolute;top:32px;left:${position}%;width:6px;height:14px;transform:translateX(-50%);background:#f3f4f6;border-radius:2px;z-index:4;"></span>`; })).join('') : '';
