@@ -2785,6 +2785,12 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 const inquiry2Name = String(r.inq2Sub ?? '').trim();
                 const inquiry1Grade = validGrade(r.inq1Grd);
                 const inquiry2Grade = validGrade(r.inq2Grd);
+                const validPercentile = value => {
+                    const percentile = Number(value);
+                    return Number.isFinite(percentile) ? percentile : null;
+                };
+                const inquiry1Percentile = validPercentile(r.inq1Ptc);
+                const inquiry2Percentile = validPercentile(r.inq2Ptc);
                 const inquiry1Science = sciencePattern.test(inquiry1Name);
                 const inquiry2Science = sciencePattern.test(inquiry2Name);
                 const mathSubject = String(r.mathSubject ?? '').replace(/\\s/g, '');
@@ -2800,37 +2806,38 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                         inquiryItems = [{
                             subject: '과탐',
                             grade: mockInquiryMode === 'scienceFloor' ? Math.floor(average) : average,
+                            percentile: inquiry1Percentile !== null && inquiry2Percentile !== null ? (inquiry1Percentile + inquiry2Percentile) / 2 : null,
                             order: 4
                         }];
                     }
                 } else if (mockInquiryMode === 'both') {
-                    if (inquiry1Grade !== null) inquiryItems.push({ subject: inquiry1Name.charAt(0), grade: inquiry1Grade, order: 4 });
-                    if (inquiry2Grade !== null) inquiryItems.push({ subject: inquiry2Name.charAt(0), grade: inquiry2Grade, order: 5 });
+                    if (inquiry1Grade !== null) inquiryItems.push({ subject: inquiry1Name.charAt(0), grade: inquiry1Grade, percentile: inquiry1Percentile, order: 4 });
+                    if (inquiry2Grade !== null) inquiryItems.push({ subject: inquiry2Name.charAt(0), grade: inquiry2Grade, percentile: inquiry2Percentile, order: 5 });
                 } else if (mockInquiryMode === 'scienceOne') {
                     const eligible = [
-                        { subject: inquiry1Name.charAt(0), grade: inquiry1Grade, isScience: inquiry1Science },
-                        { subject: inquiry2Name.charAt(0), grade: inquiry2Grade, isScience: inquiry2Science }
+                        { subject: inquiry1Name.charAt(0), grade: inquiry1Grade, percentile: inquiry1Percentile, isScience: inquiry1Science },
+                        { subject: inquiry2Name.charAt(0), grade: inquiry2Grade, percentile: inquiry2Percentile, isScience: inquiry2Science }
                     ].filter(item => item.isScience && item.grade !== null)
-                     .sort((a, b) => a.grade - b.grade);
-                    if (eligible.length) inquiryItems = [{ subject: eligible[0].subject, grade: eligible[0].grade, order: 4 }];
+                     .sort((a, b) => a.grade - b.grade || (b.percentile ?? -Infinity) - (a.percentile ?? -Infinity));
+                    if (eligible.length) inquiryItems = [{ subject: eligible[0].subject, grade: eligible[0].grade, percentile: eligible[0].percentile, order: 4 }];
                     else inquiryNotSatisfied = true;
                 } else {
                     const eligible = [
-                        { subject: inquiry1Name.charAt(0), grade: inquiry1Grade },
-                        { subject: inquiry2Name.charAt(0), grade: inquiry2Grade }
-                    ].filter(item => item.subject && item.grade !== null).sort((a, b) => a.grade - b.grade);
-                    if (eligible.length) inquiryItems = [{ subject: eligible[0].subject, grade: eligible[0].grade, order: 4 }];
+                        { subject: inquiry1Name.charAt(0), grade: inquiry1Grade, percentile: inquiry1Percentile },
+                        { subject: inquiry2Name.charAt(0), grade: inquiry2Grade, percentile: inquiry2Percentile }
+                    ].filter(item => item.subject && item.grade !== null).sort((a, b) => a.grade - b.grade || (b.percentile ?? -Infinity) - (a.percentile ?? -Infinity));
+                    if (eligible.length) inquiryItems = [{ subject: eligible[0].subject, grade: eligible[0].grade, percentile: eligible[0].percentile, order: 4 }];
                 }
 
                 const gradeItems = [
-                    { subject: '국', grade: validGrade(r.korGrd), order: 1 },
-                    { subject: mathLabel, grade: validGrade(r.mathGrd), order: 2 },
-                    { subject: '영', grade: validGrade(r.engGrd), order: 3 },
+                    { subject: '국', grade: validGrade(r.korGrd), percentile: validPercentile(r.korPtc), order: 1 },
+                    { subject: mathLabel, grade: validGrade(r.mathGrd), percentile: validPercentile(r.mathPtc), order: 2 },
+                    { subject: '영', grade: validGrade(r.engGrd), percentile: null, order: 3 },
                     ...inquiryItems
                 ].filter(item => item.subject && item.grade !== null && item.grade !== undefined)
                  .sort((a, b) => a.order - b.order);
                 const selectedGrades = [...gradeItems]
-                    .sort((a, b) => a.grade - b.grade || a.order - b.order)
+                    .sort((a, b) => a.grade - b.grade || (b.percentile ?? -Infinity) - (a.percentile ?? -Infinity) || a.order - b.order)
                     .slice(0, mockCutoffCount)
                     .sort((a, b) => a.order - b.order);
                 const totalGrade = selectedGrades.reduce((sum, item) => sum + item.grade, 0);
