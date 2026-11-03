@@ -3035,15 +3035,15 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         let gradJeongsiDataLoaded = false;
         let gradJeongsiSortCol = null;
         let gradJeongsiIsAscending = true;
-        const gradJeongsiColOrder = [0, 1, 2, 3, 4, 5, 6, 8, 9, 12, 15];
+        const gradJeongsiColOrder = [0, 1, 5, 6, 8, 9, 12, 15];
         const gradJeongsiColLabels = {
-            0: '연도', 1: '학번', 2: '학년', 3: '반', 4: '번호', 5: '이름',
+            0: '연도', 1: '학번', 5: '이름',
             6: '대학교', 8: '모집 시기', 9: '전형-모집 단위', 12: '결과', 15: '후보 순위'
         };
 
         async function fetchGradJeongsiData() {
             const tbody = document.getElementById('gradJeongsiTableBody');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="11" class="text-center py-10 text-gray-500">정시 결과 데이터를 불러오는 중입니다...</td></tr>';
+            if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-gray-500">정시 결과 데이터를 불러오는 중입니다...</td></tr>';
             try {
                 const response = await fetch(`${GRAD_JEONGSI_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' });
                 if (!response.ok) throw new Error('네트워크 오류');
@@ -3053,7 +3053,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     complete: (results) => {
                         const rows = results.data || [];
                         if (rows.length <= 1) {
-                            if (tbody) tbody.innerHTML = '<tr><td colspan="11" class="text-center py-10 text-gray-500">졸업생 정시 결과 데이터가 없습니다.</td></tr>';
+                            if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-gray-500">졸업생 정시 결과 데이터가 없습니다.</td></tr>';
                             gradJeongsiDataLoaded = true;
                             return;
                         }
@@ -3067,7 +3067,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 });
             } catch (error) {
                 console.error('졸업생 정시 결과 데이터 로드 실패:', error);
-                if (tbody) tbody.innerHTML = '<tr><td colspan="11" class="text-center py-10 text-red-500">정시 결과 데이터를 불러오지 못했습니다. Google Sheets 공개 설정과 네트워크를 확인해 주세요.</td></tr>';
+                if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-red-500">정시 결과 데이터를 불러오지 못했습니다. Google Sheets 공개 설정과 네트워크를 확인해 주세요.</td></tr>';
             }
         }
 
@@ -3149,7 +3149,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const shown = data.slice(0, 100);
             tbody.innerHTML = '';
             if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="11" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
                 return;
             }
             shown.forEach(row => {
