@@ -500,7 +500,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                                             <option value="top1" selected>상위1</option>
                                             <option value="scienceAvg">과탐평균</option>
                                             <option value="scienceFloor">과탐절사</option>
-                                            <option value="both">탐탐</option>
+                                            <option value="both">탐탐(개별)</option>
                                             <option value="scienceOne">과탐1</option>
                                         </select>
                                     </div>
@@ -2837,7 +2837,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 const formattedTotal = Number.isInteger(totalGrade) ? String(totalGrade) : totalGrade.toFixed(2).replace(/0+$/, '').replace(/\\.$/, '');
                 const cutoffValue = inquiryNotSatisfied ? '미충족'
                     : selectedGrades.length === mockCutoffCount
-                        ? `${selectedGrades.map(item => item.subject).join(',')} ${formattedTotal}등급`
+                        ? `${selectedGrades.map(item => item.subject).join(',')} <span class="text-red-600 font-extrabold">${formattedTotal}등급</span>`
                         : '-';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td>${r.title}</td>
