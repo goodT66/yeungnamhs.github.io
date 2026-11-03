@@ -2695,9 +2695,9 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 data: {
                     labels: recs.map(r=>r.title),
                     datasets: [
-                        { label:'국수탐 평균', data:recs.map(r=>r.avg), borderColor:'#10b981', backgroundColor:'#10b981', borderWidth:4, pointRadius:5 },
-                        { label:'국어', data:recs.map(r=>r.korPtc), borderColor:'#ef4444', backgroundColor:'#ef4444', borderWidth:2, borderDash:[5,5] },
-                        { label:'수학', data:recs.map(r=>r.mathPtc), borderColor:'#3b82f6', backgroundColor:'#3b82f6', borderWidth:2, borderDash:[5,5] }
+                        { label:'국수탐 평균', data:recs.map(r=>{ const v=parseFloat(r.avg); return Number.isFinite(v) ? v : null; }), yAxisID:'y', borderColor:'#10b981', backgroundColor:'#10b981', borderWidth:4, pointRadius:5, spanGaps:false },
+                        { label:'국어', data:recs.map(r=>r.korPtc), yAxisID:'y', borderColor:'#ef4444', backgroundColor:'#ef4444', borderWidth:2, borderDash:[5,5], spanGaps:false },
+                        { label:'수학', data:recs.map(r=>r.mathPtc), yAxisID:'y', borderColor:'#3b82f6', backgroundColor:'#3b82f6', borderWidth:2, borderDash:[5,5], spanGaps:false }
                     ]
                 },
                 plugins: [ChartDataLabels], 
@@ -2712,6 +2712,16 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                         }
                     },
                     scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            min: 0,
+                            max: 100,
+                            title: { display: false },
+                            ticks: { stepSize: 10 },
+                            grid: { drawOnChartArea: true }
+                        },
                         gradeAxis: {
                             type: 'linear',
                             display: false,
@@ -2780,12 +2790,16 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     borderWidth: 3,
                     pointRadius: 5,
                     spanGaps: false,
-                    ...(item.format === 'grade' ? { yAxisID: 'gradeAxis' } : {})
+                    yAxisID: item.format === 'grade' ? 'gradeAxis' : 'y'
                 });
             });
 
             const hasGradeTrend = Array.from(selectedSubjectTrends).some(key => configs[key].format === 'grade');
             chartInstance.options.scales = chartInstance.options.scales || {};
+            chartInstance.options.scales.y = chartInstance.options.scales.y || {
+                type: 'linear', display: true, position: 'left', min: 0, max: 100,
+                ticks: { stepSize: 10 }, grid: { drawOnChartArea: true }
+            };
             chartInstance.options.scales.gradeAxis = {
                 type: 'linear',
                 display: hasGradeTrend,
