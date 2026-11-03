@@ -479,9 +479,6 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                     <button type="button" onclick="renderSubjectTrend('inq1')" style="background:#d1fae5;color:#065f46;border-color:#34d399" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">탐구1 월별 성적 추이</button>
                     <button type="button" onclick="renderSubjectTrend('inq2')" style="background:#fae8ff;color:#86198f;border-color:#e879f9" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">탐구2 월별 성적 추이</button>
                 </div>
-                <div id="subjectTrendChartContainer" class="hidden w-full mb-8 bg-white border rounded-lg p-4" style="height:360px;">
-                    <canvas id="subjectTrendChart"></canvas>
-                </div>
                 <div id="tableContainer" class="hidden w-full overflow-x-auto pb-4">
                     <table class="score-table w-full text-sm">
                         <thead>
@@ -2566,6 +2563,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         let mockDataLoaded = false;
         let studentMap = new Map();
         let chartInstance = null;
+        const selectedSubjectTrends = new Set();
 
         async function fetchMockData() {
             try {
@@ -2667,6 +2665,11 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const sid = document.getElementById('studentSelect').value;
             if (!sid || !studentMap.has(sid)) return;
             const info = studentMap.get(sid), recs = info.records;
+            selectedSubjectTrends.clear();
+            document.querySelectorAll('.subject-trend-btn').forEach(button => {
+                button.setAttribute('aria-pressed', 'false');
+                button.style.boxShadow = '';
+            });
             const studentTitle = document.getElementById('mockSelectedStudentTitle');
             if (studentTitle) studentTitle.textContent = `${sid} ${info.name} 학생 성적 추이`;
             updateMockStudentPhoto(sid, info.name);
@@ -2707,7 +2710,19 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                             align: 'top', anchor: 'end', color: '#10b981', font: { weight: '900', size: 14 },
                             formatter: function(value) { return value; }
                         }
-                    } 
+                    },
+                    scales: {
+                        gradeAxis: {
+                            type: 'linear',
+                            display: false,
+                            position: 'right',
+                            reverse: true,
+                            min: 1,
+                            max: 9,
+                            ticks: { stepSize: 1 },
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
                 }
             });
             document.getElementById('tableContainer').classList.remove('hidden');
@@ -2728,10 +2743,9 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         }
         window.renderMockData = renderMockData;
 
-        let subjectTrendChartInstance = null;
         function renderSubjectTrend(subject) {
             const sid = document.getElementById('studentSelect').value;
-            if (!sid || !studentMap.has(sid)) return;
+            if (!sid || !studentMap.has(sid) || !chartInstance) return;
             const info = studentMap.get(sid);
             const configs = {
                 kor: { label: '국어 백분위', key: 'korPtc', subjectKey: 'korSubject', color: '#ef4444', format: 'percentile' },
@@ -2743,64 +2757,53 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             };
             const config = configs[subject];
             if (!config) return;
-            const values = info.records.map(r => {
-                const raw = r[config.key];
-                if (raw === null || raw === undefined || raw === '' || raw === '-') return null;
-                const value = parseFloat(raw);
-                return Number.isFinite(value) ? value : null;
+
+            // 같은 버튼을 다시 누르면 해당 과목 선을 제거하고, 다른 버튼은 기존 선에 누적합니다.
+            if (selectedSubjectTrends.has(subject)) selectedSubjectTrends.delete(subject);
+            else selectedSubjectTrends.add(subject);
+
+            chartInstance.data.datasets = chartInstance.data.datasets.filter(dataset => !dataset.subjectTrendKey);
+            selectedSubjectTrends.forEach(key => {
+                const item = configs[key];
+                const values = info.records.map(record => {
+                    const raw = record[item.key];
+                    if (raw === null || raw === undefined || raw === '' || raw === '-') return null;
+                    const value = parseFloat(raw);
+                    return Number.isFinite(value) ? value : null;
+                });
+                chartInstance.data.datasets.push({
+                    subjectTrendKey: key,
+                    label: item.label,
+                    data: values,
+                    borderColor: item.color,
+                    backgroundColor: item.color,
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    spanGaps: false,
+                    ...(item.format === 'grade' ? { yAxisID: 'gradeAxis' } : {})
+                });
             });
-            document.getElementById('subjectTrendChartContainer').classList.remove('hidden');
-            if (subjectTrendChartInstance) subjectTrendChartInstance.destroy();
-            subjectTrendChartInstance = new Chart(document.getElementById('subjectTrendChart').getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: info.records.map(r => r.title),
-                    datasets: [{
-                        label: config.label,
-                        data: values,
-                        borderColor: config.color,
-                        backgroundColor: config.color,
-                        borderWidth: 3,
-                        pointRadius: 5,
-                        spanGaps: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: `${sid} ${info.name} 학생 ${config.label} 월별 성적 추이`, font: { size: 18, weight: 'bold' } },
-                        legend: { display: true },
-                        datalabels: {
-                            display: config.format === 'percentile',
-                            align: 'top',
-                            anchor: 'end',
-                            // 인접한 월별 데이터 라벨이 겹치지 않도록 3단계로 높이를 분산
-                            offset: (context) => 6 + (context.dataIndex % 3) * 18,
-                            clamp: false,
-                            clip: false,
-                            color: config.color,
-                            font: { size: 12, weight: 'bold' },
-                            formatter: (value, context) => {
-                                if (value === null || value === undefined) return '';
-                                if (config.format === 'percentile' && config.subjectKey) {
-                                    const record = info.records[context.dataIndex];
-                                    const subjectName = record && record[config.subjectKey] && record[config.subjectKey] !== '-' ? record[config.subjectKey] : '';
-                                    return subjectName ? [subjectName, value] : [value];
-                                }
-                                return value;
-                            }
-                        }
-                    },
-                    scales: config.format === 'grade' ? { y: { reverse: true, min: 1, max: 9, ticks: { stepSize: 1 } } } : { y: { min: 0, max: 100 } }
-                }
-            });
+
+            const hasGradeTrend = Array.from(selectedSubjectTrends).some(key => configs[key].format === 'grade');
+            chartInstance.options.scales = chartInstance.options.scales || {};
+            chartInstance.options.scales.gradeAxis = {
+                type: 'linear',
+                display: hasGradeTrend,
+                position: 'right',
+                reverse: true,
+                min: 1,
+                max: 9,
+                ticks: { stepSize: 1 },
+                grid: { drawOnChartArea: false }
+            };
+            chartInstance.update();
+
             document.querySelectorAll('.subject-trend-btn').forEach(button => {
-                button.classList.remove('bg-blue-600', 'text-white');
-                button.classList.add('bg-white');
+                const buttonSubject = (button.getAttribute('onclick') || '').match(/renderSubjectTrend\('([^']+)'\)/)?.[1];
+                const active = selectedSubjectTrends.has(buttonSubject);
+                button.setAttribute('aria-pressed', active ? 'true' : 'false');
+                button.style.boxShadow = active ? 'inset 0 0 0 2px #1f2937' : '';
             });
-            const clicked = Array.from(document.querySelectorAll('.subject-trend-btn')).find(button => button.getAttribute('onclick') === `renderSubjectTrend('${subject}')`);
-            if (clicked) { clicked.classList.remove('bg-white'); clicked.classList.add('bg-blue-600', 'text-white'); }
         }
         window.renderSubjectTrend = renderSubjectTrend;
 
