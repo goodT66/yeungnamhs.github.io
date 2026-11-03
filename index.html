@@ -472,12 +472,12 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                 </div>
                 <p class="mt-5 mb-2 text-base font-bold text-gray-700">*과목별 성적 추이 버튼을 클릭하시면 과목별 성적 변화를 그래프로 보실 수 있습니다.</p>
                 <div id="subjectTrendButtons" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 my-5 w-full">
-                    <button type="button" data-subject-trend="kor" onclick="window.renderSubjectTrend('kor')" style="background:#fee2e2;color:#991b1b;border-color:#f87171" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">국어 월별 성적 추이</button>
-                    <button type="button" data-subject-trend="math" onclick="window.renderSubjectTrend('math')" style="background:#dbeafe;color:#1e40af;border-color:#60a5fa" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">수학 월별 성적 추이</button>
-                    <button type="button" data-subject-trend="eng" onclick="window.renderSubjectTrend('eng')" style="background:#ede9fe;color:#5b21b6;border-color:#a78bfa" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">영어 월별 성적 추이</button>
-                    <button type="button" data-subject-trend="hist" onclick="window.renderSubjectTrend('hist')" style="background:#fef3c7;color:#92400e;border-color:#fbbf24" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">한국사 월별 성적 추이</button>
-                    <button type="button" data-subject-trend="inq1" onclick="window.renderSubjectTrend('inq1')" style="background:#d1fae5;color:#065f46;border-color:#34d399" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">탐구1 월별 성적 추이</button>
-                    <button type="button" data-subject-trend="inq2" onclick="window.renderSubjectTrend('inq2')" style="background:#fae8ff;color:#86198f;border-color:#e879f9" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">탐구2 월별 성적 추이</button>
+                    <button type="button" data-subject-trend="kor" style="background:#fee2e2;color:#991b1b;border-color:#f87171" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">국어 월별 성적 추이</button>
+                    <button type="button" data-subject-trend="math" style="background:#dbeafe;color:#1e40af;border-color:#60a5fa" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">수학 월별 성적 추이</button>
+                    <button type="button" data-subject-trend="eng" style="background:#ede9fe;color:#5b21b6;border-color:#a78bfa" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">영어 월별 성적 추이</button>
+                    <button type="button" data-subject-trend="hist" style="background:#fef3c7;color:#92400e;border-color:#fbbf24" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">한국사 월별 성적 추이</button>
+                    <button type="button" data-subject-trend="inq1" style="background:#d1fae5;color:#065f46;border-color:#34d399" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">탐구1 월별 성적 추이</button>
+                    <button type="button" data-subject-trend="inq2" style="background:#fae8ff;color:#86198f;border-color:#e879f9" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">탐구2 월별 성적 추이</button>
                 </div>
                 <div id="tableContainer" class="hidden w-full overflow-x-auto pb-4">
                     <table class="score-table w-full text-sm">
@@ -2826,6 +2826,23 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             });
         }
         window.renderSubjectTrend = renderSubjectTrend;
+
+        // 버튼 영역에 이벤트 위임을 한 번만 등록하여 학생 선택 및 그래프 재생성 후에도 클릭을 처리합니다.
+        const subjectTrendButtonArea = document.getElementById('subjectTrendButtons');
+        if (subjectTrendButtonArea && !subjectTrendButtonArea.dataset.clickHandlerBound) {
+            subjectTrendButtonArea.dataset.clickHandlerBound = 'true';
+            subjectTrendButtonArea.addEventListener('click', function(event) {
+                const button = event.target.closest('[data-subject-trend]');
+                if (!button || !subjectTrendButtonArea.contains(button)) return;
+                event.preventDefault();
+                const subject = button.getAttribute('data-subject-trend');
+                try {
+                    renderSubjectTrend(subject);
+                } catch (error) {
+                    console.error('과목별 성적 추이 그래프 표시 오류:', error);
+                }
+            });
+        }
 
         // =====================================================================
         // [기능 2] 졸업생 수시 결과 스크립트
