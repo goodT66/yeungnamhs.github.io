@@ -2731,7 +2731,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                             display: false,
                             position: 'right',
                             reverse: false,
-                            min: 1,
+                            min: 0,
                             max: 9,
                             ticks: { stepSize: 1 },
                             grid: { drawOnChartArea: false }
@@ -2769,8 +2769,8 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const configs = {
                 kor: { label: '국어 백분위', key: 'korPtc', color: '#ef4444', axis: 'y' },
                 math: { label: '수학 백분위', key: 'mathPtc', color: '#3b82f6', axis: 'y' },
-                eng: { label: '영어 등급', key: 'engGrd', color: '#8b5cf6', axis: 'gradeAxis' },
-                hist: { label: '한국사 등급', key: 'histGrd', color: '#f59e0b', axis: 'gradeAxis' },
+                eng: { label: '영어 등급', key: 'engGrd', color: '#8b5cf6', axis: 'gradeAxis', type: 'bar' },
+                hist: { label: '한국사 등급', key: 'histGrd', color: '#f59e0b', axis: 'gradeAxis', type: 'bar' },
                 inq1: { label: '탐구1 백분위', key: 'inq1Ptc', color: '#10b981', axis: 'y' },
                 inq2: { label: '탐구2 백분위', key: 'inq2Ptc', color: '#a855f7', axis: 'y' }
             };
@@ -2794,14 +2794,18 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 }
                 chartInstance.data.datasets.push({
                     subjectTrendKey: subject,
+                    type: config.type || 'line',
                     label: config.label,
                     data: values,
                     yAxisID: config.axis,
                     borderColor: config.color,
-                    backgroundColor: config.color,
-                    borderWidth: 3,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
+                    backgroundColor: config.type === 'bar' ? config.color : config.color,
+                    borderWidth: config.type === 'bar' ? 1 : 3,
+                    borderRadius: config.type === 'bar' ? 4 : 0,
+                    barPercentage: 0.65,
+                    categoryPercentage: 0.7,
+                    pointRadius: config.type === 'bar' ? 0 : 5,
+                    pointHoverRadius: config.type === 'bar' ? 0 : 7,
                     fill: false,
                     tension: 0.2,
                     spanGaps: false
