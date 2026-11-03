@@ -3081,15 +3081,18 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     gradJeongsiDataLoaded = true;
                     return;
                 }
-                const studentKey = row => [row[0], row[1], row[5]].map(value => String(value ?? '').trim()).join('|');
+                // 졸업생정시 시트: Q열(실제 성적 연도), B열(학번), F열(이름)로 매칭
+                // 졸업생 수능 성적 시트: A열(성적 연도), B열(학번), F열(이름)로 매칭
+                const jeongsiStudentKey = row => [row[16], row[1], row[5]].map(value => String(value ?? '').trim()).join('|');
+                const suneungStudentKey = row => [row[0], row[1], row[5]].map(value => String(value ?? '').trim()).join('|');
                 const suneungMap = new Map();
                 suneungRows.slice(1).forEach(row => {
-                    const key = studentKey(row);
+                    const key = suneungStudentKey(row);
                     if (key !== '||') suneungMap.set(key, row.slice(6, 26));
                 });
                 rawGradJeongsiData = jeongsiRows.slice(1);
                 rawGradJeongsiData.forEach(row => {
-                    row._suneung = suneungMap.get(studentKey(row)) || Array(20).fill('');
+                    row._suneung = suneungMap.get(jeongsiStudentKey(row)) || Array(20).fill('');
                 });
                 populateGradJeongsiFilters();
                 renderGradJeongsiHeaders();
