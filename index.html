@@ -3063,7 +3063,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         let gradJeongsiSummarySelection = null;
         const gradJeongsiColOrder = [200, 0, 1, 5, 6, 8, 9, 12, 15, 100, 201, ...Array.from({length: 19}, (_, i) => 101 + i)];
         const gradJeongsiColLabels = {
-            200: '성적연도', 201: '70% 평균 백분위', 0: '졸업연도', 1: '학번', 5: '이름',
+            200: '성적연도', 201: '70% 백분위', 0: '졸업연도', 1: '학번', 5: '이름',
             6: '대학교', 8: '모집 시기', 9: '전형-모집 단위', 12: '결과', 15: '후보 순위'
         };
         const gradSuneungColLabels = [
@@ -3375,6 +3375,10 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 tr.innerHTML = gradJeongsiColOrder.map(index => {
                     const cellValue = index === 200 ? row[16] : index === 201 ? row._70Percentile : (index >= 100 ? row._suneung?.[index - 100] : row[index]);
                     let value = cellValue !== undefined && cellValue !== null && cellValue !== '' ? String(cellValue) : '-';
+                    if (index === 201 && value !== '-') {
+                        const percentileValue = Number(value.replace(/,/g, '').trim());
+                        if (Number.isFinite(percentileValue)) value = percentileValue.toFixed(1);
+                    }
                     if (index === 5 && value !== '-') value = blindName(value);
                     let cls = '';
                     if (index === 12) {
