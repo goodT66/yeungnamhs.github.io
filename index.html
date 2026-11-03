@@ -470,9 +470,12 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                 <div class="sticky top-0 z-30 relative bg-white pt-4 pb-4 border-b border-gray-200 w-full mb-10 shadow-sm" style="height: 500px;">
                     <canvas id="scoreChart"></canvas>
                 </div>
-                <div class="mt-5 mb-2 text-base font-bold text-gray-700">
-                    <p>*과목별 성적 추이 버튼을 클릭하시면 과목별 성적 변화를 그래프로 보실 수 있습니다.</p>
-                    <p>*과목별 성적 추이 버튼을 <span class="text-red-600 font-extrabold">한번 더</span> 클릭하시면 그 과목 성적 변화 추이를 그래프에서 <span class="text-red-600 font-extrabold">제거</span>하실 수 있습니다.</p>
+                <div class="mt-5 mb-2 flex flex-wrap items-center justify-between gap-3">
+                    <div class="text-base font-bold text-gray-700">
+                        <p>*과목별 성적 추이 버튼을 클릭하시면 과목별 성적 변화를 그래프로 보실 수 있습니다.</p>
+                        <p>*과목별 성적 추이 버튼을 <span class="text-red-600 font-extrabold">한번 더</span> 클릭하시면 그 과목 성적 변화 추이를 그래프에서 <span class="text-red-600 font-extrabold">제거</span>하실 수 있습니다.</p>
+                    </div>
+                    <div id="scoreChartLegend" class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-gray-600"></div>
                 </div>
                 <div id="subjectTrendButtons" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 my-5 w-full">
                     <button type="button" data-subject-trend="kor" onclick="window.renderSubjectTrend('kor')" style="background:#fee2e2;color:#991b1b;border-color:#f87171" class="subject-trend-btn min-w-0 px-2 py-3 rounded-lg border text-sm lg:text-base font-extrabold whitespace-nowrap">국어 월별 성적 추이</button>
@@ -2727,8 +2730,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     plugins: { 
                         title: { display: false },
                         legend: {
-                            // 그래프 상단 범례 클릭으로 데이터 선을 추가하거나 숨기지 않습니다.
-                            onClick: function() {}
+                            display: false
                         },
                         datalabels: {
                             display: function(context) { return context.dataset.label === '국수탐 평균'; },
@@ -2760,6 +2762,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     }
                 }
             });
+            updateScoreChartLegend();
             document.getElementById('tableContainer').classList.remove('hidden');
 
             // 과목별 버튼은 HTML의 onclick에서 window.renderSubjectTrend를 직접 호출합니다.
@@ -2869,6 +2872,26 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             if (Array.isArray(currentMockRecords)) renderMockScoreTable(currentMockRecords);
         };
 
+        function updateScoreChartLegend() {
+            const container = document.getElementById('scoreChartLegend');
+            if (!container || !chartInstance) return;
+            container.innerHTML = '';
+            chartInstance.data.datasets.forEach(dataset => {
+                const item = document.createElement('span');
+                item.className = 'inline-flex items-center gap-1 whitespace-nowrap';
+                const swatch = document.createElement('span');
+                swatch.style.display = 'inline-block';
+                swatch.style.width = '22px';
+                swatch.style.height = dataset.type === 'bar' ? '10px' : '4px';
+                swatch.style.backgroundColor = dataset.borderColor;
+                const label = document.createElement('span');
+                label.textContent = dataset.label;
+                item.appendChild(swatch);
+                item.appendChild(label);
+                container.appendChild(item);
+            });
+        }
+
         function renderSubjectTrend(subject) {
             if (!chartInstance || !Array.isArray(currentMockRecords) || currentMockRecords.length === 0) {
                 console.warn('먼저 학생을 선택해 성적 그래프를 불러와 주세요.');
@@ -2934,6 +2957,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const hasGradeTrend = chartInstance.data.datasets.some(dataset => dataset.yAxisID === 'gradeAxis');
             chartInstance.options.scales.gradeAxis.display = hasGradeTrend;
             chartInstance.update();
+            updateScoreChartLegend();
 
             document.querySelectorAll('#subjectTrendButtons .subject-trend-btn').forEach(button => {
                 const active = selectedSubjectTrends.has(button.getAttribute('data-subject-trend'));
