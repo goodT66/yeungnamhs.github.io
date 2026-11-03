@@ -3061,9 +3061,9 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         let gradJeongsiCurrentPage = 0;
         const gradJeongsiPageSize = 150;
         let gradJeongsiSummarySelection = null;
-        const gradJeongsiColOrder = [200, 0, 1, 5, 6, 8, 9, 12, 15, ...Array.from({length: 20}, (_, i) => 100 + i)];
+        const gradJeongsiColOrder = [200, 0, 1, 5, 6, 8, 9, 12, 15, 100, 201, ...Array.from({length: 19}, (_, i) => 101 + i)];
         const gradJeongsiColLabels = {
-            200: '성적연도', 0: '졸업연도', 1: '학번', 5: '이름',
+            200: '성적연도', 201: '70% 평균 백분위', 0: '졸업연도', 1: '학번', 5: '이름',
             6: '대학교', 8: '모집 시기', 9: '전형-모집 단위', 12: '결과', 15: '후보 순위'
         };
         const gradSuneungColLabels = [
@@ -3076,18 +3076,31 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
 
         async function fetchGradJeongsiData() {
             const tbody = document.getElementById('gradJeongsiTableBody');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="29" class="text-center py-10 text-gray-500">정시 결과 및 졸업생 수능 성적 데이터를 불러오는 중입니다...</td></tr>';
+            if (tbody) tbody.innerHTML = '<tr><td colspan="30" class="text-center py-10 text-gray-500">정시 결과 및 졸업생 수능 성적 데이터를 불러오는 중입니다...</td></tr>';
             try {
-                const [jeongsiResponse, suneungResponse] = await Promise.all([
+                const [jeongsiResponse, suneungResponse, percentileCsv] = await Promise.all([
                     fetch(`${GRAD_JEONGSI_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' }),
-                    fetch(`${GRAD_SUNEUNG_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' })
+                    fetch(`${GRAD_SUNEUNG_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' }),
+                    fetch(`${SUSI_RESULT_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' }).then(response => response.ok ? response.text() : '').catch(error => { console.warn('정시 입결 조회 백분위 자료를 불러오지 못했습니다.', error); return ''; })
                 ]);
                 if (!jeongsiResponse.ok || !suneungResponse.ok) throw new Error('네트워크 오류');
                 const [jeongsiCsv, suneungCsv] = await Promise.all([jeongsiResponse.text(), suneungResponse.text()]);
                 const jeongsiRows = Papa.parse(jeongsiCsv, { skipEmptyLines: true }).data || [];
                 const suneungRows = Papa.parse(suneungCsv, { skipEmptyLines: true }).data || [];
+                const percentileRows = percentileCsv ? (Papa.parse(percentileCsv, { skipEmptyLines: true }).data || []).slice(1) : [];
+                const normalizePercentileKey = value => String(value ?? '').normalize('NFKC').replace(/\\s+/g, '').trim();
+                const percentileMap = new Map();
+                percentileRows.forEach(row => {
+                    const year = normalizePercentileKey(row[1]);
+                    const university = normalizePercentileKey(row[5]);
+                    const major = normalizePercentileKey(row[6]);
+                    const percentile = String(row[17] ?? '').trim();
+                    if (year && university && major && percentile && percentile !== '-') {
+                        percentileMap.set([year, university, major].join('|'), percentile);
+                    }
+                });
                 if (jeongsiRows.length <= 1) {
-                    if (tbody) tbody.innerHTML = '<tr><td colspan="28" class="text-center py-10 text-gray-500">졸업생 정시 결과 데이터가 없습니다.</td></tr>';
+                    if (tbody) tbody.innerHTML = '<tr><td colspan="30" class="text-center py-10 text-gray-500">졸업생 정시 결과 데이터가 없습니다.</td></tr>';
                     gradJeongsiDataLoaded = true;
                     return;
                 }
@@ -3103,6 +3116,11 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 rawGradJeongsiData = jeongsiRows.slice(1);
                 rawGradJeongsiData.forEach(row => {
                     row._suneung = suneungMap.get(jeongsiStudentKey(row)) || Array(20).fill('');
+                    const admissionUnit = String(row[9] ?? '').trim();
+                    const separatorIndex = admissionUnit.indexOf('-');
+                    const major = separatorIndex >= 0 ? admissionUnit.slice(separatorIndex + 1).trim() : '';
+                    const percentileKey = [row[16], row[6], major].map(normalizePercentileKey).join('|');
+                    row._70Percentile = major ? (percentileMap.get(percentileKey) || '') : '';
                 });
                 populateGradJeongsiFilters();
                 renderGradJeongsiHeaders();
@@ -3111,7 +3129,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 gradJeongsiDataLoaded = true;
             } catch (error) {
                 console.error('졸업생 정시 결과 및 수능 성적 데이터 로드 실패:', error);
-                if (tbody) tbody.innerHTML = '<tr><td colspan="28" class="text-center py-10 text-red-500">데이터를 불러오지 못했습니다. Google Sheets 공개 설정과 네트워크를 확인해 주세요.</td></tr>';
+                if (tbody) tbody.innerHTML = '<tr><td colspan="30" class="text-center py-10 text-red-500">데이터를 불러오지 못했습니다. Google Sheets 공개 설정과 네트워크를 확인해 주세요.</td></tr>';
             }
         }
 
@@ -3318,8 +3336,9 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                         if (resultOrder !== 0) return resultOrder;
                     }
                     if (gradJeongsiSortCol !== null) {
-                        const av = String(gradJeongsiSortCol >= 200 ? (gradJeongsiSortCol === 200 ? (a[16] ?? '') : (a._suneung?.[gradJeongsiSortCol - 100] ?? '')) : (a[gradJeongsiSortCol] ?? '')).trim();
-                        const bv = String(gradJeongsiSortCol >= 200 ? (gradJeongsiSortCol === 200 ? (b[16] ?? '') : (b._suneung?.[gradJeongsiSortCol - 100] ?? '')) : (b[gradJeongsiSortCol] ?? '')).trim();
+                        const getSortValue = row => gradJeongsiSortCol === 200 ? (row[16] ?? '') : gradJeongsiSortCol === 201 ? (row._70Percentile ?? '') : gradJeongsiSortCol >= 100 ? (row._suneung?.[gradJeongsiSortCol - 100] ?? '') : (row[gradJeongsiSortCol] ?? '');
+                        const av = String(getSortValue(a)).trim();
+                        const bv = String(getSortValue(b)).trim();
                         if (!av || av === '-') return 1;
                         if (!bv || bv === '-') return -1;
                         const an = Number(av), bn = Number(bv);
@@ -3344,7 +3363,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             if (nextButton) nextButton.disabled = gradJeongsiCurrentPage >= pageCount - 1;
             tbody.innerHTML = '';
             if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="28" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="30" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
                 return;
             }
             shown.forEach(row => {
@@ -3353,7 +3372,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 if (result.includes('합격') && !result.includes('불합격')) tr.classList.add('bg-blue-50');
                 if (result.includes('불합격')) tr.classList.add('bg-red-50');
                 tr.innerHTML = gradJeongsiColOrder.map(index => {
-                    const cellValue = index === 200 ? row[16] : (index >= 100 ? row._suneung?.[index - 100] : row[index]);
+                    const cellValue = index === 200 ? row[16] : index === 201 ? row._70Percentile : (index >= 100 ? row._suneung?.[index - 100] : row[index]);
                     let value = cellValue !== undefined && cellValue !== null && cellValue !== '' ? String(cellValue) : '-';
                     if (index === 5 && value !== '-') value = blindName(value);
                     let cls = '';
