@@ -3382,6 +3382,17 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                         if (Number.isFinite(percentileValue)) value = percentileValue.toFixed(1);
                     }
                     if (index === 5 && value !== '-') value = blindName(value);
+                    let percentileDifference = '';
+                    if (index === 101 && value !== '-' && row._70Percentile !== undefined && row._70Percentile !== null && String(row._70Percentile).trim() !== '' && String(row._70Percentile).trim() !== '-') {
+                        const averagePercentile = Number(String(value).replace(/,/g, '').trim());
+                        const seventyPercentile = Number(String(row._70Percentile).replace(/,/g, '').trim());
+                        if (Number.isFinite(averagePercentile) && Number.isFinite(seventyPercentile)) {
+                            const difference = Number((averagePercentile - seventyPercentile).toFixed(1));
+                            const differenceText = difference > 0 ? '+' + difference : String(difference);
+                            const differenceClass = difference < 0 ? 'text-red-700' : 'text-blue-700';
+                            percentileDifference = ` <span class="font-bold ${differenceClass}">(${differenceText})</span>`;
+                        }
+                    }
                     let cls = '';
                     if (index === 12) {
                         if (value.includes('불합격')) cls = 'font-black text-red-700 text-base';
@@ -3391,7 +3402,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     else if (index === 101) cls = 'font-black text-red-700 text-lg';
                     else if ([100, 103, 107, 113, 117, 105, 109, 110, 111, 115, 119].includes(index)) cls = 'font-bold text-blue-700 text-base';
                     else if (index === 5 || index === 6) cls = 'font-bold text-gray-800';
-                    return `<td class="${cls}">${escapeHtmlGrad(value)}</td>`;
+                    return `<td class="${cls}">${escapeHtmlGrad(value)}${percentileDifference}</td>`;
                 }).join('');
                 tbody.appendChild(tr);
             });
