@@ -2829,7 +2829,10 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     ...inquiryItems
                 ].filter(item => item.subject && item.grade !== null && item.grade !== undefined)
                  .sort((a, b) => a.order - b.order);
-                const selectedGrades = gradeItems.slice(0, mockCutoffCount);
+                const selectedGrades = [...gradeItems]
+                    .sort((a, b) => a.grade - b.grade || a.order - b.order)
+                    .slice(0, mockCutoffCount)
+                    .sort((a, b) => a.order - b.order);
                 const totalGrade = selectedGrades.reduce((sum, item) => sum + item.grade, 0);
                 const formattedTotal = Number.isInteger(totalGrade) ? String(totalGrade) : totalGrade.toFixed(2).replace(/0+$/, '').replace(/\\.$/, '');
                 const cutoffValue = inquiryNotSatisfied ? '미충족'
