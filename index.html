@@ -3089,10 +3089,11 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 const suneungRows = Papa.parse(suneungCsv, { skipEmptyLines: true }).data || [];
                 const percentileRows = percentileCsv ? (Papa.parse(percentileCsv, { skipEmptyLines: true }).data || []).slice(1) : [];
                 const normalizePercentileKey = value => String(value ?? '').normalize('NFKC').replace(/\s+/g, '').trim();
+                const normalizePercentileUniversity = value => normalizePercentileKey(value).replace(/대학교$/, '대');
                 const percentileMap = new Map();
                 percentileRows.forEach(row => {
                     const year = normalizePercentileKey(row[1]);
-                    const university = normalizePercentileKey(row[5]);
+                    const university = normalizePercentileUniversity(row[5]);
                     const major = normalizePercentileKey(row[6]);
                     const percentile = String(row[17] ?? '').trim();
                     if (year && university && major && percentile && percentile !== '-') {
@@ -3119,7 +3120,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     const admissionUnit = String(row[9] ?? '').trim();
                     const separatorIndex = admissionUnit.indexOf('-');
                     const major = separatorIndex >= 0 ? admissionUnit.slice(separatorIndex + 1).trim() : '';
-                    const percentileKey = [row[16], row[6], major].map(normalizePercentileKey).join('|');
+                    const percentileKey = [normalizePercentileKey(row[16]), normalizePercentileUniversity(row[6]), normalizePercentileKey(major)].join('|');
                     row._70Percentile = major ? (percentileMap.get(percentileKey) || '') : '';
                 });
                 populateGradJeongsiFilters();
