@@ -3236,12 +3236,12 @@ function selectGradSummary(type, key) {
                 const labelColor = key === '추가합격' ? '#854d0e' : color;
                 const labelStyle = (position, value, isStart, extraOffset = 0) => `<span style="position:absolute;top:${top + height + 2 + extraOffset}px;left:${position}%;transform:${position < 5 ? 'translateX(0)' : position > 95 ? 'translateX(-100%)' : 'translateX(-50%)'};font-size:13px;font-weight:900;line-height:16px;color:${labelColor};background:#fff;padding:0 2px;border-radius:3px;white-space:nowrap;z-index:3;">${format(value)}</span>`;
                 if (group.grades.length === 1) {
-                    const isDottedGroup = key === '합격-기타' || key === '추가합격';
+                    const isDottedGroup = key === '합격' || key === '합격-기타' || key === '추가합격';
                     return `${labelStyle(left, group.min)}<span title="${group.label}: ${format(group.min)}" style="position:absolute;top:${top - 2}px;left:${left}%;transform:translateX(-50%);width:10px;height:10px;border-radius:50%;background:${isDottedGroup ? '#111827' : color};border:2px solid #fff;box-shadow:0 0 0 1px ${isDottedGroup ? '#111827' : color};z-index:2;"></span>`;
                 }
                 const splitStyle = key.startsWith('합격-') ? 'box-shadow:0 0 0 3px #f3f4f6;' : '';
                 const labelsTooClose = width < 4;
-                const gradeDots = (key === '합격-기타' || key === '추가합격')
+                const gradeDots = (key === '합격' || key === '합격-기타' || key === '추가합격')
                     ? group.grades.map(grade => {
                         const position = ((grade - domainMin) / span) * 100;
                         return `<span title="${group.label}: ${format(grade)}등급" style="position:absolute;top:${top - 1}px;left:${position}%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#111827;border:1px solid #fff;box-shadow:0 0 0 1px #111827;z-index:3;"></span>`;
