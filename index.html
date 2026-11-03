@@ -3157,7 +3157,7 @@ function renderGradUniversitySummary() {
             });
             const yearLabel = year ? `${escapeHtmlGrad(year)}학년도` : '전체 연도';
             const chart = gradSummarySelection ? renderGradGradeRangeChart(rows, gradSummarySelection) : '';
-            box.innerHTML = `<div class="flex flex-wrap items-center gap-2"><strong class="text-gray-800 mr-1">${yearLabel} 주요 대학 합격 현황</strong>${counts.join('')}<span class="mx-1 h-6 border-l border-gray-300" aria-hidden="true"></span><strong class="text-gray-800 mr-1">의약학 계열</strong>${majorCounts.join('')}</div>${chart}`;
+            box.innerHTML = `<div class="flex flex-wrap items-center gap-2"><strong class="text-gray-800 mr-1">${yearLabel} 주요 대학 합격 현황</strong>${counts.join('')}<span class="mx-1 h-6 border-l border-gray-300" aria-hidden="true"></span><strong class="text-gray-800 mr-1">의약학 계열</strong>${majorCounts.join('')}<span class="ml-2 text-sm font-semibold text-blue-700">* 해당 대학교 버튼을 누르시면, 졸업생의 전형별 합격/불합격 범위를 보실 수 있습니다.</span></div>${chart}`;
         }
 function selectGradSummary(type, key) {
             if (gradSummarySelection && gradSummarySelection.type === type && gradSummarySelection.key === key) {
