@@ -2697,7 +2697,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 data: {
                     labels: recs.map(r=>r.title),
                     datasets: [
-                        { label:'국수탐 평균', data:recs.map(r=>{ const v=parseFloat(r.avg); return Number.isFinite(v) ? v : null; }), yAxisID:'y', borderColor:'#10b981', backgroundColor:'#10b981', borderWidth:4, pointRadius:5, spanGaps:false },
+                        { label:'국수탐 평균', data:recs.map(r=>{ const v=parseFloat(r.avg); return Number.isFinite(v) ? v : null; }), yAxisID:'y', borderColor:'#111827', backgroundColor:'#111827', borderWidth:4, borderDash:[8, 5], pointRadius:5, spanGaps:false },
                     ]
                 },
                 plugins: [ChartDataLabels], 
@@ -2711,7 +2711,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                         },
                         datalabels: {
                             display: function(context) { return context.dataset.label === '국수탐 평균'; },
-                            align: 'top', anchor: 'end', color: '#10b981', font: { weight: '900', size: 14 },
+                            align: 'top', anchor: 'end', color: '#111827', font: { weight: '900', size: 14 },
                             formatter: function(value) { return value; }
                         }
                     },
