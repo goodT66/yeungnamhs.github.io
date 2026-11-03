@@ -3088,7 +3088,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 const jeongsiRows = Papa.parse(jeongsiCsv, { skipEmptyLines: true }).data || [];
                 const suneungRows = Papa.parse(suneungCsv, { skipEmptyLines: true }).data || [];
                 const percentileRows = percentileCsv ? (Papa.parse(percentileCsv, { skipEmptyLines: true }).data || []).slice(1) : [];
-                const normalizePercentileKey = value => String(value ?? '').normalize('NFKC').replace(/\\s+/g, '').trim();
+                const normalizePercentileKey = value => String(value ?? '').normalize('NFKC').replace(/\s+/g, '').trim();
                 const percentileMap = new Map();
                 percentileRows.forEach(row => {
                     const year = normalizePercentileKey(row[1]);
