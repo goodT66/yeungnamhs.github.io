@@ -3500,9 +3500,9 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                         const seventyPercentile = Number(String(row._70Percentile).replace(/,/g, '').trim());
                         if (Number.isFinite(averagePercentile) && Number.isFinite(seventyPercentile)) {
                             const difference = Number((averagePercentile - seventyPercentile).toFixed(1));
-                            const differenceText = difference > 0 ? '▲' + difference : difference < 0 ? '▼' + Math.abs(difference) : '0';
+                            const differenceText = difference > 0 ? '+' + difference : difference < 0 ? '-' + Math.abs(difference) : '0';
                             const differenceClass = difference < 0 ? 'text-red-700' : 'text-blue-700';
-                            percentileDifference = ` <span class="font-bold ${differenceClass}">(${differenceText})</span>`;
+                            percentileDifference = ` <span class="font-bold text-gray-900">(</span><span class="font-bold ${differenceClass}">${differenceText}</span><span class="font-bold text-gray-900">)</span>`;
                         }
                     }
                     let cls = '';
