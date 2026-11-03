@@ -487,6 +487,15 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                         <thead>
                             <tr>
                                 <th rowspan="2" class="w-24">월(고사명)</th>
+                                <th rowspan="2" class="whitespace-nowrap bg-amber-50 text-amber-700">
+                                    <div>최저 충족 여부</div>
+                                    <select id="mockCutoffCount" class="mt-1 w-full rounded border border-amber-300 bg-white px-1 py-1 text-xs font-bold text-gray-700" onchange="window.updateMockCutoffCount(this.value)" aria-label="최저 충족 과목 수 기준">
+                                        <option value="1">1개</option>
+                                        <option value="2" selected>2개 합</option>
+                                        <option value="3">3개 합</option>
+                                        <option value="4">4개 합</option>
+                                    </select>
+                                </th>
                                 <th rowspan="2" class="text-emerald-700 bg-emerald-50 whitespace-nowrap">국수탐 백분위 평균</th>
                                 <th colspan="4" class="text-red-600 bg-red-50">국어</th><th colspan="4" class="text-blue-600 bg-blue-50">수학</th>
                                 <th rowspan="2">영어<br>등급</th><th rowspan="2">한국사<br>등급</th>
@@ -2746,12 +2755,30 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
 
             // 과목별 버튼은 HTML의 onclick에서 window.renderSubjectTrend를 직접 호출합니다.
 
-            const tbody = document.getElementById('scoreTableBody'); 
-            if(!tbody) return;
+            renderMockScoreTable(recs);
+        }
+        window.renderMockData = renderMockData;
+
+        let mockCutoffCount = 2;
+
+        function renderMockScoreTable(records) {
+            const tbody = document.getElementById('scoreTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
-            [...recs].reverse().forEach(r => {
+            [...records].reverse().forEach(r => {
+                const grades = [r.korGrd, r.mathGrd, r.engGrd, [r.inq1Grd, r.inq2Grd]
+                    .map(value => Number(value))
+                    .filter(value => Number.isFinite(value) && value > 0)
+                    .sort((a, b) => a - b)[0]]
+                    .map(value => Number(value))
+                    .filter(value => Number.isFinite(value) && value > 0)
+                    .sort((a, b) => a - b);
+                const cutoffValue = grades.length >= mockCutoffCount
+                    ? (mockCutoffCount === 1 ? grades[0] : grades.slice(0, mockCutoffCount).reduce((sum, grade) => sum + grade, 0))
+                    : '-';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td>${r.title}</td>
+                <td class="text-amber-700 font-bold bg-amber-50/40">${cutoffValue === '-' ? '-' : cutoffValue + '등급'}</td>
                 <td class="text-emerald-700 font-bold bg-emerald-50/40">${r.avg !== '' && r.avg !== null && r.avg !== undefined ? r.avg : '-'}</td>
                 <td>${r.korSubject}</td><td>${r.korStd}</td><td>${r.korPtc ?? '-'}</td><td class="text-red-600 font-bold">${r.korGrd}</td>
                 <td>${r.mathSubject}</td><td>${r.mathStd}</td><td>${r.mathPtc ?? '-'}</td><td class="text-blue-600 font-bold">${r.mathGrd}</td>
@@ -2761,7 +2788,11 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 tbody.appendChild(tr);
             });
         }
-        window.renderMockData = renderMockData;
+
+        window.updateMockCutoffCount = function(value) {
+            mockCutoffCount = Number(value) || 2;
+            if (Array.isArray(currentMockRecords)) renderMockScoreTable(currentMockRecords);
+        };
 
         function renderSubjectTrend(subject) {
             if (!chartInstance || !Array.isArray(currentMockRecords) || currentMockRecords.length === 0) {
