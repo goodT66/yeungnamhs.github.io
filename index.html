@@ -3316,6 +3316,8 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                         else if (value.includes('합격')) cls = 'font-black text-blue-700 text-base';
                         else cls = 'font-bold text-gray-800 text-base';
                     } else if (index === 15) cls = 'font-bold text-gray-900 text-base bg-yellow-50/50';
+                    else if (index === 101) cls = 'font-black text-red-700 text-lg';
+                    else if ([100, 103, 107, 113, 117, 105, 109, 110, 111, 115, 119].includes(index)) cls = 'font-bold text-blue-700 text-base';
                     else if (index === 5 || index === 6) cls = 'font-bold text-gray-800';
                     return `<td class="${cls}">${escapeHtmlGrad(value)}</td>`;
                 }).join('');
