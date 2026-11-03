@@ -2776,8 +2776,9 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const config = configs[subject];
             if (!config) return;
 
-            // 버튼을 누른 과목의 추이 선을 그래프에 추가하며, 이미 표시된 선은 유지합니다.
-            selectedSubjectTrends.add(subject);
+            // 해당 과목 버튼을 누를 때마다 그래프 선을 표시하거나 제거합니다.
+            if (selectedSubjectTrends.has(subject)) selectedSubjectTrends.delete(subject);
+            else selectedSubjectTrends.add(subject);
 
             chartInstance.data.datasets = chartInstance.data.datasets.filter(dataset => !dataset.subjectTrendKey);
             selectedSubjectTrends.forEach(key => {
