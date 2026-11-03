@@ -1578,6 +1578,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         const PHOTO_LIST_API_URL = 'https://script.google.com/a/macros/yeungnam.hs.kr/s/AKfycbxHCKsc9cNZAaWGytujMZX0YTn7Aj_Dm_3xGgRAz71y9x0fqpcCNKpX56B-7tly6y7T/exec';
         const GRAD_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=졸업생`;
         const GRAD_JEONGSI_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1123384481`;
+        const GRAD_SUNEUNG_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=졸업생수능`;
         const SUSI_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026수시`; 
         const INTERVIEW_2026_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2026면접`; 
         const SUSI_RESULT_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1822882619`;
@@ -3035,39 +3036,53 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         let gradJeongsiDataLoaded = false;
         let gradJeongsiSortCol = null;
         let gradJeongsiIsAscending = true;
-        const gradJeongsiColOrder = [0, 1, 5, 6, 8, 9, 12, 15];
+        const gradJeongsiColOrder = [0, 1, 5, 6, 8, 9, 12, 15, ...Array.from({length: 20}, (_, i) => 100 + i)];
         const gradJeongsiColLabels = {
             0: '연도', 1: '학번', 5: '이름',
             6: '대학교', 8: '모집 시기', 9: '전형-모집 단위', 12: '결과', 15: '후보 순위'
         };
+        const gradSuneungColLabels = [
+            '국수탐 표점합', '국수탐 평균백분위', '국어 선택', '국어 표점', '국어 백분위', '국어 등급',
+            '수학 선택', '수학 표점', '수학 백분위', '수학 등급', '영어 등급', '한국사 등급',
+            '탐구1 선택', '탐구1 표점', '탐구1 백분위', '탐구1 등급',
+            '탐구2 선택', '탐구2 표점', '탐구2 백분위', '탐구2 등급'
+        ];
+        gradSuneungColLabels.forEach((label, index) => { gradJeongsiColLabels[100 + index] = label; });
 
         async function fetchGradJeongsiData() {
             const tbody = document.getElementById('gradJeongsiTableBody');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-gray-500">정시 결과 데이터를 불러오는 중입니다...</td></tr>';
+            if (tbody) tbody.innerHTML = '<tr><td colspan="28" class="text-center py-10 text-gray-500">정시 결과 및 졸업생 수능 성적 데이터를 불러오는 중입니다...</td></tr>';
             try {
-                const response = await fetch(`${GRAD_JEONGSI_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' });
-                if (!response.ok) throw new Error('네트워크 오류');
-                const csvText = await response.text();
-                Papa.parse(csvText, {
-                    skipEmptyLines: true,
-                    complete: (results) => {
-                        const rows = results.data || [];
-                        if (rows.length <= 1) {
-                            if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-gray-500">졸업생 정시 결과 데이터가 없습니다.</td></tr>';
-                            gradJeongsiDataLoaded = true;
-                            return;
-                        }
-                        rawGradJeongsiData = rows.slice(1);
-                        populateGradJeongsiFilters();
-                        renderGradJeongsiHeaders();
-                        applyGradJeongsiFilter();
-                        gradJeongsiDataLoaded = true;
-                    },
-                    error: (error) => { throw error; }
+                const [jeongsiResponse, suneungResponse] = await Promise.all([
+                    fetch(`${GRAD_JEONGSI_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' }),
+                    fetch(`${GRAD_SUNEUNG_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' })
+                ]);
+                if (!jeongsiResponse.ok || !suneungResponse.ok) throw new Error('네트워크 오류');
+                const [jeongsiCsv, suneungCsv] = await Promise.all([jeongsiResponse.text(), suneungResponse.text()]);
+                const jeongsiRows = Papa.parse(jeongsiCsv, { skipEmptyLines: true }).data || [];
+                const suneungRows = Papa.parse(suneungCsv, { skipEmptyLines: true }).data || [];
+                if (jeongsiRows.length <= 1) {
+                    if (tbody) tbody.innerHTML = '<tr><td colspan="28" class="text-center py-10 text-gray-500">졸업생 정시 결과 데이터가 없습니다.</td></tr>';
+                    gradJeongsiDataLoaded = true;
+                    return;
+                }
+                const studentKey = row => [row[0], row[1], row[5]].map(value => String(value ?? '').trim()).join('|');
+                const suneungMap = new Map();
+                suneungRows.slice(1).forEach(row => {
+                    const key = studentKey(row);
+                    if (key !== '||') suneungMap.set(key, row.slice(6, 26));
                 });
+                rawGradJeongsiData = jeongsiRows.slice(1);
+                rawGradJeongsiData.forEach(row => {
+                    row._suneung = suneungMap.get(studentKey(row)) || Array(20).fill('');
+                });
+                populateGradJeongsiFilters();
+                renderGradJeongsiHeaders();
+                applyGradJeongsiFilter();
+                gradJeongsiDataLoaded = true;
             } catch (error) {
-                console.error('졸업생 정시 결과 데이터 로드 실패:', error);
-                if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-red-500">정시 결과 데이터를 불러오지 못했습니다. Google Sheets 공개 설정과 네트워크를 확인해 주세요.</td></tr>';
+                console.error('졸업생 정시 결과 및 수능 성적 데이터 로드 실패:', error);
+                if (tbody) tbody.innerHTML = '<tr><td colspan="28" class="text-center py-10 text-red-500">데이터를 불러오지 못했습니다. Google Sheets 공개 설정과 네트워크를 확인해 주세요.</td></tr>';
             }
         }
 
@@ -3134,8 +3149,8 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const data = [...filteredGradJeongsiData];
             if (gradJeongsiSortCol !== null) {
                 data.sort((a,b) => {
-                    const av = String(a[gradJeongsiSortCol] ?? '').trim();
-                    const bv = String(b[gradJeongsiSortCol] ?? '').trim();
+                    const av = String(gradJeongsiSortCol >= 100 ? (a._suneung?.[gradJeongsiSortCol - 100] ?? '') : (a[gradJeongsiSortCol] ?? '')).trim();
+                    const bv = String(gradJeongsiSortCol >= 100 ? (b._suneung?.[gradJeongsiSortCol - 100] ?? '') : (b[gradJeongsiSortCol] ?? '')).trim();
                     if (!av || av === '-') return 1;
                     if (!bv || bv === '-') return -1;
                     const an = Number(av), bn = Number(bv);
@@ -3149,7 +3164,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
             const shown = data.slice(0, 100);
             tbody.innerHTML = '';
             if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="28" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
                 return;
             }
             shown.forEach(row => {
@@ -3158,7 +3173,8 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 if (result.includes('합격') && !result.includes('불합격')) tr.classList.add('bg-blue-50');
                 if (result.includes('불합격')) tr.classList.add('bg-red-50');
                 tr.innerHTML = gradJeongsiColOrder.map(index => {
-                    let value = row[index] !== undefined && row[index] !== null && row[index] !== '' ? String(row[index]) : '-';
+                    const cellValue = index >= 100 ? row._suneung?.[index - 100] : row[index];
+                    let value = cellValue !== undefined && cellValue !== null && cellValue !== '' ? String(cellValue) : '-';
                     if (index === 5 && value !== '-') value = blindName(value);
                     let cls = '';
                     if (index === 12) {
