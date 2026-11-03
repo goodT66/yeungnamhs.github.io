@@ -3213,10 +3213,17 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     row._suneung = suneungMap.get(jeongsiStudentKey(row)) || Array(20).fill('');
                     const admissionUnit = String(row[9] ?? '').trim();
                     const admissionParts = admissionUnit.split('-');
-                    const isKyungHee = normalizePercentileUniversity(row[6]) === '경희대';
-                    const major = isKyungHee
-                        ? (admissionParts.length >= 3 ? admissionParts[1].trim() : '')
-                        : (admissionParts.length >= 2 ? admissionParts.slice(1).join('-').trim() : '');
+                    const university = normalizePercentileUniversity(row[6]);
+                    const isKyungHee = university === '경희대';
+                    const isSeoulNational = university === '서울대';
+                    const universityWordIndex = admissionUnit.indexOf('대학');
+                    const major = isSeoulNational
+                        ? (universityWordIndex >= 0
+                            ? admissionUnit.slice(universityWordIndex + '대학'.length).replace(/^[-\s]+/, '').trim()
+                            : (admissionParts.length >= 2 ? admissionParts.slice(1).join('-').trim() : ''))
+                        : isKyungHee
+                            ? (admissionParts.length >= 3 ? admissionParts[1].trim() : '')
+                            : (admissionParts.length >= 2 ? admissionParts.slice(1).join('-').trim() : '');
                     const percentileKey = [normalizePercentileKey(row[16]), normalizePercentileUniversity(row[6]), normalizePercentileKey(major)].join('|');
                     row._70Percentile = major ? (percentileMap.get(percentileKey) || '') : '';
                 });
