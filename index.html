@@ -3094,11 +3094,11 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
         ];
                 function matchesGradSummaryUniversity(schoolName, universityName) {
             const school = String(schoolName || '').replace(/\s+/g, '').toLowerCase();
+            if (universityName === '고려대학교' && (school.includes('세종') || school.includes('조치원'))) return false;
             if (universityName === '한양대학교' && (school.includes('erica') || school.includes('에리카'))) return false;
-            if (universityName === '연세대학교' && school.includes('미래')) return false;
-            if (universityName === '고려대학교' && school.includes('세종')) return false;
+            if (universityName === '연세대학교' && (school.includes('미래') || school.includes('원주'))) return false;
+            if (universityName === '중앙대학교' && (school.includes('다빈치') || school.includes('안성'))) return false;
             if (universityName === '건국대학교' && (school.includes('글로컬') || school.includes('glocal'))) return false;
-            if (universityName === '중앙대학교' && school.includes('다빈치')) return false;
             if (universityName === '동국대학교' && (school.includes('wise') || school.includes('와이즈') || school.includes('경주'))) return false;
             const university = GRAD_SUMMARY_UNIVERSITIES.find(item => item.name === universityName);
             if (!university) return false;
