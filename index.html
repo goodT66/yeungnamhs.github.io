@@ -3118,8 +3118,11 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 rawGradJeongsiData.forEach(row => {
                     row._suneung = suneungMap.get(jeongsiStudentKey(row)) || Array(20).fill('');
                     const admissionUnit = String(row[9] ?? '').trim();
-                    const separatorIndex = admissionUnit.indexOf('-');
-                    const major = separatorIndex >= 0 ? admissionUnit.slice(separatorIndex + 1).trim() : '';
+                    const admissionParts = admissionUnit.split('-');
+                    const isKyungHee = normalizePercentileUniversity(row[6]) === '경희대';
+                    const major = isKyungHee
+                        ? (admissionParts.length >= 3 ? admissionParts[1].trim() : '')
+                        : (admissionParts.length >= 2 ? admissionParts.slice(1).join('-').trim() : '');
                     const percentileKey = [normalizePercentileKey(row[16]), normalizePercentileUniversity(row[6]), normalizePercentileKey(major)].join('|');
                     row._70Percentile = major ? (percentileMap.get(percentileKey) || '') : '';
                 });
