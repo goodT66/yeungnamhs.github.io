@@ -3228,7 +3228,10 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                             : isSogang
                                 ? (firstHyphenIndex >= 0 ? admissionUnit.slice(firstHyphenIndex + 1).trim() : '')
                                 : (admissionParts.length >= 2 ? admissionParts.slice(1).join('-').trim() : '');
-                    const percentileKey = [normalizePercentileKey(row[16]), normalizePercentileUniversity(row[6]), normalizePercentileKey(major)].join('|');
+                    // 정시 입결 조회의 연도는 졸업생 정시 결과의 성적연도보다 1년 큽니다.
+                    const gradScoreYear = normalizePercentileKey(row[16]);
+                    const percentileYear = /^\\d{4}$/.test(gradScoreYear) ? String(Number(gradScoreYear) + 1) : gradScoreYear;
+                    const percentileKey = [percentileYear, normalizePercentileUniversity(row[6]), normalizePercentileKey(major)].join('|');
                     row._70Percentile = major ? (percentileMap.get(percentileKey) || '') : '';
                 });
                 populateGradJeongsiFilters();
