@@ -1696,6 +1696,31 @@ const UNIVERSITY_INFO_DOWNLOAD_URL = "https://sam.adiga.kr/common/downloadFile.d
 let universityAdmissionsInfoRows = [];
 let universityAdmissionsInfoLoadedYear = "";
 let universityAdmissionsInfoRequest = null;
+let universityAdmissionsInitial = "ㄱ";
+const UNIVERSITY_INFO_INITIALS = ["ㄱ","ㄴ","ㄷ","ㄹ","ㅁ","ㅂ","ㅅ","ㅇ","ㅈ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+function getUniversityNameInitial(value){
+  const first=String(value??"").trim().charAt(0);
+  const code=first.charCodeAt(0);
+  if(code>=0xAC00 && code<=0xD7A3){
+    const initials=["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+    return initials[Math.floor((code-0xAC00)/588)]||"";
+  }
+  return "";
+}
+function setUniversityAdmissionsInitial(initial){
+  universityAdmissionsInitial=UNIVERSITY_INFO_INITIALS.includes(initial)?initial:"ㄱ";
+  document.querySelectorAll("[data-univ-initial]").forEach(button=>{
+    const active=button.dataset.univInitial===universityAdmissionsInitial;
+    button.classList.toggle("bg-yellow-500",active);
+    button.classList.toggle("border-yellow-600",active);
+    button.classList.toggle("text-white",active);
+    button.classList.toggle("bg-white",!active);
+    button.classList.toggle("border-yellow-300",!active);
+    button.classList.toggle("text-yellow-900",!active);
+    button.setAttribute("aria-pressed",active?"true":"false");
+  });
+  renderUniversityAdmissionsInfo();
+}
 
 function openUniversityAdmissionsInfo(){
   ["mainDashboard","classView","interviewView","mockView","gradView","susiResultView","studentLookupView","admissions2028View","universityAdmissionsInfoView"].forEach(id=>{
@@ -1770,7 +1795,7 @@ function renderUniversityAdmissionsInfo(){
   const keyword=String(document.getElementById("univInfoSearch")?.value??"").trim().toLowerCase();
   const rows=universityAdmissionsInfoRows.filter(row=>{
     const text=[row.univ_nm,row.area_nm,row.campus_nm].map(value=>String(value??"").toLowerCase()).join(" ");
-    return !keyword||text.includes(keyword);
+    return getUniversityNameInitial(row.univ_nm)===universityAdmissionsInitial && (!keyword||text.includes(keyword));
   });
   if(!rows.length){
     tbody.innerHTML='<tr><td colspan="11" class="p-8 text-center text-gray-500">조건에 맞는 대학 자료가 없습니다.</td></tr>';
@@ -5536,9 +5561,12 @@ window.changeSusiPage = changeSusiPage;
     </div>
     <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
       <div class="grid grid-cols-1 gap-3">
-        <label class="text-sm font-bold text-gray-700">대학명 검색
+        <label class="block sm:w-1/3 text-sm font-bold text-gray-700">대학명 검색
           <input id="univInfoSearch" type="search" oninput="filterUniversityAdmissionsInfo()" placeholder="대학명 또는 지역 검색" class="mt-1 w-full border border-gray-300 rounded-lg p-2 bg-white">
         </label>
+      </div>
+      <div id="univInfoInitialButtons" class="flex flex-wrap gap-2 mt-3" aria-label="대학명 초성별 필터">
+        <button type="button" data-univ-initial="ㄱ" onclick="setUniversityAdmissionsInitial('ㄱ')" aria-pressed="true" class="px-3 py-1.5 rounded-lg border text-sm font-bold transition bg-yellow-500 border-yellow-600 text-white">ㄱ</button><button type="button" data-univ-initial="ㄴ" onclick="setUniversityAdmissionsInitial('ㄴ')" aria-pressed="false" class="px-3 py-1.5 rounded-lg border text-sm font-bold transition bg-white border-yellow-300 text-yellow-900 hover:bg-yellow-100">ㄴ</button><button type="button" data-univ-initial="ㄷ" onclick="setUniversityAdmissionsInitial('ㄷ')" aria-pressed="false" class="px-3 py-1.5 rounded-lg border text-sm font-bold transition bg-white border-yellow-300 text-yellow-900 hover:bg-yellow-100">ㄷ</button><button type="button" data-univ-initial="ㄹ" onclick="setUniversityAdmissionsInitial('ㄹ')" aria-pressed="false" class="px-3 py-1.5 rounded-lg border text-sm font-bold transition bg-white border-yellow-300 text-yellow-900 hover:bg-yellow-100">ㄹ</button><button type="button" data-univ-initial="ㅁ" onclick="setUniversityAdmissionsInitial('ㅁ')" aria-pressed="false" class="px-3 py-1.5 rounded-lg border text-sm font-bold transition bg-white border-yellow-300 text-yellow-900 hover:bg-yellow-100">ㅁ</button><button type="button" data-univ-initial="ㅂ" onclick="setUniversityAdmissionsInitial('ㅂ')" aria-pressed="false" class="px-3 py-1.5 rounded-lg border text-sm font-bold transition bg-white border-yellow-300 text-yellow-900 hover:bg-yellow-100">ㅂ</button><button type="button" data-univ-initial="ㅅ" onclick="setUniversityAdmissionsInitial('ㅅ')" aria-pressed="false" class="px-3 py-1.5 rounded-lg border text-sm font-bold transition bg-white border-yellow-300 text-yellow-900 hover:bg-yellow-100">ㅅ</button><button type="button" data-univ-initial="ㅇ" onclick="setUniversityAdmissionsInitial('ㅇ')" aria-pressed="false" class="px-3 py-1.5 rounded-lg border text-sm font-bold transition bg-white border-yellow-300 text-yellow-900 hover:bg-yellow-100">ㅇ</button><button type="button" data-univ-initial="ㅈ" onclick="setUniversityAdmissionsInitial('ㅈ')" aria-pressed="false" class="px-3 py-1.5 rounded-lg border text-sm font-bold transition bg-white border-yellow-300 text-yellow-900 hover:bg-yellow-100">ㅈ</button><button type="button" data-univ-initial="ㅊ" onclick="setUniversityAdmissionsInitial('ㅊ')" aria-pressed="false" class="px-3 py-1.5 rounded-lg border text-sm font-bold transition bg-white border-yellow-300 text-yellow-900 hover:bg-yellow-100">ㅊ</button><button type="button" data-univ-initial="ㅋ" onclick="setUniversityAdmissionsInitial('ㅋ')" aria-pressed="false" class="px-3 py-1.5 rounded-lg border text-sm font-bold transition bg-white border-yellow-300 text-yellow-900 hover:bg-yellow-100">ㅋ</button><button type="button" data-univ-initial="ㅌ" onclick="setUniversityAdmissionsInitial('ㅌ')" aria-pressed="false" class="px-3 py-1.5 rounded-lg border text-sm font-bold transition bg-white border-yellow-300 text-yellow-900 hover:bg-yellow-100">ㅌ</button><button type="button" data-univ-initial="ㅍ" onclick="setUniversityAdmissionsInitial('ㅍ')" aria-pressed="false" class="px-3 py-1.5 rounded-lg border text-sm font-bold transition bg-white border-yellow-300 text-yellow-900 hover:bg-yellow-100">ㅍ</button><button type="button" data-univ-initial="ㅎ" onclick="setUniversityAdmissionsInitial('ㅎ')" aria-pressed="false" class="px-3 py-1.5 rounded-lg border text-sm font-bold transition bg-white border-yellow-300 text-yellow-900 hover:bg-yellow-100">ㅎ</button>
       </div>
       <div class="flex flex-wrap items-center justify-between gap-3 mt-3">
         <p id="univInfoStatus" class="text-sm text-gray-600" role="status" aria-live="polite">대학 정보를 불러오려면 잠시 기다려 주세요.</p>
