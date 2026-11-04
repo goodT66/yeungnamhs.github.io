@@ -1754,10 +1754,10 @@ async function loadUniversityAdmissionsInfo(force=false){
   }).finally(()=>{universityAdmissionsInfoRequest=null;});
   return universityAdmissionsInfoRequest;
 }
-function universityAdmissionsDownloadLink(fileId,fileName){
+function universityAdmissionsDownloadLink(fileId,fileSn,fileName){
   const id=String(fileId??"").trim();
   if(!id)return '<span class="text-gray-400">자료 없음</span>';
-  const url=UNIVERSITY_INFO_DOWNLOAD_URL+"?"+new URLSearchParams({fileId:id,fileSn:"1",filePath:"kcu.fileStorePath"}).toString();
+  const url=UNIVERSITY_INFO_DOWNLOAD_URL+"?"+new URLSearchParams({fileId:id,fileSn:String(fileSn||"1"),filePath:"kcu.fileStorePath"}).toString();
   const safeName=String(fileName??"").trim();
   return '<a href="'+url+'" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 font-bold text-blue-700 hover:bg-blue-100 hover:border-blue-400 whitespace-nowrap">'+(safeName?'<span class="mr-1">📄</span>':'<span class="mr-1">⬇</span>')+escapeAdmHtml(safeName||"다운로드")+'</a>';
 }
@@ -1777,9 +1777,9 @@ function renderUniversityAdmissionsInfo(){
     const name=escapeAdmHtml(row.univ_nm||"");
     const area=escapeAdmHtml(row.area_nm||"");
     const campus=escapeAdmHtml(row.campus_nm||"");
-    const plan=universityAdmissionsDownloadLink(row.file_id10,row.file_nm10);
-    const susi=universityAdmissionsDownloadLink(row.file_id20,row.file_nm20);
-    const jeongsi=universityAdmissionsDownloadLink(row.file_id30,row.file_nm30);
+    const plan=universityAdmissionsDownloadLink(row.file_id10,row.file_sn10,row.file_nm10);
+    const susi=universityAdmissionsDownloadLink(row.file_id20,row.file_sn20,row.file_nm20);
+    const jeongsi=universityAdmissionsDownloadLink(row.file_id30,row.file_sn30,row.file_nm30);
     return '<tr class="hover:bg-yellow-50/50">'+
       '<td class="border border-gray-200 p-3 text-center whitespace-nowrap">'+area+'</td>'+
       '<td class="border border-gray-200 p-3 font-bold text-gray-800 whitespace-nowrap">'+name+'</td>'+
