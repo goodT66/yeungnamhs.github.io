@@ -48,7 +48,13 @@ def main():
         try:
             payload = response.json()
         except ValueError as exc:
-            raise RuntimeError(f"{year}학년도 응답이 JSON이 아닙니다.") from exc
+            body_preview = " ".join(response.text[:1200].split())
+            raise RuntimeError(
+                f"{year}학년도 응답이 JSON이 아닙니다. "
+                f"HTTP={response.status_code}, "
+                f"Content-Type={response.headers.get('Content-Type', '')}, "
+                f"응답 앞부분={body_preview!r}"
+            ) from exc
 
         rows = extract_rows(payload)
         if not rows:
