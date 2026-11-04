@@ -1724,34 +1724,24 @@ async function loadUniversityAdmissionsInfo(force=false){
   }
   status.textContent=year+"학년도 대학 정보를 불러오는 중입니다.";
   tbody.innerHTML='<tr><td colspan="6" class="p-8 text-center text-gray-500">대학 정보를 불러오는 중입니다.</td></tr>';
-  const params=new URLSearchParams({
-    selYear:year,
-    selUniType:"02",
-    selLetter:"1",
-    uni_ty:"on",
-    searchKeyword:""
-  });
-  universityAdmissionsInfoRequest=fetch(UNIVERSITY_INFO_API_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/x-www-form-urlencoded; charset=UTF-8","X-Requested-With":"XMLHttpRequest"},
-    body:params.toString(),
-    cache:"no-store"
-  }).then(async response=>{
-    if(!response.ok)throw new Error("대입정보포털 응답 오류 ("+response.status+")");
-    return response.json();
-  }).then(data=>{
-    const result=data?.resultPuidList || data?.resultVO?.resultPuidList || data?.data?.resultPuidList;
-    if(!Array.isArray(result))throw new Error("대학 목록 응답 형식이 예상과 다릅니다.");
-    universityAdmissionsInfoRows=result;
-    universityAdmissionsInfoLoadedYear=year;
-    renderUniversityAdmissionsInfo();
-    status.textContent=year+"학년도 대학 "+result.length+"개를 불러왔습니다.";
-  }).catch(error=>{
-    console.error("대학 입시 정보 조회 실패:",error);
-    universityAdmissionsInfoRows=[];
-    status.textContent="대학 정보를 불러오지 못했습니다. 대입정보포털의 외부 사이트 접근(CORS) 또는 연결 상태를 확인해 주세요.";
-    tbody.innerHTML='<tr><td colspan="6" class="p-8 text-center text-red-600">자료를 불러오지 못했습니다. 잠시 후 새로고침해 주세요.</td></tr>';
-  }).finally(()=>{universityAdmissionsInfoRequest=null;});
+  universityAdmissionsInfoRequest=fetch(`./data/university-admissions/${year}.json?t=${Date.now()}`,{cache:"no-store"})
+    .then(async response=>{
+      if(!response.ok)throw new Error("저장된 대학 자료 응답 오류 ("+response.status+")");
+      return response.json();
+    }).then(data=>{
+      const result=data?.rows;
+      if(!Array.isArray(result))throw new Error("저장된 대학 목록 형식이 올바르지 않습니다.");
+      universityAdmissionsInfoRows=result;
+      universityAdmissionsInfoLoadedYear=year;
+      renderUniversityAdmissionsInfo();
+      const updated=data.updatedAt?new Date(data.updatedAt).toLocaleString("ko-KR"):"";
+      status.textContent=year+"학년도 대학 "+result.length+"개를 불러왔습니다."+(updated?" (자료 갱신: "+updated+")":"");
+    }).catch(error=>{
+      console.error("대학 입시 정보 조회 실패:",error);
+      universityAdmissionsInfoRows=[];
+      status.textContent="대학 자료를 아직 준비하지 못했습니다. GitHub Actions에서 자료 업데이트를 실행해 주세요.";
+      tbody.innerHTML='<tr><td colspan="6" class="p-8 text-center text-red-600">대학 자료가 아직 저장되지 않았습니다. 잠시 후 다시 시도해 주세요.</td></tr>';
+    })
   return universityAdmissionsInfoRequest;
 }
 function universityAdmissionsDownloadLink(fileId,fileSn,fileName){
