@@ -98,6 +98,17 @@
         #classView .grad-table th:nth-child(6), #classView .grad-table td:nth-child(6) { left: 480px; }
         #classView .grad-table th:nth-child(7), #classView .grad-table td:nth-child(7) { left: 630px; }
         #classView .grad-table th:nth-child(8), #classView .grad-table td:nth-child(8) { left: 690px; }
+        /* 모바일에서는 표의 좌측 고정 열을 해제하여 가로 스크롤 시 값이 가려지지 않도록 처리 */
+        @media (max-width: 768px) {
+            #gradJeongsiTableScroll .grad-table th:nth-child(-n+7),
+            #gradJeongsiTableScroll .grad-table td:nth-child(-n+7),
+            #classView .grad-table th:nth-child(-n+8),
+            #classView .grad-table td:nth-child(-n+8) {
+                position: static !important;
+                left: auto !important;
+                z-index: auto !important;
+            }
+        }
         #susiResultTableScroll .grad-table { table-layout: fixed; }
         #susiResultTableScroll .grad-table th:nth-child(3),
         #susiResultTableScroll .grad-table td:nth-child(3) { width: 220px; min-width: 220px; max-width: 220px; white-space: normal; overflow-wrap: anywhere; word-break: keep-all; line-height: 1.35; }
