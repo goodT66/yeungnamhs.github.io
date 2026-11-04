@@ -277,6 +277,37 @@
             #susiResultTableScroll .grad-table th:nth-child(3),
             #susiResultTableScroll .grad-table td:nth-child(3) { width: 150px; min-width: 150px; max-width: 150px; }
             select, input, button { max-width: 100%; }
+            /* 정시 입결 조회: 모바일에서 검색·필터 영역을 세로로 재배치 */
+            #susiResultView { padding: 12px !important; border-top-width: 6px !important; }
+            #susiResultView > div:first-child { gap: 10px !important; margin-bottom: 14px !important; padding-bottom: 12px !important; }
+            #susiResultView > div:first-child h3 { font-size: 20px !important; }
+            #susiResultContent > .mb-4 { padding: 10px !important; }
+            #susiResultContent > .mb-4 > .grid { display: flex !important; flex-direction: column !important; gap: 12px !important; }
+            #susiStudentMockLookup > div:first-child { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px !important; }
+            #susiStudentMockLookup > div:first-child > strong { grid-column: 1 / -1; }
+            #susiStudentMockLookup select { width: 100% !important; min-width: 0 !important; }
+            #susiStudentMockLookup > div:last-child { align-items: stretch !important; gap: 8px !important; }
+            #susiStudentMockLookup > div:last-child > div { width: 100%; box-sizing: border-box; padding: 8px 10px !important; }
+            #susiStudentMockLookup > div:last-child > div:last-child { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px !important; font-size: 13px !important; }
+            #susiResultContent > .mb-4 .flex.flex-nowrap { flex-wrap: wrap !important; }
+            #susiResultContent > .mb-4 input#susiUnivInput,
+            #susiResultContent > .mb-4 input#susiMajorInput { width: 100% !important; min-width: 0 !important; }
+            #susiResultContent > .mb-4 .relative.flex.shrink-0 { flex: 1 1 100% !important; min-width: 0 !important; }
+            #susiResultContent > .mb-4 select#susiYearSelect { width: 100% !important; }
+            #susiResultContent > .mb-4 select#susiPositionSelect { flex: 1 1 100% !important; width: 100% !important; }
+            #susiResultContent > .mb-4 div:has(> #susiCsatMin) { width: 100%; height: auto !important; min-height: 40px; flex-wrap: wrap !important; padding: 6px 8px !important; }
+            #susiCsatMin, #susiCsatMax { flex: 1 1 60px; min-width: 0; }
+            #susiMockStudentPhoto { width: 112px !important; height: 144px !important; }
+            #susiResultContent > .mb-4 table { font-size: 10px !important; }
+            #susiResultContent > .mb-4 table th,
+            #susiResultContent > .mb-4 table td { padding: 3px 4px !important; overflow-wrap: anywhere; }
+            #susiPagination { margin-top: 8px; }
+            #susiResultTableScroll { width: 100%; max-width: 100%; overflow-x: auto !important; }
+            #susiResultTableScroll .grad-table { min-width: 1600px !important; table-layout: auto !important; }
+            #susiResultTableScroll .grad-table th,
+            #susiResultTableScroll .grad-table td { white-space: nowrap !important; }
+            #susiResultTableScroll .grad-table th:nth-child(3),
+            #susiResultTableScroll .grad-table td:nth-child(3) { width: 150px !important; min-width: 150px !important; max-width: 150px !important; white-space: normal !important; }
         }
 
 tr.susi-near-average > td { background-color: #fff3c4 !important; }
