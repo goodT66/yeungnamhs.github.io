@@ -1795,7 +1795,7 @@ function renderUniversityAdmissionsInfo(){
   const keyword=String(document.getElementById("univInfoSearch")?.value??"").trim().toLowerCase();
   const rows=universityAdmissionsInfoRows.filter(row=>{
     const text=[row.univ_nm,row.area_nm,row.campus_nm].map(value=>String(value??"").toLowerCase()).join(" ");
-    return getUniversityNameInitial(row.univ_nm)===universityAdmissionsInitial && (!keyword||text.includes(keyword));
+    return keyword ? text.includes(keyword) : getUniversityNameInitial(row.univ_nm)===universityAdmissionsInitial;
   });
   if(!rows.length){
     tbody.innerHTML='<tr><td colspan="11" class="p-8 text-center text-gray-500">조건에 맞는 대학 자료가 없습니다.</td></tr>';
