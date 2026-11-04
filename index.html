@@ -1703,7 +1703,7 @@ function openUniversityAdmissionsInfo(){
   });
   const view=document.getElementById("universityAdmissionsInfoView");
   if(view)view.classList.remove("hidden");
-  const year=document.getElementById("univInfoYear")?.value || "2027";
+  const year="2027";
   if(universityAdmissionsInfoLoadedYear!==year || !universityAdmissionsInfoRows.length)loadUniversityAdmissionsInfo();
 }
 function closeUniversityAdmissionsInfo(){
@@ -1713,11 +1713,10 @@ function closeUniversityAdmissionsInfo(){
   if(main)main.classList.remove("hidden");
 }
 async function loadUniversityAdmissionsInfo(force=false){
-  const yearEl=document.getElementById("univInfoYear");
   const status=document.getElementById("univInfoStatus");
   const tbody=document.getElementById("univInfoRows");
-  if(!yearEl||!status||!tbody)return;
-  const year=yearEl.value||"2027";
+  if(!status||!tbody)return;
+  const year="2027";
   if(universityAdmissionsInfoRequest && !force)return universityAdmissionsInfoRequest;
   if(!force && universityAdmissionsInfoLoadedYear===year && universityAdmissionsInfoRows.length){
     renderUniversityAdmissionsInfo();return;
@@ -5536,15 +5535,8 @@ window.changeSusiPage = changeSusiPage;
       <button type="button" onclick="closeUniversityAdmissionsInfo()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg">◀ 메인 화면으로</button>
     </div>
     <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <label class="text-sm font-bold text-gray-700">학년도
-          <select id="univInfoYear" onchange="loadUniversityAdmissionsInfo(true)" class="mt-1 w-full border border-gray-300 rounded-lg p-2 bg-white">
-            <option value="2027" selected>2027학년도</option>
-            <option value="2028">2028학년도</option>
-            <option value="2026">2026학년도</option>
-          </select>
-        </label>
-        <label class="text-sm font-bold text-gray-700 sm:col-span-2">대학명 검색
+      <div class="grid grid-cols-1 gap-3">
+        <label class="text-sm font-bold text-gray-700">대학명 검색
           <input id="univInfoSearch" type="search" oninput="filterUniversityAdmissionsInfo()" placeholder="대학명 또는 지역 검색" class="mt-1 w-full border border-gray-300 rounded-lg p-2 bg-white">
         </label>
       </div>
