@@ -1723,7 +1723,7 @@ async function loadUniversityAdmissionsInfo(force=false){
     renderUniversityAdmissionsInfo();return;
   }
   status.textContent=year+"학년도 대학 정보를 불러오는 중입니다.";
-  tbody.innerHTML='<tr><td colspan="8" class="p-8 text-center text-gray-500">대학 정보를 불러오는 중입니다.</td></tr>';
+  tbody.innerHTML='<tr><td colspan="11" class="p-8 text-center text-gray-500">대학 정보를 불러오는 중입니다.</td></tr>';
   universityAdmissionsInfoRequest=fetch(`./data/university-admissions/${year}.json?t=${Date.now()}`,{cache:"no-store"})
     .then(async response=>{
       if(!response.ok)throw new Error("저장된 대학 자료 응답 오류 ("+response.status+")");
@@ -1740,7 +1740,7 @@ async function loadUniversityAdmissionsInfo(force=false){
       console.error("대학 입시 정보 조회 실패:",error);
       universityAdmissionsInfoRows=[];
       status.textContent="대학 자료를 아직 준비하지 못했습니다. GitHub Actions에서 자료 업데이트를 실행해 주세요.";
-      tbody.innerHTML='<tr><td colspan="8" class="p-8 text-center text-red-600">대학 자료가 아직 저장되지 않았습니다. 잠시 후 다시 시도해 주세요.</td></tr>';
+      tbody.innerHTML='<tr><td colspan="11" class="p-8 text-center text-red-600">대학 자료가 아직 저장되지 않았습니다. 잠시 후 다시 시도해 주세요.</td></tr>';
     })
   return universityAdmissionsInfoRequest;
 }
@@ -1773,14 +1773,16 @@ function renderUniversityAdmissionsInfo(){
     return !keyword||text.includes(keyword);
   });
   if(!rows.length){
-    tbody.innerHTML='<tr><td colspan="8" class="p-8 text-center text-gray-500">조건에 맞는 대학 자료가 없습니다.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="11" class="p-8 text-center text-gray-500">조건에 맞는 대학 자료가 없습니다.</td></tr>';
     return;
   }
   tbody.innerHTML=rows.map(row=>{
     const name=escapeAdmHtml(row.univ_nm||"");
     const area=escapeAdmHtml(row.area_nm||"");
     const campus=escapeAdmHtml(row.campus_nm||"");
-    const plan=universityAdmissionsDownloadLink(row.file_id10,row.file_sn10,row.file_nm10);
+    const plan2027=universityAdmissionsDownloadLink(row.file_id10,row.file_sn10,row.file_nm10);
+    const plan2028=universityAdmissionsDownloadLink(row.file_id10_nxt,row.file_sn10_nxt,row.file_nm10_nxt);
+    const priorLearning=universityAdmissionsDownloadLink(row.file_id40,row.file_sn40,row.file_nm40);
     const susi=universityAdmissionsDownloadLink(row.file_id20,row.file_sn20,row.file_nm20);
     const jeongsi=universityAdmissionsDownloadLink(row.file_id30,row.file_sn30,row.file_nm30);
     const homepage=universityAdmissionsHomepageLink(row.hmpg,"대학 홈페이지");
@@ -1791,7 +1793,9 @@ function renderUniversityAdmissionsInfo(){
       '<td class="border border-gray-200 p-3 text-center whitespace-nowrap">'+campus+'</td>'+
       '<td class="border border-gray-200 p-3 text-center">'+homepage+'</td>'+
       '<td class="border border-gray-200 p-3 text-center">'+admissionHomepage+'</td>'+
-      '<td class="border border-gray-200 p-3 text-center">'+plan+'</td>'+
+      '<td class="border border-gray-200 p-3 text-center">'+plan2027+'</td>'+
+      '<td class="border border-gray-200 p-3 text-center">'+plan2028+'</td>'+
+      '<td class="border border-gray-200 p-3 text-center">'+priorLearning+'</td>'+
       '<td class="border border-gray-200 p-3 text-center">'+susi+'</td>'+
       '<td class="border border-gray-200 p-3 text-center">'+jeongsi+'</td></tr>';
   }).join("");
@@ -5556,13 +5560,15 @@ window.changeSusiPage = changeSusiPage;
             <th class="border border-yellow-100 p-3 text-center">캠퍼스</th>
             <th class="border border-yellow-100 p-3 text-center">대학 홈페이지</th>
             <th class="border border-yellow-100 p-3 text-center">입시 홈페이지</th>
-            <th class="border border-yellow-100 p-3 text-center">대학교별 시행계획</th>
+            <th class="border border-yellow-100 p-3 text-center">2027 시행 계획</th>
+            <th class="border border-yellow-100 p-3 text-center">2028 시행 계획</th>
+            <th class="border border-yellow-100 p-3 text-center">선행학습영향평가</th>
             <th class="border border-yellow-100 p-3 text-center">수시 모집요강</th>
             <th class="border border-yellow-100 p-3 text-center">정시 모집요강</th>
           </tr>
         </thead>
         <tbody id="univInfoRows">
-          <tr><td colspan="8" class="p-8 text-center text-gray-500">대학 정보를 불러오는 중입니다.</td></tr>
+          <tr><td colspan="11" class="p-8 text-center text-gray-500">대학 정보를 불러오는 중입니다.</td></tr>
         </tbody>
       </table>
     </div>
