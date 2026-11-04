@@ -3239,6 +3239,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     const isKyungHee = university === '경희대';
                     const isSeoulNational = university === '서울대';
                     const isSogang = university === '서강대';
+                    const isKyungpook = university === '경북대';
                     const universityWordIndex = admissionUnit.indexOf('대학');
                     const firstHyphenIndex = admissionUnit.indexOf('-');
                     const major = isSeoulNational
@@ -3249,7 +3250,9 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                             ? (admissionParts.length >= 3 ? admissionParts[1].trim() : '')
                             : isSogang
                                 ? (firstHyphenIndex >= 0 ? admissionUnit.slice(firstHyphenIndex + 1).trim() : '')
-                                : (admissionParts.length >= 2 ? admissionParts.slice(1).join('-').trim() : '');
+                                : isKyungpook
+                                    ? (admissionParts.length >= 2 ? admissionParts.slice(1).join('-').trim() : admissionUnit)
+                                    : (admissionParts.length >= 2 ? admissionParts.slice(1).join('-').trim() : '');
                     // 정시 입결 조회의 연도는 졸업생 정시 결과의 성적연도보다 1년 큽니다.
                     const gradScoreYear = normalizePercentileKey(row[16]);
                     const percentileYear = /^\d{4}$/.test(gradScoreYear) ? String(Number(gradScoreYear) + 1) : gradScoreYear;
