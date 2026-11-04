@@ -3288,7 +3288,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 const active = gradJeongsiSortCol === index ? (gradJeongsiIsAscending ? ' ▲' : ' ▼') : '';
                 th.className = 'cursor-pointer select-none hover:bg-blue-100 whitespace-nowrap';
                 th.title = '클릭하면 오름차순/내림차순 정렬';
-                th.innerHTML = `${index === 201 ? '<div class="leading-tight">70% 백분위</div><div class="text-[10px] font-normal text-gray-500 leading-tight">(대학어디가 자료)</div>' : gradJeongsiColLabels[index]}<span class="sort-icon">${active}</span>`;
+                th.innerHTML = `${index === 201 ? '<div class="leading-tight">70% 백분위</div><div class="text-[10px] font-normal text-gray-500 leading-tight">(대학어디가 자료)</div>' : index === 101 ? '<div class="leading-tight">학생 백분위</div><div class="text-[10px] font-normal text-gray-500 leading-tight">(국수탐 평균)</div>' : gradJeongsiColLabels[index]}<span class="sort-icon">${active}</span>`;
                 th.addEventListener('click', () => setGradJeongsiSort(index));
                 row.appendChild(th);
             });
@@ -3502,7 +3502,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                             const difference = Number((averagePercentile - seventyPercentile).toFixed(1));
                             const differenceText = difference > 0 ? '+' + difference : difference < 0 ? '-' + Math.abs(difference) : '0';
                             const differenceClass = difference < 0 ? 'text-red-700' : 'text-blue-700';
-                            percentileDifference = ` <span class="font-bold text-gray-900">(</span><span class="font-bold ${differenceClass}">${differenceText}</span><span class="font-bold text-gray-900">)</span>`;
+                            percentileDifference = ` <span class="text-sm font-bold text-gray-900">(</span><span class="text-sm font-bold ${differenceClass}">${differenceText}</span><span class="text-sm font-bold text-gray-900">)</span>`;
                         }
                     }
                     let cls = '';
@@ -3511,7 +3511,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                         else if (value.includes('합격')) cls = 'font-black text-blue-700 text-base';
                         else cls = 'font-bold text-gray-800 text-base';
                     } else if (index === 15) cls = 'font-bold text-gray-900 text-base bg-yellow-50/50';
-                    else if (index === 101) cls = 'font-black text-red-700 text-lg';
+                    else if (index === 101) cls = 'font-black text-gray-900 text-lg';
                     else if ([100, 103, 107, 113, 117, 105, 109, 110, 111, 115, 119].includes(index)) cls = 'font-bold text-blue-700 text-base';
                     else if (index === 5 || index === 6) cls = 'font-bold text-gray-800';
                     return `<td class="${cls}">${escapeHtmlGrad(value)}${percentileDifference}</td>`;
