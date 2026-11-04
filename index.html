@@ -1747,7 +1747,7 @@ async function loadUniversityAdmissionsInfo(force=false){
 function universityAdmissionsHomepageLink(value,label){
   let address=String(value??"").trim();
   if(!address)return '<span class="text-gray-400">자료 없음</span>';
-  if(!/^https?:\\/\\//i.test(address))address="https://"+address;
+  if(!/^https?:\/\//i.test(address))address="https://"+address;
   try{
     const parsed=new URL(address);
     if(parsed.protocol!=="http:"&&parsed.protocol!=="https:")return '<span class="text-gray-400">자료 없음</span>';
