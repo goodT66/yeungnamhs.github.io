@@ -22,7 +22,7 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .break-keep { word-break: keep-all; }
         @media (min-width: 1280px) {
-            nav[aria-label="주요 메뉴"] { grid-template-columns: max-content repeat(6, minmax(0, 1fr)) !important; }
+            nav[aria-label="주요 메뉴"] { grid-template-columns: max-content repeat(7, minmax(0, 1fr)) !important; }
         }
         .bg-school { background-color: #094b83; }
         .text-school { color: #094b83; }
@@ -405,6 +405,9 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
             </button>
             <button type="button" onclick="openSusiResultView()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-left text-xl xl:text-2xl font-extrabold shadow-sm hover:bg-amber-100 hover:border-amber-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-amber-300 transition duration-150">
                 <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">📝</span><span class="min-w-0 leading-snug whitespace-nowrap" style="white-space:nowrap;">정시 입결 조회</span>
+            </button>
+            <button type="button" onclick="openUniversityAdmissionsInfo()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-yellow-200 bg-yellow-50 text-yellow-900 text-left text-xl xl:text-2xl font-extrabold shadow-sm hover:bg-yellow-100 hover:border-yellow-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-yellow-300 transition duration-150" style="background-color:#fff0a8 !important;color:#51451c !important;border-color:#eadb8c !important;" title="대학별 시행계획·수시·정시 모집요강 다운로드">
+                <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">📌</span><span class="min-w-0 leading-snug">대학 입시 정보</span>
             </button>
         </nav>
 
@@ -1678,12 +1681,119 @@ function filterAdmissions2028() {
 function resetAdmissionsFilters(){["admFilterUniversity","admFilterUnit","admFilterType","admFilterName","admFilterCsat"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});filterAdmissions2028();}
 function openAdmissions2028(){
   if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) { alert("이 메뉴는 허용된 교사 계정으로 로그인한 뒤 이용할 수 있습니다."); return; }
-  ["mainDashboard","classView","interviewView","mockView","gradView","susiResultView","studentLookupView","admissions2028View"].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add("hidden");});
+  ["mainDashboard","classView","interviewView","mockView","gradView","susiResultView","studentLookupView","admissions2028View","universityAdmissionsInfoView"].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add("hidden");});
   const view=document.getElementById("admissions2028View");if(view)view.classList.remove("hidden");
   loadAdmissions2028();
 }
 function closeAdmissions2028(){const view=document.getElementById("admissions2028View");if(view)view.classList.add("hidden");const main=document.getElementById("mainDashboard");if(main)main.classList.remove("hidden");}
 window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAdmissions2028; window.filterAdmissions2028=filterAdmissions2028; window.sortAdmissions2028=sortAdmissions2028; window.resetAdmissionsFilters=resetAdmissionsFilters;
+
+// =====================================================================
+// [대학 입시 정보] 대입정보포털 대학별 시행계획·수시·정시 원본 파일 다운로드
+// =====================================================================
+const UNIVERSITY_INFO_API_URL = "https://sam.adiga.kr/kcue/ast/cou/por/bbs/selectUnventInfDtaInfo.do";
+const UNIVERSITY_INFO_DOWNLOAD_URL = "https://sam.adiga.kr/common/downloadFile.do";
+let universityAdmissionsInfoRows = [];
+let universityAdmissionsInfoLoadedYear = "";
+let universityAdmissionsInfoRequest = null;
+
+function openUniversityAdmissionsInfo(){
+  ["mainDashboard","classView","interviewView","mockView","gradView","susiResultView","studentLookupView","admissions2028View","universityAdmissionsInfoView"].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.classList.add("hidden");
+  });
+  const view=document.getElementById("universityAdmissionsInfoView");
+  if(view)view.classList.remove("hidden");
+  const year=document.getElementById("univInfoYear")?.value || "2027";
+  if(universityAdmissionsInfoLoadedYear!==year || !universityAdmissionsInfoRows.length)loadUniversityAdmissionsInfo();
+}
+function closeUniversityAdmissionsInfo(){
+  const view=document.getElementById("universityAdmissionsInfoView");
+  if(view)view.classList.add("hidden");
+  const main=document.getElementById("mainDashboard");
+  if(main)main.classList.remove("hidden");
+}
+async function loadUniversityAdmissionsInfo(force=false){
+  const yearEl=document.getElementById("univInfoYear");
+  const status=document.getElementById("univInfoStatus");
+  const tbody=document.getElementById("univInfoRows");
+  if(!yearEl||!status||!tbody)return;
+  const year=yearEl.value||"2027";
+  if(universityAdmissionsInfoRequest && !force)return universityAdmissionsInfoRequest;
+  if(!force && universityAdmissionsInfoLoadedYear===year && universityAdmissionsInfoRows.length){
+    renderUniversityAdmissionsInfo();return;
+  }
+  status.textContent=year+"학년도 대학 정보를 불러오는 중입니다.";
+  tbody.innerHTML='<tr><td colspan="6" class="p-8 text-center text-gray-500">대학 정보를 불러오는 중입니다.</td></tr>';
+  const params=new URLSearchParams({
+    selYear:year,
+    selUniType:"02",
+    selLetter:"1",
+    uni_ty:"on",
+    searchKeyword:""
+  });
+  universityAdmissionsInfoRequest=fetch(UNIVERSITY_INFO_API_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/x-www-form-urlencoded; charset=UTF-8","X-Requested-With":"XMLHttpRequest"},
+    body:params.toString(),
+    cache:"no-store"
+  }).then(async response=>{
+    if(!response.ok)throw new Error("대입정보포털 응답 오류 ("+response.status+")");
+    return response.json();
+  }).then(data=>{
+    const result=data?.resultPuidList || data?.resultVO?.resultPuidList || data?.data?.resultPuidList;
+    if(!Array.isArray(result))throw new Error("대학 목록 응답 형식이 예상과 다릅니다.");
+    universityAdmissionsInfoRows=result;
+    universityAdmissionsInfoLoadedYear=year;
+    renderUniversityAdmissionsInfo();
+    status.textContent=year+"학년도 대학 "+result.length+"개를 불러왔습니다.";
+  }).catch(error=>{
+    console.error("대학 입시 정보 조회 실패:",error);
+    universityAdmissionsInfoRows=[];
+    status.textContent="대학 정보를 불러오지 못했습니다. 대입정보포털의 외부 사이트 접근(CORS) 또는 연결 상태를 확인해 주세요.";
+    tbody.innerHTML='<tr><td colspan="6" class="p-8 text-center text-red-600">자료를 불러오지 못했습니다. 잠시 후 새로고침해 주세요.</td></tr>';
+  }).finally(()=>{universityAdmissionsInfoRequest=null;});
+  return universityAdmissionsInfoRequest;
+}
+function universityAdmissionsDownloadLink(fileId,fileName){
+  const id=String(fileId??"").trim();
+  if(!id)return '<span class="text-gray-400">자료 없음</span>';
+  const url=UNIVERSITY_INFO_DOWNLOAD_URL+"?"+new URLSearchParams({fileId:id,fileSn:"1",filePath:"kcu.fileStorePath"}).toString();
+  const safeName=String(fileName??"").trim();
+  return '<a href="'+url+'" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 font-bold text-blue-700 hover:bg-blue-100 hover:border-blue-400 whitespace-nowrap">'+(safeName?'<span class="mr-1">📄</span>':'<span class="mr-1">⬇</span>')+escapeAdmHtml(safeName||"다운로드")+'</a>';
+}
+function renderUniversityAdmissionsInfo(){
+  const tbody=document.getElementById("univInfoRows");
+  if(!tbody)return;
+  const keyword=String(document.getElementById("univInfoSearch")?.value??"").trim().toLowerCase();
+  const rows=universityAdmissionsInfoRows.filter(row=>{
+    const text=[row.univ_nm,row.area_nm,row.campus_nm].map(value=>String(value??"").toLowerCase()).join(" ");
+    return !keyword||text.includes(keyword);
+  });
+  if(!rows.length){
+    tbody.innerHTML='<tr><td colspan="6" class="p-8 text-center text-gray-500">조건에 맞는 대학 자료가 없습니다.</td></tr>';
+    return;
+  }
+  tbody.innerHTML=rows.map(row=>{
+    const name=escapeAdmHtml(row.univ_nm||"");
+    const area=escapeAdmHtml(row.area_nm||"");
+    const campus=escapeAdmHtml(row.campus_nm||"");
+    const plan=universityAdmissionsDownloadLink(row.file_id10,row.file_nm10);
+    const susi=universityAdmissionsDownloadLink(row.file_id20,row.file_nm20);
+    const jeongsi=universityAdmissionsDownloadLink(row.file_id30,row.file_nm30);
+    return '<tr class="hover:bg-yellow-50/50">'+
+      '<td class="border border-gray-200 p-3 text-center whitespace-nowrap">'+area+'</td>'+
+      '<td class="border border-gray-200 p-3 font-bold text-gray-800 whitespace-nowrap">'+name+'</td>'+
+      '<td class="border border-gray-200 p-3 text-center whitespace-nowrap">'+campus+'</td>'+
+      '<td class="border border-gray-200 p-3 text-center">'+plan+'</td>'+
+      '<td class="border border-gray-200 p-3 text-center">'+susi+'</td>'+
+      '<td class="border border-gray-200 p-3 text-center">'+jeongsi+'</td></tr>';
+  }).join("");
+}
+function filterUniversityAdmissionsInfo(){renderUniversityAdmissionsInfo();}
+window.openUniversityAdmissionsInfo=openUniversityAdmissionsInfo;
+window.closeUniversityAdmissionsInfo=closeUniversityAdmissionsInfo;
+window.loadUniversityAdmissionsInfo=loadUniversityAdmissionsInfo;
+window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
 
 </script>
 
@@ -1702,7 +1812,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
 
         // 화면 전환 시 메인 대시보드와 각 조회 화면 중 하나만 표시합니다.
         function hideAllContentViews() {
-            ['mainDashboard', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView', 'studentLookupView']
+            ['mainDashboard', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView', 'studentLookupView', 'universityAdmissionsInfoView']
                 .forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.classList.add('hidden');
@@ -5399,6 +5509,55 @@ window.changeSusiPage = changeSusiPage;
         </section>
       </div>
     </div>
+  </section>
+</div>
+
+<!-- 대학 입시 정보 다운로드 화면 -->
+<div id="universityAdmissionsInfoView" class="hidden bg-white rounded-2xl shadow-lg p-5 sm:p-8 w-full border-t-8 border-yellow-500">
+  <section>
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 pb-4 border-b gap-3">
+      <div>
+        <h2 class="text-2xl font-extrabold text-gray-800">📌 대학 입시 정보</h2>
+        <p class="text-gray-600 text-sm mt-1">대입정보포털에서 제공하는 대학별 원본 시행계획 및 모집요강을 다운로드합니다.</p>
+      </div>
+      <button type="button" onclick="closeUniversityAdmissionsInfo()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg">◀ 메인 화면으로</button>
+    </div>
+    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <label class="text-sm font-bold text-gray-700">학년도
+          <select id="univInfoYear" onchange="loadUniversityAdmissionsInfo(true)" class="mt-1 w-full border border-gray-300 rounded-lg p-2 bg-white">
+            <option value="2027" selected>2027학년도</option>
+            <option value="2028">2028학년도</option>
+            <option value="2026">2026학년도</option>
+          </select>
+        </label>
+        <label class="text-sm font-bold text-gray-700 sm:col-span-2">대학명 검색
+          <input id="univInfoSearch" type="search" oninput="filterUniversityAdmissionsInfo()" placeholder="대학명 또는 지역 검색" class="mt-1 w-full border border-gray-300 rounded-lg p-2 bg-white">
+        </label>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-3 mt-3">
+        <p id="univInfoStatus" class="text-sm text-gray-600" role="status" aria-live="polite">대학 정보를 불러오려면 잠시 기다려 주세요.</p>
+        <button type="button" onclick="loadUniversityAdmissionsInfo(true)" class="shrink-0 text-sm font-bold text-yellow-800 border border-yellow-300 bg-white rounded-lg px-3 py-2 hover:bg-yellow-100">자료 새로고침</button>
+      </div>
+    </div>
+    <div class="overflow-x-auto border border-gray-200 rounded-xl">
+      <table class="w-full text-sm border-collapse min-w-[850px]">
+        <thead class="bg-yellow-50 text-yellow-950">
+          <tr>
+            <th class="border border-yellow-100 p-3 text-center">지역</th>
+            <th class="border border-yellow-100 p-3 text-center">대학교</th>
+            <th class="border border-yellow-100 p-3 text-center">캠퍼스</th>
+            <th class="border border-yellow-100 p-3 text-center">대학교별 시행계획</th>
+            <th class="border border-yellow-100 p-3 text-center">수시 모집요강</th>
+            <th class="border border-yellow-100 p-3 text-center">정시 모집요강</th>
+          </tr>
+        </thead>
+        <tbody id="univInfoRows">
+          <tr><td colspan="6" class="p-8 text-center text-gray-500">대학 정보를 불러오는 중입니다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-xs text-gray-500 mt-3">※ 다운로드는 대입정보포털에서 제공하는 원본 파일을 그대로 이용합니다. 대학·학년도에 따라 제공되지 않는 자료가 있을 수 있습니다.</p>
   </section>
 </div>
 
