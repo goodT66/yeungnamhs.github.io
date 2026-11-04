@@ -98,6 +98,24 @@
         #classView .grad-table th:nth-child(6), #classView .grad-table td:nth-child(6) { left: 480px; }
         #classView .grad-table th:nth-child(7), #classView .grad-table td:nth-child(7) { left: 630px; }
         #classView .grad-table th:nth-child(8), #classView .grad-table td:nth-child(8) { left: 690px; }
+        /* 대학 입시 정보 표: 모바일에서는 열 너비를 확보하고 가로 스크롤로 표시 */
+        @media (max-width: 768px) {
+            #univInfoTable {
+                width: 1200px !important;
+                min-width: 1200px !important;
+                table-layout: auto !important;
+            }
+            #univInfoTable th,
+            #univInfoTable td {
+                box-sizing: border-box;
+                white-space: normal;
+                overflow-wrap: anywhere;
+                vertical-align: middle;
+            }
+            #univInfoTable td a {
+                white-space: nowrap;
+            }
+        }
         /* 모바일에서는 표의 좌측 고정 열을 해제하여 가로 스크롤 시 값이 가려지지 않도록 처리 */
         @media (max-width: 768px) {
             #gradJeongsiTableScroll .grad-table th:nth-child(-n+7),
@@ -5586,7 +5604,7 @@ window.changeSusiPage = changeSusiPage;
       </div>
     </div>
     <div class="overflow-x-auto border border-gray-200 rounded-xl">
-      <table class="w-full text-xs border-collapse table-fixed min-w-0">
+      <table class="w-full text-xs border-collapse table-fixed min-w-0" id="univInfoTable">
         <thead class="bg-yellow-50 text-yellow-950">
           <tr>
             <th class="border border-yellow-100 px-1 py-2 text-center" style="width:6%">지역</th>
