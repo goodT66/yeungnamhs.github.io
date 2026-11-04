@@ -3219,7 +3219,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                 if (!response.ok) throw new Error('네트워크 오류');
                 const percentileCsv = await response.text();
                 const percentileRows = (Papa.parse(percentileCsv, { skipEmptyLines: true }).data || []).slice(1);
-                const normalizePercentileKey = value => String(value ?? '').normalize('NFKC').replace(/\\s+/g, '').trim();
+                const normalizePercentileKey = value => String(value ?? '').normalize('NFKC').replace(/\s+/g, '').trim();
                 const normalizePercentileUniversity = value => normalizePercentileKey(value).replace(/대학교$/, '대');
                 const percentileMap = new Map();
                 percentileRows.forEach(row => {
@@ -3242,7 +3242,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                     const firstHyphenIndex = admissionUnit.indexOf('-');
                     const major = isSeoulNational
                         ? (universityWordIndex >= 0
-                            ? admissionUnit.slice(universityWordIndex + '대학'.length).replace(/^[-\\s]+/, '').trim()
+                            ? admissionUnit.slice(universityWordIndex + '대학'.length).replace(/^[-\s]+/, '').trim()
                             : (admissionParts.length >= 2 ? admissionParts.slice(1).join('-').trim() : ''))
                         : isKyungHee
                             ? (admissionParts.length >= 3 ? admissionParts[1].trim() : '')
@@ -3251,7 +3251,7 @@ window.openAdmissions2028=openAdmissions2028; window.closeAdmissions2028=closeAd
                                 : (admissionParts.length >= 2 ? admissionParts.slice(1).join('-').trim() : '');
                     // 정시 입결 조회의 연도는 졸업생 정시 결과의 성적연도보다 1년 큽니다.
                     const gradScoreYear = normalizePercentileKey(row[16]);
-                    const percentileYear = /^\\d{4}$/.test(gradScoreYear) ? String(Number(gradScoreYear) + 1) : gradScoreYear;
+                    const percentileYear = /^\d{4}$/.test(gradScoreYear) ? String(Number(gradScoreYear) + 1) : gradScoreYear;
                     const percentileKey = [percentileYear, normalizePercentileUniversity(row[6]), normalizePercentileKey(major)].join('|');
                     row._70Percentile = major ? (percentileMap.get(percentileKey) || '') : '';
                 });
