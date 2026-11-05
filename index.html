@@ -1106,6 +1106,8 @@ import {
     const auth = getAuth(app);
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
+    provider.addScope("https://www.googleapis.com/auth/spreadsheets.readonly");
+    let googleSheetsAccessToken = null;
 
     const TEACHER_NAMES = {
         "jjoeun32@yeungnam.hs.kr": "장조은",
@@ -1158,12 +1160,45 @@ window.studentSusiPlanStore = {
     save: async (studentId, payload) => setDoc(doc(db, "studentSusiPlans", studentId), { ...payload, updatedAt: serverTimestamp() }, { merge: true })
 };
 
-// 비공개 11월 성적표 자료는 교사 인증을 확인한 뒤 Firestore에서 조회합니다.
+// 교사 Google 로그인 권한으로 비공개 Google 스프레드시트의 11월 성적을 직접 조회합니다.
 window.novemberScoreStore = {
     load: async () => {
         if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
-        const snapshot = await getDocs(collection(db, "novemberScoreReports"));
-        return snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        if (!googleSheetsAccessToken) {
+            const result = await signInWithPopup(auth, provider);
+            if (!ALLOWED_EMAILS.includes(result.user.email) || result.user.email !== currentUser.email) {
+                throw new Error("현재 로그인한 교사 계정과 스프레드시트 접근 계정이 일치하지 않습니다.");
+            }
+            const credential = GoogleAuthProvider.credentialFromResult(result);
+            googleSheetsAccessToken = credential?.accessToken || null;
+        }
+        if (!googleSheetsAccessToken) throw new Error("Google 스프레드시트 읽기 권한을 받지 못했습니다. 다시 로그인해 주세요.");
+        const spreadsheetId = "1P7u_QcKhcrEJXVJiHX94Kv576GkSaDCa9PfYZXYZjT8";
+        const range = encodeURIComponent("'시트1'!A:S");
+        const response = await fetch("https://sheets.googleapis.com/v4/spreadsheets/" + spreadsheetId + "/values/" + range + "?valueRenderOption=FORMATTED_VALUE", {
+            headers: { Authorization: "Bearer " + googleSheetsAccessToken }
+        });
+        if (response.status === 401) {
+            googleSheetsAccessToken = null;
+            throw new Error("Google 스프레드시트 인증이 만료되었습니다. 11월 성적표를 다시 열어 권한을 갱신해 주세요.");
+        }
+        if (!response.ok) {
+            const detail = await response.json().catch(() => ({}));
+            throw new Error(detail.error?.message || "스프레드시트를 읽지 못했습니다. 시트 공유 권한과 Google Sheets API 사용 설정을 확인해 주세요.");
+        }
+        const data = await response.json();
+        const values = (data.values || []).slice(1);
+        return values.map(row => ({
+            id: String(row[0] || "").replace(/\\D/g, "").padStart(2, "0") + "_" + String(row[1] || "").replace(/\\D/g, "").padStart(2, "0"),
+            cls: String(row[0] || "").replace(/\\D/g, ""),
+            no: String(row[1] || "").replace(/\\D/g, ""),
+            name: row[2] || "",
+            korSubject: row[3] || "", korCommon: row[4] || "", korElective: row[5] || "", korTotal: row[6] || "",
+            korRank: row[7] || "", korPercentile: row[8] || "", korStandard: row[9] || "",
+            mathSubject: row[10] || "", mathCommon: row[11] || "", mathElective: row[12] || "", mathTotal: row[13] || "",
+            mathRank: row[14] || "", mathPercentile: row[15] || "", mathStandard: row[16] || "",
+            engScore: row[17] || "", engGrade: row[18] || ""
+        })).filter(row => row.cls && row.no && row.name);
     }
 };
 
@@ -1431,6 +1466,8 @@ interviewDateCache = {};
     window.loginWithGoogle = async () => {
         try {
             const result = await signInWithPopup(auth, provider);
+            const googleCredential = GoogleAuthProvider.credentialFromResult(result);
+            googleSheetsAccessToken = googleCredential?.accessToken || null;
             if (ALLOWED_EMAILS.includes(result.user.email)) {
                 alert("교사 인증 성공!");
             }
