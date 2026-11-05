@@ -4738,12 +4738,12 @@ function openNovemberScoreView(){
 }
 function closeNovemberScoreView(){showMainDashboard();}
 async function loadNovemberScoreData(){
-  const status=document.getElementById("novemberScoreStatus");status.textContent="Firebase에서 11월 성적 자료를 불러오는 중입니다.";
+  const status=document.getElementById("novemberScoreStatus");status.textContent="Google 스프레드시트에서 11월 성적 자료를 불러오는 중입니다.";
   try{if(!window.novemberScoreStore)throw new Error("성적 자료 연결이 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.");
     novemberScoreRows=await window.novemberScoreStore.load();novemberScoreRows.sort((a,b)=>Number(a.cls)-Number(b.cls)||Number(a.no)-Number(b.no));novemberScoreLoaded=true;
     const cls=document.getElementById("novemberScoreClass");cls.innerHTML='<option value="">반 선택</option>';
     [...new Set(novemberScoreRows.map(r=>String(r.cls)))].sort((a,b)=>Number(a)-Number(b)).forEach(c=>cls.add(new Option(c+"반",c)));
-    status.textContent=novemberScoreRows.length?"총 "+novemberScoreRows.length+"명의 11월 성적 자료를 불러왔습니다.":"성적 자료가 아직 Firebase에 등록되지 않았습니다. Google 스프레드시트 동기화를 먼저 실행해 주세요.";
+    status.textContent=novemberScoreRows.length?"총 "+novemberScoreRows.length+"명의 11월 성적 자료를 불러왔습니다.":"스프레드시트에 조회할 성적 자료가 없습니다. 시트1의 A:S열과 첫 행 제목을 확인해 주세요.";
   }catch(e){console.error("11월 성적표 불러오기 실패:",e);status.textContent=e.message||"성적 자료를 불러오지 못했습니다.";novemberScoreLoaded=false;}
 }
 function updateNovemberScoreStudents(){
