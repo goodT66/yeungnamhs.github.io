@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import firebase_admin
@@ -50,11 +51,13 @@ def main():
         data = {field: clean(padded[index]) for index, field in enumerate(FIELDS)}
         if not data["cls"] or not data["no"] or not data["name"]:
             continue
-        class_key = data["cls"].replace("반", "").strip()
-        number_key = data["no"].replace("번", "").strip()
+        class_key = re.sub(r"\D", "", data["cls"])
+        number_key = re.sub(r"\D", "", data["no"])
+        if not class_key or not number_key:
+            continue
         doc_id = f"{int(class_key):02d}_{int(number_key):02d}"
-        data["cls"] = class_key
-        data["no"] = number_key
+        data["cls"] = str(int(class_key))
+        data["no"] = str(int(number_key))
         data["sourceRow"] = row_number
         records.append((doc_id, data))
 
