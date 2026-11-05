@@ -1183,15 +1183,17 @@ window.novemberScoreStore = {
         if (parsed.errors && parsed.errors.length) console.warn("11월 성적 CSV 파싱 경고:", parsed.errors);
         const values = (parsed.data || []).slice(1);
         return values.map(row => ({
-            id: String(row[0] || "").replace(/\\D/g, "").padStart(2, "0") + "_" + String(row[1] || "").replace(/\\D/g, "").padStart(2, "0"),
-            cls: String(row[0] || "").replace(/\\D/g, ""),
-            no: String(row[1] || "").replace(/\\D/g, ""),
+            id: String(row[0] || "").replace(/\D/g, "").padStart(2, "0") + "_" + String(row[1] || "").replace(/\D/g, "").padStart(2, "0"),
+            cls: String(row[0] || "").replace(/\D/g, ""),
+            no: String(row[1] || "").replace(/\D/g, ""),
             name: row[2] || "",
             korSubject: row[3] || "", korCommon: row[4] || "", korElective: row[5] || "", korTotal: row[6] || "",
             korRank: row[7] || "", korPercentile: row[8] || "", korStandard: row[9] || "",
             mathSubject: row[10] || "", mathCommon: row[11] || "", mathElective: row[12] || "", mathTotal: row[13] || "",
             mathRank: row[14] || "", mathPercentile: row[15] || "", mathStandard: row[16] || "",
-            engScore: row[17] || "", engGrade: row[18] || ""
+            engScore: row[17] || "", engGrade: row[18] || "", engRank: row[19] || "",
+            inquiry1Subject: row[20] || "", inquiry1Score: row[21] || "", inquiry1Rank: row[22] || "",
+            inquiry2Subject: row[23] || "", inquiry2Score: row[24] || "", inquiry2Rank: row[25] || ""
         })).filter(row => row.cls && row.no && row.name);
     }
 };
@@ -4747,7 +4749,7 @@ async function loadNovemberScoreData(){
     novemberScoreRows=await window.novemberScoreStore.load();novemberScoreRows.sort((a,b)=>Number(a.cls)-Number(b.cls)||Number(a.no)-Number(b.no));novemberScoreLoaded=true;
     const cls=document.getElementById("novemberScoreClass");cls.innerHTML='<option value="">반 선택</option>';
     [...new Set(novemberScoreRows.map(r=>String(r.cls)))].sort((a,b)=>Number(a)-Number(b)).forEach(c=>cls.add(new Option(c+"반",c)));
-    status.textContent=novemberScoreRows.length?"총 "+novemberScoreRows.length+"명의 11월 성적 자료를 불러왔습니다.":"스프레드시트에 조회할 성적 자료가 없습니다. 시트1의 A:S열과 첫 행 제목을 확인해 주세요.";
+    status.textContent=novemberScoreRows.length?"총 "+novemberScoreRows.length+"명의 11월 성적 자료를 불러왔습니다.":"스프레드시트에 조회할 성적 자료가 없습니다. 시트1의 A:Z열과 첫 행 제목을 확인해 주세요.";
   }catch(e){console.error("11월 성적표 불러오기 실패:",e);status.textContent=e.message||"성적 자료를 불러오지 못했습니다.";novemberScoreLoaded=false;}
 }
 function updateNovemberScoreStudents(){
@@ -4758,6 +4760,8 @@ function updateNovemberScoreStudents(){
 function renderNovemberScorePage(r){
   const esc=v=>String(v===undefined||v===null||String(v).trim()===""?"-":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
   const cell=(v,extra="")=>'<td class="border border-gray-500 px-2 py-3 '+extra+'">'+esc(v)+'</td>';
+  const subjectRow=(name,subject,common,elective,total,standard,percentile,rank,grade="-")=>
+    '<tr><th class="border border-gray-500 p-3 bg-slate-50">'+name+'</th>'+cell(subject)+cell(common)+cell(elective)+cell(total,"font-bold")+cell(standard)+cell(percentile)+cell(rank)+cell(grade)+'</tr>';
   return '<article class="november-score-page bg-white border border-gray-300 rounded-xl p-5 sm:p-7 shadow-sm"><div class="text-center border-b-2 border-gray-800 pb-4 mb-5"><h2 class="text-2xl font-black tracking-wide">2026학년도 11월 학력평가 성적통지표</h2><p class="text-sm text-gray-600 mt-1">영남고등학교</p></div>'+
   '<table class="w-full border-collapse text-center mb-5"><tbody><tr class="bg-slate-100">'+
   '<th class="border border-gray-500 p-3 w-1/5">학년</th><th class="border border-gray-500 p-3 w-1/5">반</th><th class="border border-gray-500 p-3 w-1/5">번호</th><th class="border border-gray-500 p-3 w-2/5">성명</th></tr><tr class="text-lg font-bold">'+
@@ -4765,9 +4769,11 @@ function renderNovemberScorePage(r){
   '<h3 class="font-extrabold text-lg mb-2 text-center">영역별 성적</h3><div class="overflow-x-auto"><table class="w-full min-w-[760px] border-collapse text-center text-sm"><thead>'+
   '<tr class="bg-slate-200"><th rowspan="2" class="border border-gray-500 p-2">영역</th><th rowspan="2" class="border border-gray-500 p-2">선택과목</th><th colspan="3" class="border border-gray-500 p-2">원점수</th><th rowspan="2" class="border border-gray-500 p-2">표준점수</th><th rowspan="2" class="border border-gray-500 p-2">학교백분위</th><th rowspan="2" class="border border-gray-500 p-2">학교석차</th><th rowspan="2" class="border border-gray-500 p-2">등급</th></tr>'+
   '<tr class="bg-slate-100"><th class="border border-gray-500 p-2">공통</th><th class="border border-gray-500 p-2">선택</th><th class="border border-gray-500 p-2">합계</th></tr></thead><tbody>'+
-  '<tr><th class="border border-gray-500 p-3 bg-slate-50">국어</th>'+cell(r.korSubject)+cell(r.korCommon)+cell(r.korElective)+cell(r.korTotal,"font-bold")+cell(r.korStandard,"font-bold")+cell(r.korPercentile)+cell(r.korRank)+cell("-")+'</tr>'+
-  '<tr><th class="border border-gray-500 p-3 bg-slate-50">수학</th>'+cell(r.mathSubject)+cell(r.mathCommon)+cell(r.mathElective)+cell(r.mathTotal,"font-bold")+cell(r.mathStandard,"font-bold")+cell(r.mathPercentile)+cell(r.mathRank)+cell("-")+'</tr>'+
-  '<tr><th class="border border-gray-500 p-3 bg-slate-50">영어</th>'+cell("-")+cell("-")+cell("-")+cell(r.engScore,"font-bold")+cell("-")+cell("-")+cell("-")+cell(r.engGrade,"font-bold text-lg")+'</tr>'+
+  subjectRow("국어",r.korSubject,r.korCommon,r.korElective,r.korTotal,r.korStandard,r.korPercentile,r.korRank)+
+  subjectRow("수학",r.mathSubject,r.mathCommon,r.mathElective,r.mathTotal,r.mathStandard,r.mathPercentile,r.mathRank)+
+  subjectRow("영어","-","-","-",r.engScore,"-","-",r.engRank,r.engGrade)+
+  subjectRow("탐구1",r.inquiry1Subject,"-","-",r.inquiry1Score,"-","-",r.inquiry1Rank)+
+  subjectRow("탐구2",r.inquiry2Subject,"-","-",r.inquiry2Score,"-","-",r.inquiry2Rank)+
   '</tbody></table></div><p class="text-xs text-gray-500 mt-6 text-right">※ 학교석차 및 학교백분위는 교내 성적 기준입니다.</p><p class="text-xs text-gray-500 mt-2 text-right">영남고등학교 진로진학 상담 시스템</p></article>';
 }
 function renderNovemberScoreSelected(){
