@@ -22,7 +22,7 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .break-keep { word-break: keep-all; }
         @media (min-width: 1280px) {
-            nav[aria-label="주요 메뉴"] { grid-template-columns: max-content repeat(7, minmax(0, 1fr)) !important; }
+            nav[aria-label="주요 메뉴"] { grid-template-columns: max-content repeat(8, minmax(0, 1fr)) !important; }
         }
         .bg-school { background-color: #094b83; }
         .text-school { color: #094b83; }
@@ -186,6 +186,13 @@
           #studentLookupCard table.lookup-susi-third-grade textarea { white-space:pre-wrap !important; }
           #studentLookupCard * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
           @page { size:A4 portrait; margin:8mm; }
+        }
+        @media print {
+          body * { visibility:hidden !important; }
+          #novemberScorePrintArea, #novemberScorePrintArea * { visibility:visible !important; }
+          #novemberScorePrintArea { display:block !important; position:absolute !important; left:0 !important; top:0 !important; width:100% !important; margin:0 !important; padding:0 !important; }
+          .november-score-page { display:block !important; width:100% !important; min-height:270mm !important; page-break-after:always !important; break-after:page !important; box-sizing:border-box !important; padding:0 !important; border:0 !important; box-shadow:none !important; }
+          .november-score-page:last-child { page-break-after:auto !important; break-after:auto !important; }
         }
 
         /* 주요 메뉴 7개: 책 위에 붙인 포스트잇 디자인 (기존 기능/이벤트는 유지) */
@@ -445,6 +452,9 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
 
         <!-- 메인 헤더 바로 아래 메뉴: 버튼별 테두리와 배경색으로 구분 -->
         <nav aria-label="주요 메뉴" class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 pl-0 mb-5 ml-0 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-2">
+            <button type="button" id="novemberScoreButton" onclick="openNovemberScoreView()" class="min-w-0 min-h-[76px] flex items-center justify-center gap-2 px-3 py-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-900 text-xl xl:text-2xl font-extrabold shadow-sm hover:bg-rose-100 hover:border-rose-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-rose-300 transition duration-150" title="11월 성적표 조회 및 반별 출력">
+                <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">📋</span><span class="min-w-0 leading-snug">11월 성적표</span>
+            </button>
             <button type="button" id="admissions2028Button" onclick="openAdmissions2028()" class="justify-self-start w-max min-w-0 min-h-[76px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-left text-lg xl:text-xl font-extrabold shadow-sm hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-sky-300 transition duration-150" style="background-color:#0f766e !important; color:#ffffff !important; border-color:#115e59 !important;" title="2028 대입 전형 자료">
                 <span class="shrink-0 text-xl leading-none" aria-hidden="true">🎯</span><span class="min-w-0 leading-snug whitespace-nowrap" style="display:inline-block !important; color:#ffffff !important; visibility:visible !important; opacity:1 !important;">2028 대입</span>
             </button>
@@ -1146,6 +1156,15 @@ window.studentSusiPlanStore = {
     save: async (studentId, payload) => setDoc(doc(db, "studentSusiPlans", studentId), { ...payload, updatedAt: serverTimestamp() }, { merge: true })
 };
 
+// 비공개 11월 성적표 자료는 교사 인증을 확인한 뒤 Firestore에서 조회합니다.
+window.novemberScoreStore = {
+    load: async () => {
+        if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
+        const snapshot = await getDocs(collection(db, "novemberScoreReports"));
+        return snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+    }
+};
+
 window.classSusiEditStore = {
     load: async () => {
         if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
@@ -1377,7 +1396,7 @@ document.getElementById('userEmail').innerText = user.email;
         } else {
             currentUser = null;
             // 로그아웃 시 보호 화면만 닫습니다. 메뉴 버튼은 계속 표시합니다.
-            ['studentLookupView','admissions2028View'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+            ['studentLookupView','admissions2028View','novemberScoreView'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
             document.getElementById('mainDashboard')?.classList.remove('hidden');
             // 로그아웃 시 실시간 구독 해제
 stopCloudDataSync();
@@ -1741,7 +1760,7 @@ function filterAdmissions2028() {
 function resetAdmissionsFilters(){["admFilterUniversity","admFilterUnit","admFilterType","admFilterName","admFilterCsat"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});filterAdmissions2028();}
 function openAdmissions2028(){
   if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) { alert("이 메뉴는 허용된 교사 계정으로 로그인한 뒤 이용할 수 있습니다."); return; }
-  ["mainDashboard","classView","interviewView","mockView","gradView","susiResultView","studentLookupView","admissions2028View","universityAdmissionsInfoView"].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add("hidden");});
+  ["mainDashboard","classView","interviewView","mockView","gradView","susiResultView","studentLookupView","admissions2028View","universityAdmissionsInfoView","novemberScoreView"].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add("hidden");});
   const view=document.getElementById("admissions2028View");if(view)view.classList.remove("hidden");
   loadAdmissions2028();
 }
@@ -1910,7 +1929,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
 
         // 화면 전환 시 메인 대시보드와 각 조회 화면 중 하나만 표시합니다.
         function hideAllContentViews() {
-            ['mainDashboard', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView', 'studentLookupView', 'universityAdmissionsInfoView']
+            ['mainDashboard', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView', 'studentLookupView', 'universityAdmissionsInfoView', 'novemberScoreView']
                 .forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.classList.add('hidden');
@@ -4670,7 +4689,50 @@ function applyGradFilter() {
                 const control = td.querySelector('input, select');
                 return `<td>${escapeExcelHtml(control ? control.value : td.textContent.trim())}</td>`;
             }).join('')}</tr>`).join('');
-            const workbookHtml = `<html><head><meta charset="UTF-8"></head><body><table>${headerHtml}${bodyHtml}</table></body></html>`;
+            const workbookHtml = `<html><head><meta charset="UTF-8"></head><body><table>${headerHtml}${bodyHtml}</table><script>
+let novemberScoreRows = [];
+let novemberScoreLoaded = false;
+function openNovemberScoreView(){
+  if(!window.getCurrentUser || !window.getCurrentUser()){alert("11월 성적표는 교사 Google 로그인 후 이용할 수 있습니다.");return;}
+  hideAllContentViews();document.getElementById("novemberScoreView").classList.remove("hidden");
+  if(!novemberScoreLoaded)loadNovemberScoreData();
+}
+function closeNovemberScoreView(){showMainDashboard();}
+async function loadNovemberScoreData(){
+  const status=document.getElementById("novemberScoreStatus");status.textContent="Firebase에서 11월 성적 자료를 불러오는 중입니다.";
+  try{if(!window.novemberScoreStore)throw new Error("성적 자료 연결이 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.");
+    novemberScoreRows=await window.novemberScoreStore.load();novemberScoreRows.sort((a,b)=>Number(a.cls)-Number(b.cls)||Number(a.no)-Number(b.no));novemberScoreLoaded=true;
+    const cls=document.getElementById("novemberScoreClass");cls.innerHTML='<option value="">반 선택</option>';
+    [...new Set(novemberScoreRows.map(r=>String(r.cls)))].sort((a,b)=>Number(a)-Number(b)).forEach(c=>cls.add(new Option(c+"반",c)));
+    status.textContent=novemberScoreRows.length?"총 "+novemberScoreRows.length+"명의 11월 성적 자료를 불러왔습니다.":"성적 자료가 아직 Firebase에 등록되지 않았습니다. Google 스프레드시트 동기화를 먼저 실행해 주세요.";
+  }catch(e){console.error("11월 성적표 불러오기 실패:",e);status.textContent=e.message||"성적 자료를 불러오지 못했습니다.";novemberScoreLoaded=false;}
+}
+function updateNovemberScoreStudents(){
+  const cls=document.getElementById("novemberScoreClass").value,sel=document.getElementById("novemberScoreStudent");sel.innerHTML='<option value="">번호-이름 선택</option>';
+  const rows=novemberScoreRows.filter(r=>String(r.cls)===cls);rows.forEach(r=>{const id=String(r.id||(""+r.cls+"_"+r.no));sel.add(new Option(String(r.no)+"번 - "+r.name,id));});
+  sel.disabled=!rows.length;document.getElementById("novemberScorePrintArea").innerHTML='<div id="novemberScoreEmpty" class="rounded-xl border border-dashed border-gray-300 p-10 text-center text-gray-500">학생을 선택하면 성적표가 표시됩니다.</div>';
+}
+function renderNovemberScorePage(r){
+  const esc=v=>String(v===undefined||v===null||String(v).trim()===""?"-":v).replace(/[&<>"\']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","\'":"&#39;"}[c]));
+  const row=(label,subject,common,elective,total,rank,pct,std)=>"<tr><th>"+label+"</th><td>"+esc(subject)+"</td><td>"+esc(common)+"</td><td>"+esc(elective)+"</td><td>"+esc(total)+"</td><td>"+esc(rank)+"</td><td>"+esc(pct)+"</td><td>"+esc(std)+"</td></tr>";
+  return '<article class="november-score-page bg-white border border-gray-300 rounded-xl p-5 sm:p-7 shadow-sm"><div class="text-center border-b-2 border-gray-800 pb-4 mb-5"><h2 class="text-2xl font-black tracking-wide">2026학년도 11월 학력평가 성적표</h2><p class="text-sm text-gray-500 mt-1">영남고등학교</p></div>'+
+  '<div class="grid grid-cols-3 border border-gray-400 mb-5 text-center"><div class="p-3 border-r border-gray-300"><div class="text-xs text-gray-500">반</div><div class="text-xl font-extrabold">'+esc(r.cls)+'</div></div><div class="p-3 border-r border-gray-300"><div class="text-xs text-gray-500">번호</div><div class="text-xl font-extrabold">'+esc(r.no)+'</div></div><div class="p-3"><div class="text-xs text-gray-500">이름</div><div class="text-xl font-extrabold">'+esc(r.name)+'</div></div></div>'+
+  '<h3 class="font-extrabold text-lg mb-2">국어·수학 성적</h3><div class="overflow-x-auto"><table class="w-full border-collapse text-center text-sm"><thead><tr class="bg-slate-100"><th class="border border-gray-400 p-2">과목</th><th class="border border-gray-400 p-2">선택과목</th><th class="border border-gray-400 p-2">공통점수</th><th class="border border-gray-400 p-2">선택점수</th><th class="border border-gray-400 p-2">총점</th><th class="border border-gray-400 p-2">학교석차</th><th class="border border-gray-400 p-2">학교백분위</th><th class="border border-gray-400 p-2">표준점수</th></tr></thead><tbody>'+row("국어",r.korSubject,r.korCommon,r.korElective,r.korTotal,r.korRank,r.korPercentile,r.korStandard)+row("수학",r.mathSubject,r.mathCommon,r.mathElective,r.mathTotal,r.mathRank,r.mathPercentile,r.mathStandard)+'</tbody></table></div>'+
+  '<h3 class="font-extrabold text-lg mt-6 mb-2">영어 성적</h3><table class="w-full border-collapse text-center text-sm"><thead><tr class="bg-slate-100"><th class="border border-gray-400 p-3">영어 점수</th><th class="border border-gray-400 p-3">영어 등급</th></tr></thead><tbody><tr><td class="border border-gray-400 p-4 text-lg font-bold">'+esc(r.engScore)+'</td><td class="border border-gray-400 p-4 text-lg font-bold">'+esc(r.engGrade)+'</td></tr></tbody></table><p class="text-xs text-gray-500 mt-8 text-right">영남고등학교 진로진학 상담 시스템</p></article>';
+}
+function renderNovemberScoreSelected(){
+  const id=document.getElementById("novemberScoreStudent").value,student=novemberScoreRows.find(r=>String(r.id||(""+r.cls+"_"+r.no))===id),area=document.getElementById("novemberScorePrintArea");
+  area.innerHTML=student?renderNovemberScorePage(student):'<div id="novemberScoreEmpty" class="rounded-xl border border-dashed border-gray-300 p-10 text-center text-gray-500">학생을 선택하면 성적표가 표시됩니다.</div>';
+}
+function printNovemberScoreSelected(){renderNovemberScoreSelected();if(!document.getElementById("novemberScoreStudent").value){alert("먼저 반과 학생을 선택해 주세요.");return;}window.print();}
+function printNovemberScoreClass(){
+  const cls=document.getElementById("novemberScoreClass").value;if(!cls){alert("먼저 반을 선택해 주세요.");return;}
+  const rows=novemberScoreRows.filter(r=>String(r.cls)===cls);if(!rows.length){alert("선택한 반의 성적 자료가 없습니다.");return;}
+  document.getElementById("novemberScorePrintArea").innerHTML=rows.map(renderNovemberScorePage).join("");window.print();setTimeout(renderNovemberScoreSelected,500);
+}
+window.openNovemberScoreView=openNovemberScoreView;window.closeNovemberScoreView=closeNovemberScoreView;window.updateNovemberScoreStudents=updateNovemberScoreStudents;window.renderNovemberScoreSelected=renderNovemberScoreSelected;window.printNovemberScoreSelected=printNovemberScoreSelected;window.printNovemberScoreClass=printNovemberScoreClass;
+</script>
+</body></html>`;
             const blob = new Blob(['\ufeff', workbookHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -5610,6 +5672,23 @@ window.changeSusiPage = changeSusiPage;
   </section>
 </div>
 
+<!-- 11월 성적표 조회 화면 -->
+<div id="novemberScoreView" class="hidden bg-white rounded-2xl shadow-lg p-5 sm:p-8 w-full border-t-8 border-rose-400">
+  <section>
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 pb-4 border-b gap-3">
+      <div><h2 class="text-2xl font-extrabold text-gray-800">📋 11월 성적표</h2><p class="text-gray-600 text-sm mt-1">교사 인증 후 학생별 성적 조회 및 반별 성적표를 출력할 수 있습니다.</p></div>
+      <button type="button" onclick="closeNovemberScoreView()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg">◀ 메인 화면으로</button>
+    </div>
+    <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 mb-5">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+        <label class="block text-sm font-bold text-gray-700">반 선택<select id="novemberScoreClass" onchange="updateNovemberScoreStudents()" class="mt-1 w-full border border-gray-300 rounded-lg p-2.5 bg-white"><option value="">반 선택</option></select></label>
+        <label class="block text-sm font-bold text-gray-700">번호-이름 선택<select id="novemberScoreStudent" onchange="renderNovemberScoreSelected()" disabled class="mt-1 w-full border border-gray-300 rounded-lg p-2.5 bg-white"><option value="">번호-이름 선택</option></select></label>
+        <div class="flex flex-wrap gap-2"><button type="button" onclick="printNovemberScoreSelected()" class="flex-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2.5">🖨️ 개별 성적표 출력</button><button type="button" onclick="printNovemberScoreClass()" class="flex-1 rounded-lg bg-school hover:bg-blue-800 text-white font-bold px-4 py-2.5">📄 반별 전체 출력</button></div>
+      </div><p id="novemberScoreStatus" class="text-sm text-gray-600 mt-3" role="status">성적 자료를 불러오는 중입니다.</p>
+    </div>
+    <div id="novemberScorePrintArea" class="space-y-5"><div id="novemberScoreEmpty" class="rounded-xl border border-dashed border-gray-300 p-10 text-center text-gray-500">반과 학생을 선택하면 성적표가 표시됩니다.</div></div>
+  </section>
+</div>
 <!-- 대학 입시 정보 다운로드 화면 -->
 <div id="universityAdmissionsInfoView" class="hidden bg-white rounded-2xl shadow-lg p-5 sm:p-8 w-full border-t-8 border-yellow-500">
   <section>
