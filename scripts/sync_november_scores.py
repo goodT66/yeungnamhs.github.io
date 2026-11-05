@@ -59,8 +59,8 @@ def main():
         data = {field: clean(padded[index]) for index, field in enumerate(FIELDS)}
         if not data["cls"] or not data["no"] or not data["name"]:
             continue
-        class_key = re.sub(r"\\D", "", data["cls"])
-        number_key = re.sub(r"\\D", "", data["no"])
+        class_key = re.sub(r"\D", "", data["cls"])
+        number_key = re.sub(r"\D", "", data["no"])
         if not class_key or not number_key:
             continue
         doc_id = f"{int(class_key):02d}_{int(number_key):02d}"
