@@ -1752,7 +1752,7 @@ function filterAdmissions2028() {
 function resetAdmissionsFilters(){["admFilterUniversity","admFilterUnit","admFilterType","admFilterName","admFilterCsat"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});filterAdmissions2028();}
 function openAdmissions2028(){
   if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) { alert("이 메뉴는 허용된 교사 계정으로 로그인한 뒤 이용할 수 있습니다."); return; }
-  ["mainDashboard","classView","interviewView","mockView","gradView","susiResultView","studentLookupView","admissions2028View","universityAdmissionsInfoView"].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add("hidden");});
+  ["mainDashboard","classView","interviewView","mockView","gradView","susiResultView","studentLookupView","admissions2028View","universityAdmissionsInfoView","novemberScoreView"].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add("hidden");});
   const view=document.getElementById("admissions2028View");if(view)view.classList.remove("hidden");
   loadAdmissions2028();
 }
@@ -4766,6 +4766,7 @@ window.printNovemberClassReports=printNovemberClassReports;
 <style>
 @media print {
   body.november-printing * { visibility:hidden !important; }
+  body.november-printing #studentLookupCard, body.november-printing #studentLookupCard * { display:none !important; visibility:hidden !important; }
   #novemberPrintArea, #novemberPrintArea * { visibility:visible !important; }
   #novemberPrintArea { display:block !important; position:absolute !important; left:0; top:0; width:100%; }
   #novemberPrintArea .november-report-card { break-after:page; page-break-after:always; border:1px solid #333 !important; border-radius:0 !important; }
