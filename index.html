@@ -1990,7 +1990,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             hideAllContentViews();
             document.getElementById('mockView').classList.remove('hidden');
             if (window.getCurrentUser && window.getCurrentUser()) {
-                if(mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) populateGradeDropdown();
+                if (!mockDataLoaded) fetchMockData();
+                else if (document.getElementById('gradeSelect').options.length <= 1) populateGradeDropdown();
             }
         }
 
@@ -2004,14 +2005,18 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             hideAllContentViews();
             document.getElementById('classView').classList.remove('hidden');
             if (window.getCurrentUser && window.getCurrentUser()) {
-                if(classSusiData.length > 0 && document.getElementById('classGradeSelect').options.length <= 1) populateClassGradeDropdown();
+                if (classSusiData.length > 0) {
+                    if (document.getElementById('classGradeSelect').options.length <= 1) populateClassGradeDropdown();
+                } else {
+                    fetchClassSusiData();
+                }
             }
         }
 
         function openInterviewView() {
             hideAllContentViews();
             document.getElementById('interviewView').classList.remove('hidden');
-            if (window.getCurrentUser && window.getCurrentUser()) {
+            if (window.getCurrentUser && window.getCurrentUser() && !interviewData.length) {
                 fetchInterviewData();
             }
         }
@@ -2020,20 +2025,17 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             hideAllContentViews();
             document.getElementById('susiResultView').classList.remove('hidden');
             if (window.getCurrentUser && window.getCurrentUser()) {
-                if(susiResultData.length > 0) renderSusiResultTable();
+                if (susiResultData.length > 0) renderSusiResultTable();
+                else fetchSusiResultData();
                 initializeSusiMockLookup();
             }
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            fetchMockData();
-            fetchGradData();
-            fetchClassSusiData();
-            fetchInterviewData();
-            fetchSusiResultData(); // 수시입결
+            // 첫 화면에서는 전달 사항과 달력만 준비하고, 무거운 성적·입결 자료는
+            // 해당 메뉴에 처음 진입할 때 불러옵니다.
             renderAllNotices();
             renderCalendar();
-
         });
 
         // =====================================================================
