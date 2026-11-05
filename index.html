@@ -191,6 +191,8 @@
           body * { visibility:hidden !important; }
           #novemberScorePrintArea, #novemberScorePrintArea * { visibility:visible !important; }
           #novemberScorePrintArea { display:block !important; position:absolute !important; left:0 !important; top:0 !important; width:100% !important; margin:0 !important; padding:0 !important; }
+          body.november-score-printing #studentLookupCard { display:none !important; visibility:hidden !important; }
+          body:not(.november-score-printing) #novemberScorePrintArea { display:none !important; visibility:hidden !important; }
           .november-score-page { display:block !important; width:100% !important; min-height:270mm !important; page-break-after:always !important; break-after:page !important; box-sizing:border-box !important; padding:0 !important; border:0 !important; box-shadow:none !important; }
           .november-score-page:last-child { page-break-after:auto !important; break-after:auto !important; }
         }
@@ -4724,13 +4726,14 @@ function renderNovemberScoreSelected(){
   const id=document.getElementById("novemberScoreStudent").value,student=novemberScoreRows.find(r=>String(r.id||(""+r.cls+"_"+r.no))===id),area=document.getElementById("novemberScorePrintArea");
   area.innerHTML=student?renderNovemberScorePage(student):'<div id="novemberScoreEmpty" class="rounded-xl border border-dashed border-gray-300 p-10 text-center text-gray-500">학생을 선택하면 성적표가 표시됩니다.</div>';
 }
-function printNovemberScoreSelected(){renderNovemberScoreSelected();if(!document.getElementById("novemberScoreStudent").value){alert("먼저 반과 학생을 선택해 주세요.");return;}window.print();}
+function printNovemberScoreSelected(){renderNovemberScoreSelected();if(!document.getElementById("novemberScoreStudent").value){alert("먼저 반과 학생을 선택해 주세요.");return;}document.body.classList.add("november-score-printing");window.print();}
 function printNovemberScoreClass(){
   const cls=document.getElementById("novemberScoreClass").value;if(!cls){alert("먼저 반을 선택해 주세요.");return;}
   const rows=novemberScoreRows.filter(r=>String(r.cls)===cls);if(!rows.length){alert("선택한 반의 성적 자료가 없습니다.");return;}
-  document.getElementById("novemberScorePrintArea").innerHTML=rows.map(renderNovemberScorePage).join("");window.print();setTimeout(renderNovemberScoreSelected,500);
+  document.getElementById("novemberScorePrintArea").innerHTML=rows.map(renderNovemberScorePage).join("");document.body.classList.add("november-score-printing");window.print();setTimeout(()=>{document.body.classList.remove("november-score-printing");renderNovemberScoreSelected();},500);
 }
 window.openNovemberScoreView=openNovemberScoreView;window.closeNovemberScoreView=closeNovemberScoreView;window.updateNovemberScoreStudents=updateNovemberScoreStudents;window.renderNovemberScoreSelected=renderNovemberScoreSelected;window.printNovemberScoreSelected=printNovemberScoreSelected;window.printNovemberScoreClass=printNovemberScoreClass;
+window.addEventListener("afterprint",()=>document.body.classList.remove("november-score-printing"));
 </script>
 </body></html>`;
             const blob = new Blob(['\ufeff', workbookHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
