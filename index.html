@@ -1108,6 +1108,17 @@ import {
     const provider = new GoogleAuthProvider();
     provider.addScope("https://www.googleapis.com/auth/spreadsheets.readonly");
     let googleSheetsAccessToken = null;
+    const NOVEMBER_SHEETS_TOKEN_KEY = "novemberSheetsAccessToken";
+    try {
+        const savedSheetsToken = JSON.parse(sessionStorage.getItem(NOVEMBER_SHEETS_TOKEN_KEY) || "null");
+        if (savedSheetsToken && savedSheetsToken.expiresAt > Date.now()) {
+            googleSheetsAccessToken = savedSheetsToken.token || null;
+        } else {
+            sessionStorage.removeItem(NOVEMBER_SHEETS_TOKEN_KEY);
+        }
+    } catch (e) {
+        sessionStorage.removeItem(NOVEMBER_SHEETS_TOKEN_KEY);
+    }
 
     const TEACHER_NAMES = {
         "jjoeun32@yeungnam.hs.kr": "장조은",
@@ -1165,7 +1176,19 @@ window.novemberScoreStore = {
     load: async () => {
         if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
         if (!googleSheetsAccessToken) {
-            throw new Error("Google 스프레드시트 권한 정보가 없습니다. 메인 화면에서 로그아웃한 뒤 다시 교사 로그인해 주세요.");
+            try {
+                const savedSheetsToken = JSON.parse(sessionStorage.getItem(NOVEMBER_SHEETS_TOKEN_KEY) || "null");
+                if (savedSheetsToken && savedSheetsToken.email === currentUser.email && savedSheetsToken.expiresAt > Date.now()) {
+                    googleSheetsAccessToken = savedSheetsToken.token || null;
+                } else {
+                    sessionStorage.removeItem(NOVEMBER_SHEETS_TOKEN_KEY);
+                }
+            } catch (e) {
+                sessionStorage.removeItem(NOVEMBER_SHEETS_TOKEN_KEY);
+            }
+        }
+        if (!googleSheetsAccessToken) {
+            throw new Error("Google 스프레드시트 권한 토큰이 없거나 만료되었습니다. 메인 화면에서 교사 로그인을 다시 진행해 주세요.");
         }
         const spreadsheetId = "1P7u_QcKhcrEJXVJiHX94Kv576GkSaDCa9PfYZXYZjT8";
         const range = encodeURIComponent("'시트1'!A:S");
@@ -1174,7 +1197,8 @@ window.novemberScoreStore = {
         });
         if (response.status === 401) {
             googleSheetsAccessToken = null;
-            throw new Error("Google 스프레드시트 인증이 만료되었습니다. 11월 성적표를 다시 열어 권한을 갱신해 주세요.");
+            sessionStorage.removeItem(NOVEMBER_SHEETS_TOKEN_KEY);
+            throw new Error("Google 스프레드시트 인증이 만료되었습니다. 메인 화면에서 교사 로그인을 다시 진행해 주세요.");
         }
         if (!response.ok) {
             const detail = await response.json().catch(() => ({}));
@@ -1462,6 +1486,14 @@ interviewDateCache = {};
             const result = await signInWithPopup(auth, provider);
             const googleCredential = GoogleAuthProvider.credentialFromResult(result);
             googleSheetsAccessToken = googleCredential?.accessToken || null;
+            if (googleSheetsAccessToken && ALLOWED_EMAILS.includes(result.user.email)) {
+                const expiresIn = Number(result._tokenResponse?.expiresIn || 3600);
+                sessionStorage.setItem(NOVEMBER_SHEETS_TOKEN_KEY, JSON.stringify({
+                    token: googleSheetsAccessToken,
+                    email: result.user.email,
+                    expiresAt: Date.now() + Math.max(60, expiresIn - 60) * 1000
+                }));
+            }
             if (ALLOWED_EMAILS.includes(result.user.email)) {
                 alert("교사 인증 성공!");
             }
@@ -1473,6 +1505,8 @@ interviewDateCache = {};
     };
 
     window.logout = async () => {
+        googleSheetsAccessToken = null;
+        sessionStorage.removeItem(NOVEMBER_SHEETS_TOKEN_KEY);
         await signOut(auth);
         alert("로그아웃 되었습니다.");
     };
