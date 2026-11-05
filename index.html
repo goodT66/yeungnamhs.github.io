@@ -445,6 +445,9 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
 
         <!-- 메인 헤더 바로 아래 메뉴: 버튼별 테두리와 배경색으로 구분 -->
         <nav aria-label="주요 메뉴" class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 pl-0 mb-5 ml-0 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-2">
+            <button type="button" id="novemberScoreButton" onclick="openNovemberScoreView()" class="justify-self-start w-max min-w-0 min-h-[76px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-left text-lg xl:text-xl font-extrabold shadow-sm hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-amber-300 transition duration-150" style="background-color:#fef3c7 !important; color:#92400e !important; border-color:#f59e0b !important;" title="11월 성적표 조회 및 반별 출력">
+                <span class="shrink-0 text-xl leading-none" aria-hidden="true">📄</span><span class="min-w-0 leading-snug whitespace-nowrap">11월 성적표</span>
+            </button>
             <button type="button" id="admissions2028Button" onclick="openAdmissions2028()" class="justify-self-start w-max min-w-0 min-h-[76px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-left text-lg xl:text-xl font-extrabold shadow-sm hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-sky-300 transition duration-150" style="background-color:#0f766e !important; color:#ffffff !important; border-color:#115e59 !important;" title="2028 대입 전형 자료">
                 <span class="shrink-0 text-xl leading-none" aria-hidden="true">🎯</span><span class="min-w-0 leading-snug whitespace-nowrap" style="display:inline-block !important; color:#ffffff !important; visibility:visible !important; opacity:1 !important;">2028 대입</span>
             </button>
@@ -1141,6 +1144,14 @@ let calendarEventsReady = false;
 window.getCurrentUser = () => currentUser;
 window.getInterviewDateCache = () => interviewDateCache;
 // 학생별 수시 지원 희망 자료의 Firestore 접근은 Firebase 모듈 범위에서 처리합니다.
+window.novemberScoreStore = {
+    load: async () => {
+        if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
+        const snapshot = await getDocs(collection(db, "novemberScoreReports"));
+        return snapshot.docs.map(item => item.data());
+    }
+};
+
 window.studentSusiPlanStore = {
     load: async (studentId) => { const snap = await getDoc(doc(db, "studentSusiPlans", studentId)); return snap.exists() ? snap.data() : null; },
     save: async (studentId, payload) => setDoc(doc(db, "studentSusiPlans", studentId), { ...payload, updatedAt: serverTimestamp() }, { merge: true })
@@ -1910,7 +1921,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
 
         // 화면 전환 시 메인 대시보드와 각 조회 화면 중 하나만 표시합니다.
         function hideAllContentViews() {
-            ['mainDashboard', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView', 'studentLookupView', 'universityAdmissionsInfoView']
+            ['mainDashboard', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView', 'studentLookupView', 'universityAdmissionsInfoView', 'novemberScoreView']
                 .forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.classList.add('hidden');
@@ -4672,7 +4683,101 @@ function applyGradFilter() {
                 const control = td.querySelector('input, select');
                 return `<td>${escapeExcelHtml(control ? control.value : td.textContent.trim())}</td>`;
             }).join('')}</tr>`).join('');
-            const workbookHtml = `<html><head><meta charset="UTF-8"></head><body><table>${headerHtml}${bodyHtml}</table></body></html>`;
+            const workbookHtml = `<html><head><meta charset="UTF-8"></head><body><table>${headerHtml}${bodyHtml}</table><script>
+/* [11월 성적표] Firestore에서 반별 성적표를 조회하고 인쇄합니다. */
+let novemberScoreRows = [];
+let novemberScoreLoaded = false;
+const NOVEMBER_SCORE_FIELDS = [
+  ["korSubject","국어 선택과목"],["korCommon","국어 공통 점수"],["korElective","국어 선택 점수"],["korTotal","국어 총점수"],["korStandard","국어 표준점수"],["korPercentile","국어 백분위"],["korGrade","국어 등급"],
+  ["mathSubject","수학 선택과목"],["mathCommon","수학 공통 점수"],["mathElective","수학 선택 점수"],["mathTotal","수학 총점수"],["mathStandard","수학 표준점수"],["mathPercentile","수학 백분위"],["mathGrade","수학 등급"],
+  ["engScore","영어 점수"],["engGrade","영어 등급"],["historyScore","한국사 점수"],
+  [" 탐구1 과목","탐구1 과목"]
+];
+const NOVEMBER_SCORE_GROUPS = [
+  {title:"국어",fields:[["korSubject","선택과목"],["korCommon","공통 점수"],["korElective","선택 점수"],["korTotal","총점수"],["korStandard","표준점수"],["korPercentile","백분위"],["korGrade","등급"]]},
+  {title:"수학",fields:[["mathSubject","선택과목"],["mathCommon","공통 점수"],["mathElective","선택 점수"],["mathTotal","총점수"],["mathStandard","표준점수"],["mathPercentile","백분위"],["mathGrade","등급"]]},
+  {title:"영어·한국사",fields:[["engScore","영어 점수"],["engGrade","영어 등급"],["historyScore","한국사 점수"]]},
+  {title:"탐구",fields:[["social1Subject","탐구1 과목"],["social1Score","탐구1 점수"],["social1Standard","탐구1 표준점수"],["social1Percentile","탐구1 백분위"],["social1Grade","탐구1 등급"],["social2Subject","탐구2 과목"],["social2Score","탐구2 점수"],["social2Standard","탐구2 표준점수"],["social2Percentile","탐구2 백분위"],["social2Grade","탐구2 등급"]]}
+];
+function novemberEsc(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+async function openNovemberScoreView(){
+  const user=window.getCurrentUser&&window.getCurrentUser();
+  if(!user){alert("11월 성적표는 교사 Google 로그인 후 이용할 수 있습니다.");return;}
+  hideAllContentViews();
+  document.getElementById("novemberScoreView").classList.remove("hidden");
+  const status=document.getElementById("novemberScoreStatus");
+  status.textContent="11월 성적 자료를 불러오는 중입니다.";
+  try{
+    if(!novemberScoreLoaded){
+      novemberScoreRows=await window.novemberScoreStore.load();
+      novemberScoreRows.sort((a,b)=>Number(a.cls)-Number(b.cls)||Number(a.no)-Number(b.no));
+      novemberScoreLoaded=true;
+    }
+    const classes=[...new Set(novemberScoreRows.map(x=>String(x.cls??"").trim()).filter(Boolean))].sort((a,b)=>Number(a)-Number(b));
+    const select=document.getElementById("novemberClassSelect");
+    select.innerHTML='<option value="">반 선택</option>'+classes.map(c=>'<option value="'+novemberEsc(c)+'">'+novemberEsc(c)+'반</option>').join("");
+    status.textContent=novemberScoreRows.length+"명의 11월 성적 자료를 불러왔습니다.";
+  }catch(e){console.error(e);status.textContent="성적 자료를 불러오지 못했습니다. 교사 로그인 및 Firestore 권한을 확인해 주세요.";}
+}
+function updateNovemberStudents(){
+  const cls=document.getElementById("novemberClassSelect").value;
+  const select=document.getElementById("novemberStudentSelect");
+  const students=novemberScoreRows.filter(x=>String(x.cls)===cls);
+  select.innerHTML='<option value="">번호-이름 선택</option>'+students.map(x=>'<option value="'+novemberEsc(x.no)+'">'+novemberEsc(x.no)+'번 - '+novemberEsc(x.name)+'</option>').join("");
+  select.disabled=!cls;
+  document.getElementById("novemberClassPrintButton").disabled=!cls||!students.length;
+  document.getElementById("novemberScoreReport").classList.add("hidden");
+  document.getElementById("novemberScoreEmpty").classList.remove("hidden");
+}
+function novemberReportCard(student){
+  const groups=NOVEMBER_SCORE_GROUPS.map(group=>'<section class="rounded-lg border border-gray-200 overflow-hidden"><h3 class="bg-slate-100 px-3 py-2 font-extrabold text-slate-800">'+group.title+'</h3><div class="grid grid-cols-2 sm:grid-cols-4">'+group.fields.map(([key,label])=>'<div class="border-t border-r border-gray-200 p-2 min-w-0"><div class="text-xs text-gray-500">'+label+'</div><div class="font-bold text-gray-900 break-words">'+novemberEsc(student[key]||"-")+'</div></div>').join("")+'</div></section>').join("");
+  return '<article class="november-report-card bg-white border-2 border-slate-300 rounded-xl p-4 sm:p-5 mb-4"><div class="flex justify-between items-start gap-3 border-b-2 border-slate-700 pb-3 mb-4"><div><h2 class="text-xl font-extrabold text-slate-900">11월 성적표</h2><p class="text-sm text-slate-600 mt-1">영남고등학교</p></div><div class="text-right text-sm font-bold text-slate-800">'+novemberEsc(student.cls)+'반 '+novemberEsc(student.no)+'번<br>'+novemberEsc(student.name)+'<br><span class="font-normal">'+novemberEsc(student.studentId)+'</span></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-3">'+groups+'</div></article>';
+}
+function renderNovemberStudentReport(){
+  const cls=document.getElementById("novemberClassSelect").value;
+  const no=document.getElementById("novemberStudentSelect").value;
+  const student=novemberScoreRows.find(x=>String(x.cls)===cls&&String(x.no)===no);
+  const output=document.getElementById("novemberScoreReport");
+  if(!student){output.classList.add("hidden");document.getElementById("novemberScoreEmpty").classList.remove("hidden");return;}
+  output.innerHTML=novemberReportCard(student);
+  output.classList.remove("hidden");
+  document.getElementById("novemberScoreEmpty").classList.add("hidden");
+}
+function printNovemberClassReports(){
+  const cls=document.getElementById("novemberClassSelect").value;
+  const students=novemberScoreRows.filter(x=>String(x.cls)===cls).sort((a,b)=>Number(a.no)-Number(b.no));
+  if(!cls||!students.length)return;
+  const old=document.getElementById("novemberPrintArea");
+  if(old)old.remove();
+  const area=document.createElement("div");
+  area.id="novemberPrintArea";
+  area.innerHTML=students.map(novemberReportCard).join("");
+  document.body.appendChild(area);
+  window.print();
+  setTimeout(()=>area.remove(),1000);
+}
+function closeNovemberScoreView(){showMainDashboard();}
+window.openNovemberScoreView=openNovemberScoreView;
+window.closeNovemberScoreView=closeNovemberScoreView;
+window.updateNovemberStudents=updateNovemberStudents;
+window.renderNovemberStudentReport=renderNovemberStudentReport;
+window.printNovemberClassReports=printNovemberClassReports;
+</script>
+<style>
+@media print {
+  body.november-printing * { visibility:hidden !important; }
+  #novemberPrintArea, #novemberPrintArea * { visibility:visible !important; }
+  #novemberPrintArea { display:block !important; position:absolute !important; left:0; top:0; width:100%; }
+  #novemberPrintArea .november-report-card { break-after:page; page-break-after:always; border:1px solid #333 !important; border-radius:0 !important; }
+  #novemberPrintArea .november-report-card:last-child { break-after:auto; page-break-after:auto; }
+}
+</style>
+<script>
+window.addEventListener("beforeprint",()=>{if(document.getElementById("novemberPrintArea"))document.body.classList.add("november-printing");});
+window.addEventListener("afterprint",()=>document.body.classList.remove("november-printing"));
+</script>
+
+</body></html>`;
             const blob = new Blob(['\ufeff', workbookHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -5515,6 +5620,30 @@ window.changeSusiPage = changeSusiPage;
 </div>
 
 
+
+<!-- 11월 성적표 조회 화면 -->
+<div id="novemberScoreView" class="hidden bg-white rounded-2xl shadow-lg p-5 sm:p-8 w-full border-t-8 border-amber-500">
+  <section>
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 pb-4 border-b gap-3">
+      <div><h2 class="text-2xl font-extrabold text-gray-800">📄 11월 성적표</h2><p class="text-gray-600 text-sm mt-1">반과 번호-이름을 선택하면 학생별 성적표를 확인할 수 있습니다.</p></div>
+      <button type="button" onclick="closeNovemberScoreView()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg">◀ 메인 화면으로</button>
+    </div>
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+        <label class="text-sm font-bold text-gray-700">반
+          <select id="novemberClassSelect" onchange="updateNovemberStudents()" class="mt-1 block w-full border border-gray-300 rounded-lg p-3 bg-white"><option value="">반 선택</option></select>
+        </label>
+        <label class="text-sm font-bold text-gray-700">번호 - 이름
+          <select id="novemberStudentSelect" onchange="renderNovemberStudentReport()" disabled class="mt-1 block w-full border border-gray-300 rounded-lg p-3 bg-white disabled:bg-gray-100"><option value="">번호-이름 선택</option></select>
+        </label>
+        <button type="button" onclick="printNovemberClassReports()" id="novemberClassPrintButton" disabled class="px-4 py-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold disabled:opacity-40 disabled:cursor-not-allowed">🖨️ 반별 출력</button>
+      </div>
+      <p id="novemberScoreStatus" class="text-xs text-gray-600 mt-3" role="status">성적 자료를 불러오는 중입니다.</p>
+    </div>
+    <div id="novemberScoreEmpty" class="bg-white rounded-xl border-2 border-dashed border-gray-300 p-10 text-center text-gray-500">반과 학생을 선택하면 11월 성적표가 표시됩니다.</div>
+    <div id="novemberScoreReport" class="hidden"></div>
+  </section>
+</div>
 
 <!-- 2028 대입 자료 조회 화면 -->
 <div id="admissions2028View" class="hidden bg-white rounded-2xl shadow-lg p-5 sm:p-8 w-full border-t-8 border-indigo-600">
