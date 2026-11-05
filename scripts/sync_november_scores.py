@@ -1,20 +1,28 @@
 import json
 import os
 import re
+
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-SPREADSHEET_ID = "1P7u_QcKhcrEJXVJiHX94Kv576GkSaDCa9PfYZXYZjT8"
-SHEET_RANGE = "'시트1'!A:S"
+# The user's November score sheet (first row contains column headings).
+SPREADSHEET_ID = "1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM"
+SHEET_RANGE = "'11월'!A:AE"
 COLLECTION = "novemberScoreReports"
 
 FIELDS = [
-    "cls", "no", "name", "korSubject", "korCommon", "korElective",
-    "korTotal", "korRank", "korPercentile", "korStandard",
+    "cls", "no", "studentId", "name",
+    "korSubject", "korCommon", "korElective", "korTotal",
+    "korStandard", "korPercentile", "korGrade",
     "mathSubject", "mathCommon", "mathElective", "mathTotal",
-    "mathRank", "mathPercentile", "mathStandard", "engScore", "engGrade"
+    "mathStandard", "mathPercentile", "mathGrade",
+    "engScore", "engGrade", "historyScore",
+    "social1Subject", "social1Score", "social1Standard",
+    "social1Percentile", "social1Grade",
+    "social2Subject", "social2Score", "social2Standard",
+    "social2Percentile", "social2Grade",
 ]
 
 
@@ -43,16 +51,16 @@ def main():
     ).execute()
     values = response.get("values", [])
     if len(values) < 2:
-        raise RuntimeError("시트1에 제목행과 성적 데이터가 모두 있는지 확인해 주세요.")
+        raise RuntimeError("11월 시트에 제목행과 성적 데이터가 모두 있는지 확인해 주세요.")
 
     records = []
     for row_number, row in enumerate(values[1:], start=2):
-        padded = list(row) + [""] * (19 - len(row))
+        padded = list(row) + [""] * (len(FIELDS) - len(row))
         data = {field: clean(padded[index]) for index, field in enumerate(FIELDS)}
         if not data["cls"] or not data["no"] or not data["name"]:
             continue
-        class_key = re.sub(r"\D", "", data["cls"])
-        number_key = re.sub(r"\D", "", data["no"])
+        class_key = re.sub(r"\\D", "", data["cls"])
+        number_key = re.sub(r"\\D", "", data["no"])
         if not class_key or not number_key:
             continue
         doc_id = f"{int(class_key):02d}_{int(number_key):02d}"
