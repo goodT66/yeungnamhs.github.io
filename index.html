@@ -4734,7 +4734,7 @@ function printNovemberScoreClass(){
 }
 window.openNovemberScoreView=openNovemberScoreView;window.closeNovemberScoreView=closeNovemberScoreView;window.updateNovemberScoreStudents=updateNovemberScoreStudents;window.renderNovemberScoreSelected=renderNovemberScoreSelected;window.printNovemberScoreSelected=printNovemberScoreSelected;window.printNovemberScoreClass=printNovemberScoreClass;
 window.addEventListener("afterprint",()=>document.body.classList.remove("november-score-printing"));
-</script>
+<\/script>
 </body></html>`;
             const blob = new Blob(['\ufeff', workbookHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
             const link = document.createElement('a');
