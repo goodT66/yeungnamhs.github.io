@@ -98,6 +98,45 @@
         #classView .grad-table th:nth-child(6), #classView .grad-table td:nth-child(6) { left: 480px; }
         #classView .grad-table th:nth-child(7), #classView .grad-table td:nth-child(7) { left: 630px; }
         #classView .grad-table th:nth-child(8), #classView .grad-table td:nth-child(8) { left: 690px; }
+        /* 수시 반별 조회: 모바일 전용 표 너비 및 가로 화면 최적화 */
+        @media (max-width: 1024px) {
+            #classView { padding: 12px; }
+            #classView .grad-table {
+                width: 1230px !important;
+                min-width: 1230px !important;
+                table-layout: fixed;
+                font-size: 11px;
+            }
+            #classView .grad-table th,
+            #classView .grad-table td {
+                box-sizing: border-box;
+                width: auto !important;
+                min-width: 0 !important;
+                max-width: none !important;
+                padding: 5px 3px;
+                line-height: 1.25;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+            #classView .grad-table th:nth-child(-n+8),
+            #classView .grad-table td:nth-child(-n+8) {
+                position: static !important;
+                left: auto !important;
+                z-index: auto !important;
+            }
+            #classView .grad-table th:nth-child(12) { white-space: normal; }
+            #classView .grad-table select,
+            #classView .grad-table input { font-size: 11px; padding: 2px 0; }
+        }
+        @media (max-width: 1024px) and (orientation: landscape) {
+            #classView .grad-table {
+                width: 1160px !important;
+                min-width: 1160px !important;
+                font-size: 10px;
+            }
+            #classView .grad-table th,
+            #classView .grad-table td { padding: 4px 2px; }
+        }
         /* 대학 입시 정보 표: 모바일에서는 열 너비를 확보하고 가로 스크롤로 표시 */
         @media (max-width: 768px) {
             #univInfoTable {
