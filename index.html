@@ -831,6 +831,11 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
 
                     <input list="classMajorList" id="classMajorInput" placeholder="학과명 검색/선택" class="border border-gray-300 rounded p-2 font-medium w-48" onchange="renderClassTable()" onkeyup="renderClassTable()">
                     <datalist id="classMajorList"></datalist>
+                    <select id="classResultSelect" onchange="renderClassTable()" class="border border-gray-300 rounded p-2 bg-white font-medium">
+                        <option value="">전체 결과</option>
+                        <option value="합격">합격</option>
+                        <option value="불합격">불합격</option>
+                    </select>
                     <div class="ml-auto flex flex-wrap items-center gap-3">
                         <button type="button" id="saveClassSusiEditsButton" onclick="saveClassSusiEdits()" class="rounded bg-blue-600 px-4 py-2 font-bold text-white transition-colors hover:bg-blue-700">저장</button>
                         <span class="text-sm font-bold text-red-600">입력하신 1단계, 최종 단계, 불합격 사유, 후보 순위의 값을 저장합니다.</span>
@@ -4496,6 +4501,7 @@ function applyGradFilter() {
             const uEl = document.getElementById('classUnivInput');
             const admissionEl = document.getElementById('classAdmissionInput');
             const mEl = document.getElementById('classMajorInput');
+            const resultEl = document.getElementById('classResultSelect');
             const tbody = document.getElementById('classTableBody');
             
             if(!gEl || !cEl || !tbody) return;
@@ -4506,6 +4512,7 @@ function applyGradFilter() {
             const u = uEl.value.trim();
             const admission = admissionEl.value.trim();
             const m = mEl.value.trim();
+            const result = resultEl.value;
             
             if(!g) {
                 tbody.innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">학년을 선택해주세요.</td></tr>';
@@ -4525,6 +4532,9 @@ function applyGradFilter() {
                 if (u && !rowU.includes(u)) return false;
                 if (admission && !rowAdmission.toLocaleLowerCase().includes(admission.toLocaleLowerCase())) return false;
                 if (m && !rowM.includes(m)) return false;
+                const finalResult = String(row[18] || '').trim();
+                if (result === '합격' && (!finalResult.includes('합격') || finalResult.includes('불합격'))) return false;
+                if (result === '불합격' && !finalResult.includes('불합격')) return false;
                 
                 return true;
             });
