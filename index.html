@@ -4753,6 +4753,10 @@ function applyGradFilter() {
                                 html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['최저 미충족', '2단계 불합격', '미응시'], '불합격 사유')}</td>`;
                             }
                         } else {
+                            if (/불합격/.test(String(row[17] || '').trim())) {
+                                html += `<td><span class="text-lg font-extrabold text-gray-500" aria-label="1단계 불합격으로 최초후보순위 수정 불가">${safeValue || '-'}</span></td>`;
+                                return;
+                            }
                             if (String(row[18] || '').trim() === '최초합격') {
                                 if (row[20] !== '-') setClassSusiEdit(row, 20, '-');
                                 html += '<td><span class="text-lg font-extrabold text-black">-</span></td>';
