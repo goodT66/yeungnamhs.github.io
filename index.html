@@ -4734,7 +4734,7 @@ function applyGradFilter() {
                             const firstStage = String(row[17] || '').trim();
                             if (firstStage === '불합격' || /불합격/.test(firstStage)) {
                                 if (row[18] !== '1단계 불합격') setClassSusiEdit(row, 18, '1단계 불합격');
-                                html += '<td><span class="font-extrabold text-lg text-red-700">1단계 불합격</span></td>';
+                                html += '<td><span class="font-semibold text-red-700">1단계 불합격</span></td>';
                             } else {
                                 const selectedValue = /불합격/.test(safeValue) ? '불합격' : /충원|추가/.test(safeValue) ? '추가합격' : /합격/.test(safeValue) ? '최초합격' : safeValue;
                                 html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['최초합격', '추가합격', '후보', '불합격'], '최종단계')}</td>`;
