@@ -4378,7 +4378,8 @@ function applyGradFilter() {
         function setClassSusiEdit(row, columnIndex, value) {
             if (String(row[columnIndex] ?? '') === String(value ?? '')) return;
             const key = getClassSusiRowKey(row);
-            if (!classSusiEdits[key]) classSusiEdits[key] = {};
+            // 이전 Firestore 기록의 다른 열이 새 저장에 섞이지 않도록 이번 변경값만 보관합니다.
+            if (!classSusiChangedKeys.has(key)) classSusiEdits[key] = {};
             classSusiEdits[key][columnIndex] = value;
             row[columnIndex] = value;
             classSusiChangedKeys.add(key);
@@ -4398,10 +4399,8 @@ function applyGradFilter() {
                 savedItems.forEach(item => {
                     if (item && item.key && item.values) classSusiEdits[item.key] = item.values;
                 });
-                classSusiData.forEach(row => {
-                    const values = classSusiEdits[getClassSusiRowKey(row)];
-                    if (values) Object.entries(values).forEach(([columnIndex, value]) => { row[Number(columnIndex)] = value; });
-                });
+                // 2026수시 R~U열은 Google 시트의 최신 값을 우선합니다.
+                // 과거 Firestore 수정 기록은 불러오되 시트의 값을 덮어쓰지 않습니다.
                 classSusiFailureMatchSet = null;
                 classSusiEditsLoaded = true;
             })();
@@ -4444,7 +4443,7 @@ function applyGradFilter() {
                 }).filter(item => Object.keys(item.values).length);
                 await window.saveClassSusiToSheet(sheetItems);
                 sheetSaved = true;
-                await window.classSusiEditStore.save(items);
+                await window.classSusiEditStore.save(changedItems);
                 changedItems.forEach(item => classSusiChangedKeys.delete(item.key));
                 classSusiEditsDirty = classSusiChangedKeys.size > 0;
                 if (status) status.textContent = 'Google 시트와 Firestore에 저장되었습니다.';
@@ -4464,7 +4463,7 @@ function applyGradFilter() {
 
         async function fetchClassSusiData() {
             try {
-                const response = await fetch(SUSI_2026_CSV_URL);
+                const response = await fetch(SUSI_2026_CSV_URL + '&_refresh=' + Date.now(), { cache: 'no-store' });
                 if (!response.ok) throw new Error("네트워크 오류");
                 const text = await response.text();
                 Papa.parse(text, {
