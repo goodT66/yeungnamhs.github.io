@@ -869,9 +869,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
             </div>
             <div id="classContent" class="hidden">
                 <div class="mb-4 flex flex-wrap gap-4 items-center bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <select id="classGradeSelect" onchange="onClassGradeChange()" class="border border-gray-300 rounded p-2 bg-white font-medium w-28">
-                        <option value="">학년 선택</option>
-                    </select>
+                    <input type="hidden" id="classGradeSelect" value="3">
                     <select id="classNumSelect" onchange="onClassNumChange()" class="border border-gray-300 rounded p-2 bg-white font-medium w-28">
                         <option value="">반 선택</option>
                     </select>
@@ -1431,7 +1429,7 @@ document.getElementById('userEmail').innerText = user.email;
             if (window.rawGradData.length > 0) {
                 window.applyGradFilter();
             }
-            if (window.classSusiData && window.classSusiData.length > 0 && document.getElementById('classGradeSelect').options.length <= 1) {
+            if (window.classSusiData && window.classSusiData.length > 0 && document.getElementById('classNumSelect').options.length <= 1) {
                 window.loadClassSusiEdits().then(() => {
                     window.populateClassGradeDropdown();
                     if (window.interviewData?.length && window.renderInterviewTable) window.renderInterviewTable();
@@ -2011,7 +2009,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             document.getElementById('classView').classList.remove('hidden');
             if (window.getCurrentUser && window.getCurrentUser()) {
                 if (classSusiData.length > 0) {
-                    if (document.getElementById('classGradeSelect').options.length <= 1) populateClassGradeDropdown();
+                    if (document.getElementById('classNumSelect').options.length <= 1) populateClassGradeDropdown();
                 } else {
                     fetchClassSusiData();
                 }
@@ -4448,12 +4446,8 @@ function applyGradFilter() {
         function populateClassGradeDropdown() {
             const select = document.getElementById('classGradeSelect');
             if(!select) return;
-            select.innerHTML = '<option value="">학년 선택</option>';
-            const grades = new Set();
-            classSusiData.forEach(row => {
-                if(row[1]) grades.add(String(row[1]).trim());
-            });
-            Array.from(grades).sort().forEach(g => select.appendChild(new Option(`${g}학년`, g)));
+            select.value = '3';
+            onClassGradeChange();
         }
         window.populateClassGradeDropdown = populateClassGradeDropdown;
 
