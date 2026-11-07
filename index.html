@@ -4667,7 +4667,7 @@ function applyGradFilter() {
                                 html += '<td><span class="font-semibold text-gray-600">1단계 불합격</span></td>';
                             } else {
                                 const selectedValue = /불합격/.test(safeValue) ? '불합격' : /충원|추가/.test(safeValue) ? '추가합격' : /합격/.test(safeValue) ? '최초합격' : safeValue;
-                                html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['최초합격', '추가합격', '불합격'], '최종단계')}</td>`;
+                                html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['최초합격', '추가합격', '후보', '불합격'], '최종단계')}</td>`;
                             }
                         } else if (idx === 19) {
                             const firstStage = String(row[17] || '').trim();
@@ -4699,7 +4699,9 @@ function applyGradFilter() {
                     html += tdClass ? `<td class="${tdClass}">${val}</td>` : `<td>${val}</td>`;
                 });
                 tr.innerHTML = html;
-                if (hasAcceptedResult) {
+                if (finalResult.includes('후보')) {
+                    Array.from(tr.children).forEach(cell => { cell.style.backgroundColor = '#dcfce7'; });
+                } else if (hasAcceptedResult) {
                     Array.from(tr.children).forEach(cell => { cell.style.backgroundColor = '#dbeafe'; });
                     [17, 18].forEach(columnIndex => {
                         const cellIndex = classColOrder.indexOf(columnIndex);
