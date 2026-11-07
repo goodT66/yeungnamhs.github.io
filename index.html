@@ -506,9 +506,10 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
 nav.yn-pill-nav{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;align-items:stretch!important;overflow:visible!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;padding:10px!important;margin:0 0 20px!important;background:#fff!important;border:1px solid #e2e8f0!important;border-radius:20px!important;box-shadow:0 4px 14px rgba(15,23,42,.07)!important}
 nav.yn-pill-nav>button.yn-pill-button{display:flex!important;position:relative!important;float:none!important;flex:none!important;min-width:0!important;width:100%!important;max-width:100%!important;min-height:64px!important;height:auto!important;align-items:center!important;justify-content:center!important;gap:7px!important;box-sizing:border-box!important;padding:10px 8px!important;border:1px solid #cbd5e1!important;border-radius:999px!important;background:#f8fafc!important;color:#334155!important;font-size:clamp(11px,.85vw,15px)!important;font-weight:800!important;line-height:1.25!important;text-align:center!important;white-space:normal!important;box-shadow:0 2px 5px rgba(15,23,42,.08)!important;transform:none;transition:transform .15s,box-shadow .15s}
 nav.yn-pill-nav>button.yn-pill-button:hover{transform:translateY(-2px);box-shadow:0 5px 12px rgba(15,23,42,.12)!important}
-/* 마우스를 올린 버튼에만 하단 형광 강조 표시 */
-nav.yn-pill-nav>button.yn-pill-button::after{content:"";position:absolute;left:30%;bottom:3px;width:40%;height:5px;border-radius:999px;background:#d8ffff;box-shadow:0 0 5px 2px #65ffff,0 0 13px 4px rgba(32,240,242,.7);opacity:0;transform:scaleX(.55);transition:opacity .16s,transform .16s;pointer-events:none}
-nav.yn-pill-nav>button.yn-pill-button:hover::after,nav.yn-pill-nav>button.yn-pill-button:focus-visible::after{opacity:1;transform:scaleX(1)}
+/* 마우스를 올린 버튼의 둥근 테두리 전체에 형광 효과 */
+nav.yn-pill-nav>button.yn-pill-button::after{content:none!important}
+nav.yn-pill-nav>button.yn-pill-button:hover,
+nav.yn-pill-nav>button.yn-pill-button:focus-visible{box-shadow:0 0 0 2px #8affff,0 0 10px 3px rgba(40,240,245,.85),0 0 22px 6px rgba(40,240,245,.45)!important;border-color:#60faff!important}
 nav.yn-pill-nav>button.yn-pill-button:focus-visible{outline:3px solid #60a5fa!important;outline-offset:2px}
 nav.yn-pill-nav>button.yn-pill-button>.yn-pill-span{display:inline!important;min-width:0!important;visibility:visible!important;opacity:1!important;color:inherit!important;white-space:normal!important}
 nav.yn-pill-nav>button.yn-pill-button>.yn-pill-span:first-child{font-size:20px!important;flex-shrink:0!important}
