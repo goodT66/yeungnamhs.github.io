@@ -4691,8 +4691,9 @@ function applyGradFilter() {
                         const safeValue = String(val === '-' ? '' : val).replace(/&/g, '&amp;').replace(/\"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                         if (idx === 17) {
                             if (String(row[18] || '').trim() === '최초합격') {
-                                if (row[17] !== '-') setClassSusiEdit(row, 17, '-');
-                                html += '<td><span class="text-gray-500">-</span></td>';
+                                const firstStageValue = String(row[17] ?? '').trim();
+                                const firstStageLabel = firstStageValue === '' ? '-' : firstStageValue;
+                                html += `<td><span class="text-gray-500" aria-label="1단계 변경 불가">${firstStageLabel.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span></td>`;
                                 return;
                             }
                             const admissionType = String(row[6] || '').trim();
@@ -4789,7 +4790,6 @@ function applyGradFilter() {
                 }
             } else if (columnIndex === 18 && !/불합격/.test(String(row[17] || ''))) {
                 if (value === '최초합격') {
-                    setClassSusiEdit(row, 17, '-');
                     setClassSusiEdit(row, 20, '-');
                 }
                 if (value === '최초합격' || value === '추가합격') setClassSusiEdit(row, 19, '-');
