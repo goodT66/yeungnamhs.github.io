@@ -4299,6 +4299,7 @@ function applyGradFilter() {
         let classSusiEditsLoaded = false;
         let classSusiEditsLoadPromise = null;
         let classSusiEditsDirty = false;
+        const classSusiChangedKeys = new Set();
         let classSusiFailureMatchSet = null;
         let currentClassSortCol = null;
         let isClassAscending = true;
@@ -4375,10 +4376,12 @@ function applyGradFilter() {
         }
 
         function setClassSusiEdit(row, columnIndex, value) {
+            if (String(row[columnIndex] ?? '') === String(value ?? '')) return;
             const key = getClassSusiRowKey(row);
             if (!classSusiEdits[key]) classSusiEdits[key] = {};
             classSusiEdits[key][columnIndex] = value;
             row[columnIndex] = value;
+            classSusiChangedKeys.add(key);
             if (columnIndex === 17) classSusiFailureMatchSet = null;
             classSusiEditsDirty = true;
             const status = document.getElementById('classSusiSaveStatus');
@@ -4420,9 +4423,15 @@ function applyGradFilter() {
             if (button) { button.disabled = true; button.textContent = '저장 중…'; }
             if (status) status.textContent = 'Google 시트와 Firestore에 저장하고 있습니다.';
             const items = Object.entries(classSusiEdits).map(([key, values]) => ({ id: encodeURIComponent(key), key, values }));
+            const changedItems = items.filter(item => classSusiChangedKeys.has(item.key));
+            if (!changedItems.length) {
+                if (status) status.textContent = '저장할 변경사항이 없습니다.';
+                if (button) { button.disabled = false; button.textContent = '저장'; }
+                return;
+            }
             let sheetSaved = false;
             try {
-                const sheetItems = items.map(({ key, values }) => {
+                const sheetItems = changedItems.map(({ key, values }) => {
                     const identity = JSON.parse(key);
                     if (!Array.isArray(identity) || identity.length !== 9) throw new Error('지원 정보의 행 식별값이 올바르지 않습니다.');
                     const sheetValues = {};
@@ -4436,7 +4445,8 @@ function applyGradFilter() {
                 await window.saveClassSusiToSheet(sheetItems);
                 sheetSaved = true;
                 await window.classSusiEditStore.save(items);
-                classSusiEditsDirty = false;
+                changedItems.forEach(item => classSusiChangedKeys.delete(item.key));
+                classSusiEditsDirty = classSusiChangedKeys.size > 0;
                 if (status) status.textContent = 'Google 시트와 Firestore에 저장되었습니다.';
                 alert('입력하신 내용이 Google 시트와 Firestore에 저장되었습니다.');
             } catch (error) {
