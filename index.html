@@ -1133,6 +1133,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
 
 import {
     getFirestore,
@@ -1161,6 +1162,7 @@ import {
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const save2026SusiCallable = httpsCallable(getFunctions(app, "asia-northeast3"), "save2026Susi", { timeout: 65000 });
     const provider = new GoogleAuthProvider();
 
     const TEACHER_NAMES = {
@@ -1213,6 +1215,17 @@ window.getInterviewDateCache = () => interviewDateCache;
 window.studentSusiPlanStore = {
     load: async (studentId) => { const snap = await getDoc(doc(db, "studentSusiPlans", studentId)); return snap.exists() ? snap.data() : null; },
     save: async (studentId, payload) => setDoc(doc(db, "studentSusiPlans", studentId), { ...payload, updatedAt: serverTimestamp() }, { merge: true })
+};
+
+// Google 시트 저장은 인증된 Firebase callable 함수를 통해서만 실행합니다.
+window.saveClassSusiToSheet = async (items) => {
+    if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
+    if (!items.length) return;
+    const idToken = await currentUser.getIdToken();
+    for (let start = 0; start < items.length; start += 100) {
+        const response = await save2026SusiCallable({ idToken, items: items.slice(start, start + 100) });
+        if (response.data?.success !== true) throw new Error("Google 시트 저장 결과를 확인하지 못했습니다.");
+    }
 };
 
 window.classSusiEditStore = {
@@ -4397,27 +4410,45 @@ function applyGradFilter() {
         }
         window.loadClassSusiEdits = loadClassSusiEdits;
 
-        function saveClassSusiEdits() {
+        async function saveClassSusiEdits() {
             const button = document.getElementById('saveClassSusiEditsButton');
             const status = document.getElementById('classSusiSaveStatus');
-            if (!window.classSusiEditStore) {
+            if (!window.classSusiEditStore || !window.saveClassSusiToSheet) {
                 if (status) status.textContent = '저장 기능을 불러오지 못했습니다.';
                 return;
             }
             if (button) { button.disabled = true; button.textContent = '저장 중…'; }
-            if (status) status.textContent = '입력 내용을 저장하고 있습니다.';
+            if (status) status.textContent = 'Google 시트와 Firestore에 저장하고 있습니다.';
             const items = Object.entries(classSusiEdits).map(([key, values]) => ({ id: encodeURIComponent(key), key, values }));
-            window.classSusiEditStore.save(items).then(() => {
+            let sheetSaved = false;
+            try {
+                const sheetItems = items.map(({ key, values }) => {
+                    const identity = JSON.parse(key);
+                    if (!Array.isArray(identity) || identity.length !== 9) throw new Error('지원 정보의 행 식별값이 올바르지 않습니다.');
+                    const sheetValues = {};
+                    for (const index of [17, 18, 19, 20]) {
+                        if (Object.prototype.hasOwnProperty.call(values, index)) {
+                            sheetValues[String(index)] = String(values[index] ?? '');
+                        }
+                    }
+                    return { identity, values: sheetValues };
+                }).filter(item => Object.keys(item.values).length);
+                await window.saveClassSusiToSheet(sheetItems);
+                sheetSaved = true;
+                await window.classSusiEditStore.save(items);
                 classSusiEditsDirty = false;
-                if (status) status.textContent = '저장되었습니다.';
-                alert('입력하신 내용 저장이 완료되었습니다');
-            }).catch(error => {
+                if (status) status.textContent = 'Google 시트와 Firestore에 저장되었습니다.';
+                alert('입력하신 내용이 Google 시트와 Firestore에 저장되었습니다.');
+            } catch (error) {
                 console.error('수시 지원 반별 조회 입력값 저장 실패:', error);
-                if (status) status.textContent = '저장하지 못했습니다.';
-                alert(`입력 내용을 Firestore에 저장하지 못했습니다. 로그인 및 Firestore 보안 규칙을 확인해 주세요.\n${error?.code || error?.message || ''}`);
-            }).finally(() => {
+                if (status) status.textContent = sheetSaved ? 'Google 시트 저장 완료 / Firestore 저장 실패' : 'Google 시트 저장 실패';
+                alert((sheetSaved
+                    ? 'Google 시트에는 저장했지만 Firestore 저장에 실패했습니다.'
+                    : 'Google 시트 저장에 실패하여 Firestore 저장은 진행하지 않았습니다.') +
+                    '\\n' + (error?.message || error?.code || '오류 내용을 확인해 주세요.'));
+            } finally {
                 if (button) { button.disabled = false; button.textContent = '저장'; }
-            });
+            }
         }
         window.saveClassSusiEdits = saveClassSusiEdits;
 
