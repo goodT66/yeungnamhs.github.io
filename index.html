@@ -4710,7 +4710,7 @@ function applyGradFilter() {
                             const firstStage = String(row[17] || '').trim();
                             if (firstStage === '불합격' || /불합격/.test(firstStage)) {
                                 if (row[18] !== '1단계 불합격') setClassSusiEdit(row, 18, '1단계 불합격');
-                                html += '<td><span class="font-semibold text-gray-600">1단계 불합격</span></td>';
+                                html += '<td><span class="font-extrabold text-lg text-red-700">1단계 불합격</span></td>';
                             } else {
                                 const selectedValue = /불합격/.test(safeValue) ? '불합격' : /충원|추가/.test(safeValue) ? '추가합격' : /합격/.test(safeValue) ? '최초합격' : safeValue;
                                 html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['최초합격', '추가합격', '후보', '불합격'], '최종단계')}</td>`;
@@ -4731,10 +4731,10 @@ function applyGradFilter() {
                         } else {
                             if (String(row[18] || '').trim() === '최초합격') {
                                 if (row[20] !== '-') setClassSusiEdit(row, 20, '-');
-                                html += '<td><span class="text-gray-500">-</span></td>';
+                                html += '<td><span class="text-lg font-extrabold text-black">-</span></td>';
                                 return;
                             }
-                            html += `<td><input type="text" aria-label="최초후보순위 입력" value="${safeValue}" oninput="updateClassSusiCell(${rowIndex}, ${idx}, this.value)" class="w-full min-w-16 rounded border border-gray-300 bg-white px-2 py-1 text-center focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-300"></td>`;
+                            html += `<td><input type="text" aria-label="최초후보순위 입력" value="${safeValue}" oninput="updateClassSusiCell(${rowIndex}, ${idx}, this.value)" class="w-full min-w-16 rounded border border-gray-300 bg-white px-2 py-1 text-center text-lg font-extrabold text-black focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-300"></td>`;
                         }
                         return;
                     }
@@ -4773,7 +4773,10 @@ function applyGradFilter() {
             const optionsHtml = [`<option value="">선택</option>`, ...values.map(value => `<option value="${escape(value)}"${value === selectedValue ? ' selected' : ''}>${escape(value)}</option>`)].join('');
             const isAccepted = (columnIndex === 17 || columnIndex === 18) && /합격/.test(selectedValue) && !/불합격/.test(selectedValue);
             const acceptedClass = isAccepted ? 'font-bold text-blue-700 bg-blue-100' : '';
-            return `<select aria-label="${label} 선택" onchange="handleClassSusiSelectChange(${rowIndex}, ${columnIndex}, this.value)" class="w-full min-w-20 rounded border border-gray-300 bg-white px-1 py-1 text-center focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-300 ${acceptedClass}">${optionsHtml}</select>`;
+            const finalStageClass = columnIndex === 18
+                ? `text-lg font-extrabold ${/불합격/.test(selectedValue) ? 'text-red-700' : /합격/.test(selectedValue) ? 'text-blue-700' : 'text-gray-900'}`
+                : '';
+            return `<select aria-label="${label} 선택" onchange="handleClassSusiSelectChange(${rowIndex}, ${columnIndex}, this.value)" class="w-full min-w-20 rounded border border-gray-300 bg-white px-1 py-1 text-center focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-300 ${acceptedClass} ${finalStageClass}">${optionsHtml}</select>`;
         }
 
         function handleClassSusiSelectChange(rowIndex, columnIndex, value) {
