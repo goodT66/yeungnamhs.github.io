@@ -501,31 +501,47 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
             </div>
         </header>
 
-        <!-- 메인 헤더 바로 아래 메뉴: 버튼별 테두리와 배경색으로 구분 -->
-        <nav aria-label="주요 메뉴" class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 pl-0 mb-5 ml-0 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-2">
-            <button type="button" id="admissions2028Button" onclick="openAdmissions2028()" class="justify-self-start w-max min-w-0 min-h-[76px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-left text-lg xl:text-xl font-extrabold shadow-sm hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-sky-300 transition duration-150" style="background-color:#0f766e !important; color:#ffffff !important; border-color:#115e59 !important;" title="2028 대입 전형 자료">
-                <span class="shrink-0 text-xl leading-none" aria-hidden="true">🎯</span><span class="min-w-0 leading-snug whitespace-nowrap" style="display:inline-block !important; color:#ffffff !important; visibility:visible !important; opacity:1 !important;">2028 대입</span>
+        <style>
+.yn-pill-nav{display:flex;gap:9px;align-items:stretch;overflow-x:auto;padding:12px;margin-bottom:20px;background:#fff;border:1px solid #e2e8f0;border-radius:24px;box-shadow:0 4px 14px rgba(15,23,42,.07)}
+.yn-pill-nav .yn-pill-button{display:flex;flex:1 0 auto;align-items:center;justify-content:center;gap:8px;min-height:65px;padding:12px 14px;border-radius:999px;border:1px solid #cbd5e1;background:#f8fafc;color:#334155;font-size:clamp(12px,.9vw,16px);font-weight:800;white-space:nowrap;box-shadow:0 2px 5px rgba(15,23,42,.08);transition:transform .15s,box-shadow .15s}
+.yn-pill-nav .yn-pill-button:hover{transform:translateY(-2px);box-shadow:0 5px 12px rgba(15,23,42,.12)}
+.yn-pill-nav .yn-pill-button:focus-visible{outline:3px solid #60a5fa;outline-offset:2px}
+.yn-pill-nav .yn-pill-span:first-child{font-size:22px;flex-shrink:0}
+.yn-pill-nav .yn-pill-button:nth-child(1){background:linear-gradient(#168e9b,#08606b);border-color:#0b7380;color:white}
+.yn-pill-nav .yn-pill-button:nth-child(2){background:linear-gradient(#f5fbff,#dcefff);border-color:#c4e1fa;color:#194768}
+.yn-pill-nav .yn-pill-button:nth-child(3){background:linear-gradient(#fff8fb,#fbe1ed);border-color:#f4cbdc;color:#72364e}
+.yn-pill-nav .yn-pill-button:nth-child(4){background:linear-gradient(#f7fff5,#dff3d9);border-color:#c7e6bf;color:#2e6339}
+.yn-pill-nav .yn-pill-button:nth-child(5){background:linear-gradient(#faf7ff,#e9dfff);border-color:#d9caf7;color:#573e84}
+.yn-pill-nav .yn-pill-button:nth-child(6){background:linear-gradient(#fffaf3,#ffe7d0);border-color:#f4d2b2;color:#74491c}
+.yn-pill-nav .yn-pill-button:nth-child(7){background:linear-gradient(#f4fcff,#d9f3f8);border-color:#bce5ec;color:#225569}
+.yn-pill-nav .yn-pill-button:nth-child(8){background:linear-gradient(#fffef4,#fff1c6);border-color:#f1e1a1;color:#68551b}
+@media(max-width:900px){.yn-pill-nav{flex-wrap:wrap;overflow-x:visible}.yn-pill-nav .yn-pill-button{flex:1 1 calc(50% - 9px);min-width:0;white-space:normal;text-align:center}}
+</style>
+<!-- 메인 헤더 바로 아래 메뉴: 버튼별 테두리와 배경색으로 구분 -->
+        <nav aria-label="주요 메뉴" class="yn-pill-nav">
+            <button type="button" id="admissions2028Button" onclick="openAdmissions2028()" class="yn-pill-button" title="2028 대입 전형 자료">
+                <span class="yn-pill-span" aria-hidden="true">🎯</span><span class="yn-pill-span">2028 대입</span>
             </button>
-            <button type="button" id="studentLookupButton" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 text-left text-xl xl:text-2xl font-extrabold shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-150" title="학생 개별 조회">
-                <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">🧑‍🎓</span><span class="min-w-0 leading-snug">학생 개별 조회</span>
+            <button type="button" id="studentLookupButton" class="yn-pill-button" title="학생 개별 조회">
+                <span class="yn-pill-span" aria-hidden="true">🧑‍🎓</span><span class="yn-pill-span">학생 개별 조회</span>
             </button>
-            <button type="button" onclick="openClassView()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-left text-xl xl:text-2xl font-extrabold shadow-sm hover:bg-emerald-100 hover:border-emerald-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition duration-150">
-                <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">🧑‍🤝‍🧑</span><span class="min-w-0 leading-snug">수시 지원 반별 조회</span>
+            <button type="button" onclick="openClassView()" class="yn-pill-button">
+                <span class="yn-pill-span" aria-hidden="true">🧑‍🤝‍🧑</span><span class="yn-pill-span">수시 지원 반별 조회</span>
             </button>
-            <button type="button" onclick="openInterviewView()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-orange-200 bg-orange-50 text-orange-900 text-left text-xl xl:text-2xl font-extrabold shadow-sm hover:bg-orange-100 hover:border-orange-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-orange-300 transition duration-150">
-                <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">🎙️</span><span class="min-w-0 leading-snug">수시 면접 조편성</span>
+            <button type="button" onclick="openInterviewView()" class="yn-pill-button">
+                <span class="yn-pill-span" aria-hidden="true">🎙️</span><span class="yn-pill-span">수시 면접 조편성</span>
             </button>
-            <button type="button" onclick="openMockView()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-pink-200 bg-pink-50 text-pink-900 text-left text-xl xl:text-2xl font-extrabold shadow-sm hover:bg-pink-100 hover:border-pink-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-pink-300 transition duration-150">
-                <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">📈</span><span class="min-w-0 leading-snug">개별 모의고사 성적</span>
+            <button type="button" onclick="openMockView()" class="yn-pill-button">
+                <span class="yn-pill-span" aria-hidden="true">📈</span><span class="yn-pill-span">개별 모의고사 성적</span>
             </button>
-            <button type="button" onclick="openGradView()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-violet-200 bg-violet-50 text-violet-900 text-left text-xl xl:text-2xl font-extrabold shadow-sm hover:bg-violet-100 hover:border-violet-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-violet-300 transition duration-150">
-                <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">🎓</span><span class="min-w-0 leading-snug">졸업생 수시/정시 결과</span>
+            <button type="button" onclick="openGradView()" class="yn-pill-button">
+                <span class="yn-pill-span" aria-hidden="true">🎓</span><span class="yn-pill-span">졸업생 수시/정시 결과</span>
             </button>
-            <button type="button" onclick="openSusiResultView()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-left text-xl xl:text-2xl font-extrabold shadow-sm hover:bg-amber-100 hover:border-amber-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-amber-300 transition duration-150">
-                <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">📝</span><span class="min-w-0 leading-snug whitespace-nowrap" style="white-space:nowrap;">정시 입결 조회</span>
+            <button type="button" onclick="openSusiResultView()" class="yn-pill-button">
+                <span class="yn-pill-span" aria-hidden="true">📝</span><span class="yn-pill-span">정시 입결 조회</span>
             </button>
-            <button type="button" onclick="openUniversityAdmissionsInfo()" class="min-w-0 min-h-[76px] flex items-center justify-start gap-3 px-3 py-4 rounded-xl border border-yellow-200 bg-yellow-50 text-yellow-900 text-left text-xl xl:text-2xl font-extrabold shadow-sm hover:bg-yellow-100 hover:border-yellow-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-yellow-300 transition duration-150" style="background-color:#fff0a8 !important;color:#51451c !important;border-color:#eadb8c !important;" title="대학별 시행계획·수시·정시 모집요강 다운로드">
-                <span class="shrink-0 text-2xl xl:text-3xl leading-none" aria-hidden="true">📌</span><span class="min-w-0 leading-snug">대학 입시 정보</span>
+            <button type="button" onclick="openUniversityAdmissionsInfo()" class="yn-pill-button" title="대학별 시행계획·수시·정시 모집요강 다운로드">
+                <span class="yn-pill-span" aria-hidden="true">📌</span><span class="yn-pill-span">대학 입시 정보</span>
             </button>
         </nav>
 
