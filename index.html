@@ -4690,6 +4690,11 @@ function applyGradFilter() {
                     if (idx >= 17 && idx <= 20) {
                         const safeValue = String(val === '-' ? '' : val).replace(/&/g, '&amp;').replace(/\"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                         if (idx === 17) {
+                            if (String(row[18] || '').trim() === '최초합격') {
+                                if (row[17] !== '-') setClassSusiEdit(row, 17, '-');
+                                html += '<td><span class="text-gray-500">-</span></td>';
+                                return;
+                            }
                             const admissionType = String(row[6] || '').trim();
                             if (admissionType.includes('논술')) {
                                 if (row[17] !== '-') setClassSusiEdit(row, 17, '-');
@@ -4723,6 +4728,11 @@ function applyGradFilter() {
                                 html += `<td>${buildClassSusiSelect(rowIndex, idx, selectedValue, ['최저 미충족', '2단계 불합격', '미응시'], '불합격 사유')}</td>`;
                             }
                         } else {
+                            if (String(row[18] || '').trim() === '최초합격') {
+                                if (row[20] !== '-') setClassSusiEdit(row, 20, '-');
+                                html += '<td><span class="text-gray-500">-</span></td>';
+                                return;
+                            }
                             html += `<td><input type="text" aria-label="최초후보순위 입력" value="${safeValue}" oninput="updateClassSusiCell(${rowIndex}, ${idx}, this.value)" class="w-full min-w-16 rounded border border-gray-300 bg-white px-2 py-1 text-center focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-300"></td>`;
                         }
                         return;
@@ -4778,6 +4788,10 @@ function applyGradFilter() {
                     if (String(row[19] || '') === '1단계 불합격') setClassSusiEdit(row, 19, '');
                 }
             } else if (columnIndex === 18 && !/불합격/.test(String(row[17] || ''))) {
+                if (value === '최초합격') {
+                    setClassSusiEdit(row, 17, '-');
+                    setClassSusiEdit(row, 20, '-');
+                }
                 if (value === '최초합격' || value === '추가합격') setClassSusiEdit(row, 19, '-');
                 else if (String(row[19] || '') === '-') setClassSusiEdit(row, 19, '');
             }
