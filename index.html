@@ -89,6 +89,7 @@
         #classView .grad-table tbody td:nth-child(-n+8) { position: sticky; z-index: 10; background-color: #fff; }
         #classView .grad-table tbody tr.bg-blue-50 td:nth-child(-n+8) { background-color: #eff6ff; }
         #classView .grad-table tbody tr.bg-red-50 td:nth-child(-n+8) { background-color: #fef2f2; }
+        #classView .grad-table tbody tr.bg-green-100 td:nth-child(-n+8) { background-color: #dcfce7; }
         #classView .grad-table tbody tr:hover td:nth-child(-n+8) { background-color: #f8fafc; }
         #classView .grad-table th:nth-child(1), #classView .grad-table td:nth-child(1) { left: 0; }
         #classView .grad-table th:nth-child(2), #classView .grad-table td:nth-child(2) { left: 50px; }
@@ -892,6 +893,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                         <option value="">최종단계 전체</option>
                         <option value="합격">합격</option>
                         <option value="불합격">불합격</option>
+                        <option value="후보">후보</option>
                     </select>
                     <button type="button" onclick="applyClassSusiSearch()" class="rounded bg-green-600 px-4 py-2 font-bold text-white hover:bg-green-700">조회하기</button>
                     <div class="ml-auto flex flex-wrap items-center gap-3">
@@ -4601,6 +4603,7 @@ function applyGradFilter() {
                 const finalResult = String(row[18] || '').trim();
                 if (result === '합격' && (!finalResult.includes('합격') || finalResult.includes('불합격'))) return false;
                 if (result === '불합격' && !finalResult.includes('불합격')) return false;
+                if (result === '후보' && !finalResult.includes('후보')) return false;
                 
                 return true;
             });
@@ -4636,7 +4639,8 @@ function applyGradFilter() {
                 const hasAcceptedResult = isAccepted(firstStageResult) || isAccepted(finalResult);
                 const rowIndex = classSusiData.indexOf(row);
                 
-                if (hasAcceptedResult) tr.classList.add('bg-blue-100');
+                if (finalResult.includes('후보')) tr.classList.add('bg-green-100');
+                else if (hasAcceptedResult) tr.classList.add('bg-blue-100');
                 else if (finalResult.includes('불합격')) tr.classList.add('bg-red-50');
 
                 let html = '';
