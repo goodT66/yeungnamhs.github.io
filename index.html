@@ -502,20 +502,24 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         </header>
 
         <style>
-.yn-pill-nav{display:flex;gap:9px;align-items:stretch;overflow-x:auto;padding:12px;margin-bottom:20px;background:#fff;border:1px solid #e2e8f0;border-radius:24px;box-shadow:0 4px 14px rgba(15,23,42,.07)}
-.yn-pill-nav .yn-pill-button{display:flex;flex:1 0 auto;align-items:center;justify-content:center;gap:8px;min-height:65px;padding:12px 14px;border-radius:999px;border:1px solid #cbd5e1;background:#f8fafc;color:#334155;font-size:clamp(12px,.9vw,16px);font-weight:800;white-space:nowrap;box-shadow:0 2px 5px rgba(15,23,42,.08);transition:transform .15s,box-shadow .15s}
-.yn-pill-nav .yn-pill-button:hover{transform:translateY(-2px);box-shadow:0 5px 12px rgba(15,23,42,.12)}
-.yn-pill-nav .yn-pill-button:focus-visible{outline:3px solid #60a5fa;outline-offset:2px}
-.yn-pill-nav .yn-pill-span:first-child{font-size:22px;flex-shrink:0}
-.yn-pill-nav .yn-pill-button:nth-child(1){background:linear-gradient(#168e9b,#08606b);border-color:#0b7380;color:white}
-.yn-pill-nav .yn-pill-button:nth-child(2){background:linear-gradient(#f5fbff,#dcefff);border-color:#c4e1fa;color:#194768}
-.yn-pill-nav .yn-pill-button:nth-child(3){background:linear-gradient(#fff8fb,#fbe1ed);border-color:#f4cbdc;color:#72364e}
-.yn-pill-nav .yn-pill-button:nth-child(4){background:linear-gradient(#f7fff5,#dff3d9);border-color:#c7e6bf;color:#2e6339}
-.yn-pill-nav .yn-pill-button:nth-child(5){background:linear-gradient(#faf7ff,#e9dfff);border-color:#d9caf7;color:#573e84}
-.yn-pill-nav .yn-pill-button:nth-child(6){background:linear-gradient(#fffaf3,#ffe7d0);border-color:#f4d2b2;color:#74491c}
-.yn-pill-nav .yn-pill-button:nth-child(7){background:linear-gradient(#f4fcff,#d9f3f8);border-color:#bce5ec;color:#225569}
-.yn-pill-nav .yn-pill-button:nth-child(8){background:linear-gradient(#fffef4,#fff1c6);border-color:#f1e1a1;color:#68551b}
-@media(max-width:900px){.yn-pill-nav{flex-wrap:wrap;overflow-x:visible}.yn-pill-nav .yn-pill-button{flex:1 1 calc(50% - 9px);min-width:0;white-space:normal;text-align:center}}
+/* 상단 메뉴에만 적용: 기존 공통 버튼 스타일보다 우선 */
+nav.yn-pill-nav{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;align-items:stretch!important;overflow:visible!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;padding:10px!important;margin:0 0 20px!important;background:#fff!important;border:1px solid #e2e8f0!important;border-radius:20px!important;box-shadow:0 4px 14px rgba(15,23,42,.07)!important}
+nav.yn-pill-nav>button.yn-pill-button{display:flex!important;position:relative!important;float:none!important;flex:none!important;min-width:0!important;width:100%!important;max-width:100%!important;min-height:64px!important;height:auto!important;align-items:center!important;justify-content:center!important;gap:7px!important;box-sizing:border-box!important;padding:10px 8px!important;border:1px solid #cbd5e1!important;border-radius:999px!important;background:#f8fafc!important;color:#334155!important;font-size:clamp(11px,.85vw,15px)!important;font-weight:800!important;line-height:1.25!important;text-align:center!important;white-space:normal!important;box-shadow:0 2px 5px rgba(15,23,42,.08)!important;transform:none;transition:transform .15s,box-shadow .15s}
+nav.yn-pill-nav>button.yn-pill-button:hover{transform:translateY(-2px);box-shadow:0 5px 12px rgba(15,23,42,.12)!important}
+nav.yn-pill-nav>button.yn-pill-button:focus-visible{outline:3px solid #60a5fa!important;outline-offset:2px}
+nav.yn-pill-nav>button.yn-pill-button>.yn-pill-span{display:inline!important;min-width:0!important;visibility:visible!important;opacity:1!important;color:inherit!important;white-space:normal!important}
+nav.yn-pill-nav>button.yn-pill-button>.yn-pill-span:first-child{font-size:20px!important;flex-shrink:0!important}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(1){background:linear-gradient(#168e9b,#08606b)!important;border-color:#0b7380!important;color:#fff!important}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(2){background:linear-gradient(#f5fbff,#dcefff)!important;border-color:#c4e1fa!important;color:#194768!important}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(3){background:linear-gradient(#fff8fb,#fbe1ed)!important;border-color:#f4cbdc!important;color:#72364e!important}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(4){background:linear-gradient(#f7fff5,#dff3d9)!important;border-color:#c7e6bf!important;color:#2e6339!important}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(5){background:linear-gradient(#faf7ff,#e9dfff)!important;border-color:#d9caf7!important;color:#573e84!important}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(6){background:linear-gradient(#fffaf3,#ffe7d0)!important;border-color:#f4d2b2!important;color:#74491c!important}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(7){background:linear-gradient(#f4fcff,#d9f3f8)!important;border-color:#bce5ec!important;color:#225569!important}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(8){background:linear-gradient(#fffef4,#fff1c6)!important;border-color:#f1e1a1!important;color:#68551b!important}
+@media(min-width:700px){nav.yn-pill-nav{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(min-width:1250px){nav.yn-pill-nav{grid-template-columns:repeat(8,minmax(0,1fr))!important}}
+@media(prefers-reduced-motion:reduce){nav.yn-pill-nav>button.yn-pill-button{transition:none!important}}
 </style>
 <!-- 메인 헤더 바로 아래 메뉴: 버튼별 테두리와 배경색으로 구분 -->
         <nav aria-label="주요 메뉴" class="yn-pill-nav">
