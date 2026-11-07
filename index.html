@@ -102,8 +102,8 @@
         @media (max-width: 1024px) {
             #classView { padding: 12px; }
             #classView .grad-table {
-                width: 1230px !important;
-                min-width: 1230px !important;
+                width: 1170px !important;
+                min-width: 1170px !important;
                 table-layout: fixed;
                 font-size: 11px;
             }
@@ -118,6 +118,19 @@
                 overflow-wrap: anywhere;
                 word-break: break-word;
             }
+            /* 반·번호 두 열만 좁게 고정하고 나머지 열은 기존 비율 유지 */
+            #classView .grad-table th:nth-child(1),
+            #classView .grad-table td:nth-child(1) {
+                width: 30px !important;
+                min-width: 30px !important;
+                max-width: 30px !important;
+            }
+            #classView .grad-table th:nth-child(2),
+            #classView .grad-table td:nth-child(2) {
+                width: 36px !important;
+                min-width: 36px !important;
+                max-width: 36px !important;
+            }
             #classView .grad-table th:nth-child(-n+8),
             #classView .grad-table td:nth-child(-n+8) {
                 position: static !important;
@@ -130,8 +143,8 @@
         }
         @media (max-width: 1024px) and (orientation: landscape) {
             #classView .grad-table {
-                width: 1160px !important;
-                min-width: 1160px !important;
+                width: 1100px !important;
+                min-width: 1100px !important;
                 font-size: 10px;
             }
             #classView .grad-table th,
