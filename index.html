@@ -502,25 +502,23 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         </header>
 
         <style>
-/* 상단 메뉴에만 적용: 기존 공통 버튼 스타일보다 우선 */
-nav.yn-pill-nav{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;align-items:stretch!important;overflow:visible!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;padding:10px!important;margin:0 0 20px!important;background:#fff!important;border:1px solid #e2e8f0!important;border-radius:20px!important;box-shadow:0 4px 14px rgba(15,23,42,.07)!important}
-nav.yn-pill-nav>button.yn-pill-button{display:flex!important;position:relative!important;float:none!important;flex:none!important;min-width:0!important;width:100%!important;max-width:100%!important;min-height:64px!important;height:auto!important;align-items:center!important;justify-content:center!important;gap:7px!important;box-sizing:border-box!important;padding:10px 8px!important;border:1px solid #cbd5e1!important;border-radius:999px!important;background:#f8fafc!important;color:#334155!important;font-size:clamp(11px,.85vw,15px)!important;font-weight:800!important;line-height:1.25!important;text-align:center!important;white-space:normal!important;box-shadow:0 2px 5px rgba(15,23,42,.08)!important;transform:none;transition:transform .15s,box-shadow .15s}
-nav.yn-pill-nav>button.yn-pill-button:hover{transform:translateY(-2px);box-shadow:0 5px 12px rgba(15,23,42,.12)!important}
-/* 마우스를 올린 버튼의 둥근 테두리 전체에 형광 효과 */
+/* 책 위에 꽂힌 인덱스 포스트잇 스타일 — 상단 메뉴에만 적용 */
+nav.yn-pill-nav{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important;align-items:end!important;overflow:visible!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;padding:18px 12px 16px!important;margin:0 0 20px!important;background:linear-gradient(to bottom,#fff 0%,#fff 77%,#f2f6fa 77%,#fff 100%)!important;border:1px solid #e2e8f0!important;border-radius:22px!important;box-shadow:0 5px 16px rgba(15,23,42,.08)!important}
+nav.yn-pill-nav>button.yn-pill-button{display:flex!important;position:relative!important;float:none!important;flex:none!important;min-width:0!important;width:100%!important;max-width:100%!important;min-height:65px!important;height:auto!important;align-items:center!important;justify-content:center!important;gap:7px!important;box-sizing:border-box!important;padding:11px 7px 14px!important;border:1px solid var(--tab-border,#dbe5ed)!important;border-bottom:3px solid var(--tab-border,#dbe5ed)!important;border-radius:24px 24px 5px 5px!important;background:var(--tab-bg,#edf7fa)!important;color:var(--tab-ink,#243b53)!important;font-size:clamp(11px,.85vw,15px)!important;font-weight:800!important;line-height:1.25!important;text-align:center!important;white-space:normal!important;box-shadow:0 5px 8px rgba(15,23,42,.12),inset 0 2px 1px rgba(255,255,255,.45)!important;transform:none!important;transition:transform .16s,box-shadow .16s,border-color .16s!important;cursor:pointer}
+nav.yn-pill-nav>button.yn-pill-button::before{content:"";position:absolute;left:-6px;bottom:-3px;width:6px;height:29px;background:var(--tab-edge,var(--tab-border,#dbe5ed));border-radius:5px 0 0 2px;opacity:.75;pointer-events:none}
 nav.yn-pill-nav>button.yn-pill-button::after{content:none!important}
-nav.yn-pill-nav>button.yn-pill-button:hover,
-nav.yn-pill-nav>button.yn-pill-button:focus-visible{box-shadow:0 0 0 2px #8affff,0 0 10px 3px rgba(40,240,245,.85),0 0 22px 6px rgba(40,240,245,.45)!important;border-color:#60faff!important}
-nav.yn-pill-nav>button.yn-pill-button:focus-visible{outline:3px solid #60a5fa!important;outline-offset:2px}
+nav.yn-pill-nav>button.yn-pill-button:hover,nav.yn-pill-nav>button.yn-pill-button:focus-visible{transform:translateY(-5px)!important;border-color:#67f7f5!important;box-shadow:0 0 0 2px #8affff,0 0 10px 3px rgba(40,240,245,.75),0 0 19px 5px rgba(40,240,245,.35)!important}
+nav.yn-pill-nav>button.yn-pill-button:focus-visible{outline:2px solid #087f89!important;outline-offset:3px}
 nav.yn-pill-nav>button.yn-pill-button>.yn-pill-span{display:inline!important;min-width:0!important;visibility:visible!important;opacity:1!important;color:inherit!important;white-space:normal!important}
-nav.yn-pill-nav>button.yn-pill-button>.yn-pill-span:first-child{font-size:20px!important;flex-shrink:0!important}
-nav.yn-pill-nav>button.yn-pill-button:nth-child(1){background:linear-gradient(#168e9b,#08606b)!important;border-color:#0b7380!important;color:#fff!important}
-nav.yn-pill-nav>button.yn-pill-button:nth-child(2){background:linear-gradient(#f5fbff,#dcefff)!important;border-color:#c4e1fa!important;color:#194768!important}
-nav.yn-pill-nav>button.yn-pill-button:nth-child(3){background:linear-gradient(#fff8fb,#fbe1ed)!important;border-color:#f4cbdc!important;color:#72364e!important}
-nav.yn-pill-nav>button.yn-pill-button:nth-child(4){background:linear-gradient(#f7fff5,#dff3d9)!important;border-color:#c7e6bf!important;color:#2e6339!important}
-nav.yn-pill-nav>button.yn-pill-button:nth-child(5){background:linear-gradient(#faf7ff,#e9dfff)!important;border-color:#d9caf7!important;color:#573e84!important}
-nav.yn-pill-nav>button.yn-pill-button:nth-child(6){background:linear-gradient(#fffaf3,#ffe7d0)!important;border-color:#f4d2b2!important;color:#74491c!important}
-nav.yn-pill-nav>button.yn-pill-button:nth-child(7){background:linear-gradient(#f4fcff,#d9f3f8)!important;border-color:#bce5ec!important;color:#225569!important}
-nav.yn-pill-nav>button.yn-pill-button:nth-child(8){background:linear-gradient(#fffef4,#fff1c6)!important;border-color:#f1e1a1!important;color:#68551b!important}
+nav.yn-pill-nav>button.yn-pill-button>.yn-pill-span:first-child{font-size:21px!important;flex-shrink:0!important}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(1){--tab-bg:#5fd2c1;--tab-border:#35bcae;--tab-edge:#28a99b;--tab-ink:#073d43}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(2){--tab-bg:#d7edff;--tab-border:#b6dcfa;--tab-edge:#8cc6ed;--tab-ink:#194768}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(3){--tab-bg:#ffd9e9;--tab-border:#f8bfd8;--tab-edge:#ef9dc3;--tab-ink:#72364e}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(4){--tab-bg:#e2f6d9;--tab-border:#c7e9ba;--tab-edge:#a6d79a;--tab-ink:#2e6339}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(5){--tab-bg:#e9ddff;--tab-border:#d5c2f7;--tab-edge:#bda3eb;--tab-ink:#573e84}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(6){--tab-bg:#ffe6c9;--tab-border:#f4cfaa;--tab-edge:#eebd89;--tab-ink:#74491c}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(7){--tab-bg:#d8f4f8;--tab-border:#b9e6ed;--tab-edge:#92d5df;--tab-ink:#225569}
+nav.yn-pill-nav>button.yn-pill-button:nth-child(8){--tab-bg:#fff2b8;--tab-border:#f1e09c;--tab-edge:#e6ce76;--tab-ink:#68551b}
 @media(min-width:700px){nav.yn-pill-nav{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 @media(min-width:1250px){nav.yn-pill-nav{grid-template-columns:repeat(8,minmax(0,1fr))!important}}
 @media(prefers-reduced-motion:reduce){nav.yn-pill-nav>button.yn-pill-button{transition:none!important}}
