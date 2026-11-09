@@ -5246,7 +5246,7 @@ async function initializeSusiMockLookup() {
 }
 function clearSusiMockResult(){['susiMockAverageValue','susiMockKorValue','susiMockMathValue','susiMockEngGradeValue','susiMockHistGradeValue','susiMockInq1Value','susiMockInq2Value'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='-';});const avg=document.getElementById('susiMockAverageValue');if(avg)delete avg.dataset.average;selectedSusiMockAverage=null;}
 function clearSusiMockStudentPhoto(){const img=document.getElementById('susiMockStudentPhoto');if(img){img.onerror=null;img.removeAttribute('src');img.classList.add('hidden');}}
-async function updateSusiMockStudentPhoto(){const img=document.getElementById('susiMockStudentPhoto'),g=document.getElementById('susiMockGrade').value,c=document.getElementById('susiMockClass').value,[n,name]=document.getElementById('susiMockStudent').value.split('|');clearSusiMockStudentPhoto();if(!n||!name)return;const student=studentLookupRows.find(x=>x.grade===g&&x.cls===c&&x.no===n&&x.name===name);if(!student)return;try{await loadStudentPhotoMap();const selected=document.getElementById('susiMockStudent').value;if(selected!==`${n}|${name}`)return;const fileId=getStudentPhotoFileId(student);if(!fileId||!img)return;setStudentDriveImage(img,fileId,()=>{img.removeAttribute('src');img.classList.add('hidden');});img.classList.remove('hidden');}catch(err){console.warn('정시 입결 조회 학생 사진을 불러오지 못했습니다.',err);}}
+async function updateSusiMockStudentPhoto(){const img=document.getElementById('susiMockStudentPhoto'),g=document.getElementById('susiMockGrade').value,c=document.getElementById('susiMockClass').value,[n,name]=document.getElementById('susiMockStudent').value.split('|');clearSusiMockStudentPhoto();if(!n||!name)return;const student=studentLookupRows.find(x=>x.grade===g&&x.cls===c&&x.no===n&&x.name===name);if(!student)return;try{await loadStudentPhotoMap();const selected=document.getElementById('susiMockStudent').value;if(selected!==`${n}|${name}`)return;const fileId=getStudentPhotoFileId(student);if(!fileId||!img)return;let url=fileId;if(/^[\w-]{20,}$/.test(fileId))url=`https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w800`;else{const match=fileId.match(/drive\.google\.com\/file\/d\/([^/]+)/);if(match)url=`https://drive.google.com/thumbnail?id=${encodeURIComponent(match[1])}&sz=w800`;}img.onerror=()=>{img.onerror=null;img.removeAttribute('src');img.classList.add('hidden');};img.src=url;img.classList.remove('hidden');}catch(err){console.warn('정시 입결 조회 학생 사진을 불러오지 못했습니다.',err);}}
 function onSusiMockGradeChange(){const g=document.getElementById('susiMockGrade').value,c=document.getElementById('susiMockClass'),s=document.getElementById('susiMockStudent'),e=document.getElementById('susiMockExam');c.innerHTML='<option value="">반</option>';s.innerHTML='<option value="">번호-이름</option>';e.innerHTML='<option value="">모의고사 월</option>';[...new Set(studentLookupRows.filter(x=>x.grade===g).map(x=>x.cls))].sort((a,b)=>Number(a)-Number(b)).forEach(x=>c.add(new Option(x+'반',x)));c.disabled=!g;s.disabled=true;e.disabled=true;clearSusiMockStudentPhoto();clearSusiMockResult();}
 function onSusiMockClassChange(){const g=document.getElementById('susiMockGrade').value,c=document.getElementById('susiMockClass').value,s=document.getElementById('susiMockStudent'),e=document.getElementById('susiMockExam');s.innerHTML='<option value="">번호-이름</option>';e.innerHTML='<option value="">모의고사 월</option>';studentLookupRows.filter(x=>x.grade===g&&x.cls===c).sort((a,b)=>Number(a.no)-Number(b.no)).forEach(x=>s.add(new Option(`${x.no}번 - ${x.name}`,`${x.no}|${x.name}`)));s.disabled=!(g&&c);e.disabled=true;clearSusiMockStudentPhoto();clearSusiMockResult();}
 function getSusiMockSelectedRows(){const g=document.getElementById('susiMockGrade').value,c=document.getElementById('susiMockClass').value,[n,name]=document.getElementById('susiMockStudent').value.split('|'),s=studentLookupRows.find(x=>x.grade===g&&x.cls===c&&x.no===n&&x.name===name);if(!s)return[];const ids=new Set([`${s.grade}${String(s.cls).padStart(2,'0')}${String(s.no).padStart(2,'0')}`,`${s.grade}${s.cls}${s.no}`,`${s.grade}${String(s.cls).padStart(2,'0')}${s.no}`]);return lookupMockRows.filter(r=>{if(r.name.trim()!==s.name.trim())return false;const id=String(r.id).replace(/\D/g,'');return ids.has(id)||(id.startsWith(s.grade)&&id.endsWith(String(s.no).padStart(2,'0'))&&id.includes(String(s.cls)));});}
@@ -6019,7 +6019,15 @@ function updateMockStudentPhoto(sid, name){
     const fileId = getStudentPhotoFileId(student);
     if(!fileId) return;
 
-    setStudentDriveImage(img,fileId,()=>{img.removeAttribute('src');img.classList.add('hidden');});
+    let url = fileId;
+    if(/^[\w-]{20,}$/.test(fileId)){
+      url = `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w500`;
+    } else {
+      const match = fileId.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+      if(match) url = `https://drive.google.com/thumbnail?id=${encodeURIComponent(match[1])}&sz=w500`;
+    }
+
+    img.src = url;
     img.classList.remove('hidden');
   }).catch(error => {
     console.warn('성적 추이 학생 사진을 불러오지 못했습니다.', error);
@@ -6040,27 +6048,16 @@ function getStudentPhotoFileId(student){
   return '';
 }
 
-/* 학생 사진 공통 표시: Drive 이미지 주소 실패 시 대체 경로를 순서대로 시도 */
-function setStudentDriveImage(img, photo, onFailure){
-  const value=String(photo||'').trim();
-  const match=value.match(/drive\\.google\\.com\\/file\\/d\\/([^/?]+)/) || value.match(/[?&]id=([A-Za-z0-9_-]{20,})/);
-  const id=/^[A-Za-z0-9_-]{20,}$/.test(value)?value:(match?match[1]:'');
-  const urls=id?[
-    'https://drive.google.com/thumbnail?id='+encodeURIComponent(id)+'&sz=w800',
-    'https://lh3.googleusercontent.com/d/'+encodeURIComponent(id)+'=w800',
-    'https://drive.google.com/uc?export=view&id='+encodeURIComponent(id)
-  ]:(value?[value]:[]);
-  let index=0;
-  img.referrerPolicy='no-referrer';
-  img.onerror=()=>{index++;if(index<urls.length){img.src=urls[index];return;}img.onerror=null;if(onFailure)onFailure();};
-  if(urls.length)img.src=urls[0];else if(onFailure)onFailure();
-}
 function setLookupPhoto(photo){
   const box=document.getElementById('lookupStudentPhoto');if(!box)return;box.innerHTML='';
   if(photo){
-    const img=document.createElement('img');img.alt='학생 사진';img.className='w-full h-full object-cover';
+    let url=photo;
+    if(/^[\w-]{20,}$/.test(photo)) url=`https://drive.google.com/thumbnail?id=${encodeURIComponent(photo)}&sz=w500`;
+    const m=photo.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+    if(m)url=`https://drive.google.com/thumbnail?id=${encodeURIComponent(m[1])}&sz=w500`;
+    const img=document.createElement('img');img.src=url;img.alt='학생 사진';img.className='w-full h-full object-cover';
+    img.onerror=()=>{box.innerHTML='<span class="text-5xl">👤</span><span class="text-xs mt-2">사진을 표시할 수 없습니다</span>';};
     box.appendChild(img);
-    setStudentDriveImage(img,photo,()=>{box.innerHTML='<span class="text-5xl">👤</span><span class="text-xs mt-2">사진을 표시할 수 없습니다</span>';});
   }else box.innerHTML='<span class="text-5xl">👤</span><span class="text-xs mt-2">학생 사진 없음</span>';
 }
 let lookupMockRows = [];
