@@ -3220,7 +3220,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 },
                 plugins: [ChartDataLabels], 
                 options: { 
-                    maintainAspectRatio: false, 
+                    maintainAspectRatio: false,
+                    animation: false, 
                     plugins: { 
                         title: { display: false },
                         legend: {
@@ -3272,6 +3273,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const tbody = document.getElementById('scoreTableBody');
             if (!tbody) return;
             tbody.innerHTML = '';
+            const fragment = document.createDocumentFragment();
             [...records].reverse().forEach(r => {
                 const validGrade = value => {
                     const grade = Number(value);
@@ -3352,8 +3354,9 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 <td class="font-bold">${r.engGrd}</td><td class="font-bold">${r.histGrd}</td>
                 <td>${r.inq1Sub}</td><td>${r.inq1Std}</td><td>${r.inq1Ptc}</td><td class="text-emerald-600 font-bold">${r.inq1Grd}</td>
                 <td>${r.inq2Sub}</td><td>${r.inq2Std}</td><td>${r.inq2Ptc}</td><td class="text-purple-600 font-bold">${r.inq2Grd}</td>`;
-                tbody.appendChild(tr);
+                fragment.appendChild(tr);
             });
+            tbody.appendChild(fragment);
         }
 
         window.updateMockCutoffCount = function(value) {
