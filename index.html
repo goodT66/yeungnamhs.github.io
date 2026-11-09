@@ -5025,6 +5025,8 @@ function setIvSort(colIndex) {
             const teacherColorMap = {};
             let colorIdx = 0;
 
+            const interviewFragment = document.createDocumentFragment();
+            const dateCache = window.getInterviewDateCache ? window.getInterviewDateCache() : {};
             filtered.forEach(row => {
                 const tr = document.createElement('tr');
                 const firstStageFailed = isInterviewStudentFirstStageFailed(row);
@@ -5061,10 +5063,6 @@ if (firstStageFailed) {
     html += '<td class="p-1 text-center"><span class="font-bold text-gray-700">1단계 불합격</span></td>';
     return;
 }
-const dateCache = window.getInterviewDateCache
-    ? window.getInterviewDateCache()
-    : {};
-
 const savedDate = Object.prototype.hasOwnProperty.call(dateCache, cloudKey)
     ? dateCache[cloudKey]
     : '';
@@ -5106,8 +5104,9 @@ const displayedDate = pendingInterviewDates.has(cloudKey)
                     tr.style.backgroundColor = '#e5e7eb';
                     Array.from(tr.children).forEach(cell => { cell.style.backgroundColor = '#e5e7eb'; });
                 }
-                tbody.appendChild(tr);
+                interviewFragment.appendChild(tr);
             });
+            tbody.appendChild(interviewFragment);
         }
         window.renderInterviewTable = renderInterviewTable;
 
