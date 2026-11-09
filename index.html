@@ -1095,7 +1095,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                     <table class="w-full text-sm text-center border-collapse" style="min-width:1180px;table-layout:fixed">
                         <colgroup><col style="width:12%"><col style="width:6%"><col style="width:9%"><col style="width:27%"><col style="width:17%"><col style="width:7%"><col style="width:7%"><col style="width:7.5%"><col style="width:7.5%"></colgroup>
                         <thead class="bg-green-50 text-gray-800"><tr>
-                            <th class="p-3 border">대학명</th><th class="p-3 border">캠퍼스</th><th class="p-3 border">전형 유형</th><th class="p-3 border">세부 전형명</th><th class="p-3 border">모집단위</th><th class="p-3 border">경쟁률</th><th class="p-3 border">충원인원</th><th class="p-3 border">50% 등급</th><th class="p-3 border">70% 등급</th>
+                            <th class="p-2 border"><button type="button" class="w-full font-bold hover:text-green-700 focus:outline-none focus:underline" onclick="sortAdigaSusi('대학명')" data-adiga-sort="대학명" title="클릭하여 오름차순/내림차순 정렬">대학명 <span aria-hidden="true">↕</span></button></th><th class="p-2 border"><button type="button" class="w-full font-bold hover:text-green-700 focus:outline-none focus:underline" onclick="sortAdigaSusi('캠퍼스')" data-adiga-sort="캠퍼스" title="클릭하여 오름차순/내림차순 정렬">캠퍼스 <span aria-hidden="true">↕</span></button></th><th class="p-2 border"><button type="button" class="w-full font-bold hover:text-green-700 focus:outline-none focus:underline" onclick="sortAdigaSusi('전형유형')" data-adiga-sort="전형유형" title="클릭하여 오름차순/내림차순 정렬">전형 유형 <span aria-hidden="true">↕</span></button></th><th class="p-2 border"><button type="button" class="w-full font-bold hover:text-green-700 focus:outline-none focus:underline" onclick="sortAdigaSusi('전형명')" data-adiga-sort="전형명" title="클릭하여 오름차순/내림차순 정렬">세부 전형명 <span aria-hidden="true">↕</span></button></th><th class="p-2 border"><button type="button" class="w-full font-bold hover:text-green-700 focus:outline-none focus:underline" onclick="sortAdigaSusi('모집단위')" data-adiga-sort="모집단위" title="클릭하여 오름차순/내림차순 정렬">모집단위 <span aria-hidden="true">↕</span></button></th><th class="p-2 border"><button type="button" class="w-full font-bold hover:text-green-700 focus:outline-none focus:underline" onclick="sortAdigaSusi('경쟁률')" data-adiga-sort="경쟁률" title="클릭하여 오름차순/내림차순 정렬">경쟁률 <span aria-hidden="true">↕</span></button></th><th class="p-2 border"><button type="button" class="w-full font-bold hover:text-green-700 focus:outline-none focus:underline" onclick="sortAdigaSusi('충원인원')" data-adiga-sort="충원인원" title="클릭하여 오름차순/내림차순 정렬">충원인원 <span aria-hidden="true">↕</span></button></th><th class="p-2 border"><button type="button" class="w-full font-bold hover:text-green-700 focus:outline-none focus:underline" onclick="sortAdigaSusi('환산등급50')" data-adiga-sort="환산등급50" title="클릭하여 오름차순/내림차순 정렬">50% 등급 <span aria-hidden="true">↕</span></button></th><th class="p-2 border"><button type="button" class="w-full font-bold hover:text-green-700 focus:outline-none focus:underline" onclick="sortAdigaSusi('환산등급70')" data-adiga-sort="환산등급70" title="클릭하여 오름차순/내림차순 정렬">70% 등급 <span aria-hidden="true">↕</span></button></th>
                         </tr></thead>
                         <tbody id="adigaSusiRows"><tr><td colspan="9" class="p-6 text-gray-500">검색 결과가 여기에 표시됩니다.</td></tr></tbody>
                     </table>
@@ -2156,6 +2156,38 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         let adigaSusiData = null;
         let adigaSusiFiltered = [];
         let adigaSusiPage = 0;
+        let adigaSusiSortKey = '';
+        let adigaSusiSortAscending = true;
+        const adigaSusiNumericKeys = new Set(['경쟁률','충원인원','환산등급50','환산등급70']);
+        const adigaSusiCollator = new Intl.Collator('ko', {numeric:true, sensitivity:'base'});
+        function sortAdigaSusi(key) {
+            if (adigaSusiSortKey === key) adigaSusiSortAscending = !adigaSusiSortAscending;
+            else { adigaSusiSortKey = key; adigaSusiSortAscending = true; }
+            applyAdigaSusiSort();
+            adigaSusiPage = 0;
+            renderAdigaSusi();
+        }
+        function applyAdigaSusiSort() {
+            if (!adigaSusiSortKey) return;
+            const key = adigaSusiSortKey, numeric = adigaSusiNumericKeys.has(key);
+            const parseNumber = value => {
+                const text = String(value ?? '').trim().replace(/,/g,'');
+                if (!text || text === '-' || /미공개|미제공|미선발/.test(text)) return null;
+                const n = Number(text.replace(/:1$/,''));
+                return Number.isFinite(n) && (key.startsWith('환산등급') ? n > 0 : true) ? n : null;
+            };
+            adigaSusiFiltered.sort((a,b) => {
+                const av = numeric ? parseNumber(a[key]) : String(a[key]??'').trim();
+                const bv = numeric ? parseNumber(b[key]) : String(b[key]??'').trim();
+                const aMissing = av === null || av === '';
+                const bMissing = bv === null || bv === '';
+                if (aMissing !== bMissing) return aMissing ? 1 : -1;
+                if (aMissing) return 0;
+                const diff = numeric ? av-bv : adigaSusiCollator.compare(av,bv);
+                return adigaSusiSortAscending ? diff : -diff;
+            });
+        }
+
         const adigaSusiPageSize = 100;
         function adigaSusiEscape(v) {
             return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2226,6 +2258,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 (!track || String(r['전형명']||'').toLowerCase().includes(track))
             );
             adigaSusiPage=0;
+            applyAdigaSusiSort();
             renderAdigaSusi();
         }
         function adigaSusiPageChange(delta) {
@@ -2234,6 +2267,10 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             renderAdigaSusi();
         }
         function renderAdigaSusi() {
+            document.querySelectorAll('[data-adiga-sort]').forEach(button => {
+                const active = button.getAttribute('data-adiga-sort') === adigaSusiSortKey;
+                button.querySelector('span').textContent = active ? (adigaSusiSortAscending ? '▲' : '▼') : '↕';
+            });
             const total=adigaSusiFiltered.length;
             const start=adigaSusiPage*adigaSusiPageSize;
             const items=adigaSusiFiltered.slice(start,start+adigaSusiPageSize);
