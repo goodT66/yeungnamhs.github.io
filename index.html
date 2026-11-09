@@ -541,6 +541,8 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
   box-shadow:0 0 0 2px #8affff,0 0 10px 3px rgba(40,240,245,.75),0 0 19px 5px rgba(40,240,245,.35)!important;
 }
 #mainDashboard,nav.yn-pill-nav ~ div[id$="View"]{position:relative;z-index:30!important;isolation:isolate}
+/* 2028 대입 화면도 다른 조회 카드처럼 포스트잇 앞에 표시 */
+#admissions2028View{position:relative!important;z-index:40!important;isolation:isolate!important}
 /* 학생 개별 조회의 파란 상단선과 흰 본문을 포스트잇보다 앞에 배치 */
 #studentLookupView{position:relative!important;z-index:40!important;isolation:isolate!important}
 #studentLookupView::before{content:"";position:absolute;top:0;left:0;right:0;height:8px;background:#2563eb;z-index:41;pointer-events:none;border-radius:14px 14px 0 0}
