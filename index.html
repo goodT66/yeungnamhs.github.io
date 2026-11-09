@@ -2191,7 +2191,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             if (!adigaSusiData) { dropdown.classList.add('hidden'); return; }
             const keyword = input.value.trim().toLowerCase();
             const names = [...new Set(adigaSusiData.map(r => String(r['대학명'] || '').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
-            const matches = names.filter(name => !keyword || name.toLowerCase().includes(keyword)).slice(0,40);
+            const exactName = names.find(name => name.toLowerCase() === keyword);
+            const matches = (exactName ? [exactName] : names.filter(name => !keyword || name.toLowerCase().includes(keyword))).slice(0,40);
             dropdown.innerHTML = matches.length
                 ? matches.map(name => '<button type="button" class="block w-full text-left px-3 py-2 hover:bg-green-50 text-sm border-b last:border-0" data-university="'+adigaSusiEscape(name)+'">'+adigaSusiEscape(name)+'</button>').join('')
                 : '<div class="px-3 py-3 text-sm text-gray-500">일치하는 대학이 없습니다.</div>';
@@ -2218,7 +2219,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const univ=value('adigaSusiUniversity'), type=value('adigaSusiType'),
                   major=value('adigaSusiMajor'), track=value('adigaSusiTrack');
             adigaSusiFiltered = adigaSusiData.filter(r =>
-                (!univ || String(r['대학명']||'').toLowerCase().includes(univ)) &&
+                (!univ || (adigaSusiData.some(item => String(item['대학명']||'').trim().toLowerCase() === univ) ? String(r['대학명']||'').trim().toLowerCase() === univ : String(r['대학명']||'').toLowerCase().includes(univ))) &&
                 (!type || String(r['전형유형']||'').toLowerCase() === type) &&
                 (!major || String(r['모집단위']||'').toLowerCase().includes(major)) &&
                 (!track || String(r['전형명']||'').toLowerCase().includes(track))
