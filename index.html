@@ -556,7 +556,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
 /* 2028 대입 화면도 다른 조회 카드처럼 포스트잇 앞에 표시 */
 #admissions2028View{position:relative!important;z-index:40!important;isolation:isolate!important}
 /* 학생 개별 조회: 수시 지원 반별 조회와 동일한 본문 폭과 상단선 두께 */
-@media (min-width: 1025px){#studentLookupView{width:calc(100% - 100px)!important;margin-left:auto!important;margin-right:auto!important}}
+
 #studentLookupView{border-top-width:4px!important}
 #studentLookupView::before{height:4px!important}
 /* 학생 개별 조회의 파란 상단선과 흰 본문을 포스트잇보다 앞에 배치 */
@@ -5764,7 +5764,7 @@ window.changeSusiPage = changeSusiPage;
 
 
 <!-- 2028 대입 자료 조회 화면 -->
-<div id="admissions2028View" class="hidden bg-white rounded-2xl shadow-lg p-5 sm:p-8 w-full border-t-8 border-indigo-600">
+<div id="admissions2028View" class="hidden bg-white rounded-2xl shadow-lg p-5 sm:p-8 w-full border-t-4 border-indigo-600">
   <section>
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 pb-4 border-b gap-3">
       <div><h2 class="text-2xl font-extrabold text-gray-800">🎯 2028 대입 전형 자료</h2><p class="text-gray-600 text-sm mt-1">대학별 모집인원, 추천 인원 제한, 평가 방식·반영 비율과 수능 최저학력기준을 함께 확인합니다.</p></div>
