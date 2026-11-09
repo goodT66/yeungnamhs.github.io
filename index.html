@@ -3314,9 +3314,9 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 const inquiry1Science = sciencePattern.test(inquiry1Name);
                 const inquiry2Science = sciencePattern.test(inquiry2Name);
                 const mathSubject = String(r.mathSubject ?? '').replace(/\\s/g, '');
-                const mathLabel = mathSubject.includes('미적분') ? '미'
-                    : mathSubject.includes('기하') ? '기'
-                    : (mathSubject.includes('확률과통계') || mathSubject.includes('확통')) ? '확통' : '수';
+                const mathLabel = mathSubject.includes('미적분') ? '미적'
+                    : mathSubject.includes('기하') ? '기하'
+                    : (mathSubject.includes('확률과통계') || mathSubject.includes('확통')) ? '확통' : '수학';
 
                 let inquiryItems = [];
                 let inquiryNotSatisfied = false;
@@ -3331,28 +3331,28 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                         }];
                     }
                 } else if (mockInquiryMode === 'both') {
-                    if (inquiry1Grade !== null) inquiryItems.push({ subject: inquiry1Name.charAt(0), grade: inquiry1Grade, percentile: inquiry1Percentile, order: 4 });
-                    if (inquiry2Grade !== null) inquiryItems.push({ subject: inquiry2Name.charAt(0), grade: inquiry2Grade, percentile: inquiry2Percentile, order: 5 });
+                    if (inquiry1Grade !== null) inquiryItems.push({ subject: inquiry1Name.slice(0, 2), grade: inquiry1Grade, percentile: inquiry1Percentile, order: 4 });
+                    if (inquiry2Grade !== null) inquiryItems.push({ subject: inquiry2Name.slice(0, 2), grade: inquiry2Grade, percentile: inquiry2Percentile, order: 5 });
                 } else if (mockInquiryMode === 'scienceOne') {
                     const eligible = [
-                        { subject: inquiry1Name.charAt(0), grade: inquiry1Grade, percentile: inquiry1Percentile, isScience: inquiry1Science },
-                        { subject: inquiry2Name.charAt(0), grade: inquiry2Grade, percentile: inquiry2Percentile, isScience: inquiry2Science }
+                        { subject: inquiry1Name.slice(0, 2), grade: inquiry1Grade, percentile: inquiry1Percentile, isScience: inquiry1Science },
+                        { subject: inquiry2Name.slice(0, 2), grade: inquiry2Grade, percentile: inquiry2Percentile, isScience: inquiry2Science }
                     ].filter(item => item.isScience && item.grade !== null)
                      .sort((a, b) => a.grade - b.grade || (b.percentile ?? -Infinity) - (a.percentile ?? -Infinity));
                     if (eligible.length) inquiryItems = [{ subject: eligible[0].subject, grade: eligible[0].grade, percentile: eligible[0].percentile, order: 4 }];
                     else inquiryNotSatisfied = true;
                 } else {
                     const eligible = [
-                        { subject: inquiry1Name.charAt(0), grade: inquiry1Grade, percentile: inquiry1Percentile },
-                        { subject: inquiry2Name.charAt(0), grade: inquiry2Grade, percentile: inquiry2Percentile }
+                        { subject: inquiry1Name.slice(0, 2), grade: inquiry1Grade, percentile: inquiry1Percentile },
+                        { subject: inquiry2Name.slice(0, 2), grade: inquiry2Grade, percentile: inquiry2Percentile }
                     ].filter(item => item.subject && item.grade !== null).sort((a, b) => a.grade - b.grade || (b.percentile ?? -Infinity) - (a.percentile ?? -Infinity));
                     if (eligible.length) inquiryItems = [{ subject: eligible[0].subject, grade: eligible[0].grade, percentile: eligible[0].percentile, order: 4 }];
                 }
 
                 const gradeItems = [
-                    { subject: '국', grade: validGrade(r.korGrd), percentile: validPercentile(r.korPtc), order: 1 },
+                    { subject: '국어', grade: validGrade(r.korGrd), percentile: validPercentile(r.korPtc), order: 1 },
                     { subject: mathLabel, grade: validGrade(r.mathGrd), percentile: validPercentile(r.mathPtc), order: 2 },
-                    { subject: '영', grade: validGrade(r.engGrd), percentile: null, order: 3 },
+                    { subject: '영어', grade: validGrade(r.engGrd), percentile: null, order: 3 },
                     ...inquiryItems
                 ].filter(item => item.subject && item.grade !== null && item.grade !== undefined)
                  .sort((a, b) => a.order - b.order);
