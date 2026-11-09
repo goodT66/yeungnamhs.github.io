@@ -497,6 +497,18 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         </header>
 
         <style>
+/* 교사 인증 전 모든 대시보드·조회 화면 비공개 */
+body:not(.teacher-authenticated) .yn-pill-nav,
+body:not(.teacher-authenticated) #mainDashboard,
+body:not(.teacher-authenticated) #mockView,
+body:not(.teacher-authenticated) #gradView,
+body:not(.teacher-authenticated) #classView,
+body:not(.teacher-authenticated) #interviewView,
+body:not(.teacher-authenticated) #susiResultView,
+body:not(.teacher-authenticated) #studentLookupView,
+body:not(.teacher-authenticated) #admissions2028View,
+body:not(.teacher-authenticated) #universityAdmissionsInfoView{display:none!important}
+body.teacher-authenticated #teacherLoginNotice{display:none!important}
 /* 책 위에 꽂힌 인덱스 포스트잇 스타일 — 상단 메뉴에만 적용 */
 nav.yn-pill-nav{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important;align-items:end!important;overflow:visible!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;padding:18px 12px 16px!important;margin:0 0 20px!important;background:linear-gradient(to bottom,#fff 0%,#fff 77%,#f2f6fa 77%,#fff 100%)!important;border:1px solid #e2e8f0!important;border-radius:22px!important;box-shadow:0 5px 16px rgba(15,23,42,.08)!important}
 nav.yn-pill-nav>button.yn-pill-button{display:flex!important;position:relative!important;float:none!important;flex:none!important;min-width:0!important;width:100%!important;max-width:100%!important;min-height:65px!important;height:auto!important;align-items:center!important;justify-content:center!important;gap:7px!important;box-sizing:border-box!important;padding:11px 7px 14px!important;border:1px solid var(--tab-border,#dbe5ed)!important;border-bottom:3px solid var(--tab-border,#dbe5ed)!important;border-radius:24px 24px 5px 5px!important;background:var(--tab-bg,#edf7fa)!important;color:var(--tab-ink,#243b53)!important;font-size:clamp(11px,.85vw,15px)!important;font-weight:800!important;line-height:1.25!important;text-align:center!important;white-space:normal!important;box-shadow:0 5px 8px rgba(15,23,42,.12),inset 0 2px 1px rgba(255,255,255,.45)!important;transform:none!important;transition:transform .16s,box-shadow .16s,border-color .16s!important;cursor:pointer}
@@ -550,6 +562,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
 
 @media(max-width:699px){nav.yn-pill-nav{margin-bottom:8px!important}}
 </style>
+<div id="teacherLoginNotice" class="bg-white rounded-2xl shadow-md border border-gray-200 p-8 text-center text-gray-700"><p class="text-xl font-bold mb-2">🔒 교사 인증이 필요합니다.</p><p>상단의 [교사 인증 (Google 로그인)] 버튼으로 인증하면 전달 사항, 달력 및 모든 조회 메뉴가 표시됩니다.</p></div>
 <!-- 메인 헤더 바로 아래 메뉴: 버튼별 테두리와 배경색으로 구분 -->
         <nav aria-label="주요 메뉴" class="yn-pill-nav">
             <button type="button" id="admissions2028Button" onclick="openAdmissions2028()" class="yn-pill-button" title="2028 대입 전형 자료">
@@ -1458,6 +1471,7 @@ function startInterviewDateSync() {
 
             
 currentUser = user;
+document.body.classList.add('teacher-authenticated');
 
 // 메뉴 버튼은 항상 표시하고, 실제 기능 진입 시 로그인 여부를 확인합니다.
 
@@ -1507,6 +1521,7 @@ document.getElementById('userEmail').innerText = user.email;
             }
         } else {
             currentUser = null;
+            document.body.classList.remove('teacher-authenticated');
             // 로그아웃 시 보호 화면만 닫습니다. 메뉴 버튼은 계속 표시합니다.
             ['studentLookupView','admissions2028View'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
             document.getElementById('mainDashboard')?.classList.remove('hidden');
