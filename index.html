@@ -5817,7 +5817,6 @@ window.changeSusiPage = changeSusiPage;
           <div class="lookup-card-left xl:col-span-5 grid grid-cols-1 sm:grid-cols-5 gap-4 items-start">
             <div class="sm:col-span-2 flex flex-col items-center">
               <div id="lookupStudentPhoto" class="w-36 h-48 border border-slate-200 bg-slate-100 flex flex-col items-center justify-center text-slate-400 rounded-sm overflow-hidden"><span class="text-5xl">👤</span><span class="text-xs mt-2">학생 사진</span></div>
-              <button type="button" class="mt-2 border border-blue-300 text-blue-700 rounded-lg px-3 py-2 text-sm font-bold hover:bg-blue-50" onclick="alert('사진 업로드 기능은 시트 연결 단계에서 추가합니다.')">📷 사진 변경/업로드</button>
             </div>
             <div class="sm:col-span-3">
               <table class="w-full text-base border-collapse"><tbody id="lookupBasicInfo">
@@ -6194,12 +6193,29 @@ function getLookupClassSusiChoices(s){
     })()
   }));
 }
+let lookupClassSusiLoadPromise = null;
+async function ensureLookupClassSusiData(){
+  if(Array.isArray(classSusiData) && classSusiData.length) return;
+  if(lookupClassSusiLoadPromise) return lookupClassSusiLoadPromise;
+  lookupClassSusiLoadPromise=(async()=>{
+    const response=await fetch(SUSI_2026_CSV_URL, {cache:'no-store'});
+    if(!response.ok)throw new Error('수시 지원 시트 응답 오류');
+    const csv=await response.text();
+    const parsed=Papa.parse(csv,{skipEmptyLines:true});
+    if(parsed.errors?.length && !parsed.data?.length)throw new Error('수시 지원 시트 파싱 오류');
+    if(parsed.data.length>1){classSusiData=parsed.data.slice(1);window.classSusiData=classSusiData;}
+  })();
+  try{await lookupClassSusiLoadPromise;}finally{lookupClassSusiLoadPromise=null;}
+}
 async function loadLookupSusiPlan(){
   const s=getLookupSelectedStudent();if(!s)return;
   const status=document.getElementById('lookupSusiSaveStatus'); if(status)status.textContent='저장된 지원 희망 내용을 불러오는 중…';
   renderLookupSusiRows([]);
   try{
-    const saved=await window.studentSusiPlanStore.load(lookupSusiDocId(s));
+    const [saved, classLoadResult]=await Promise.all([
+      window.studentSusiPlanStore.load(lookupSusiDocId(s)).catch(error=>{console.warn('지원 희망 저장 자료 조회 실패:',error);return null;}),
+      (String(s.grade).replace(/\\D/g,'')==='3'?ensureLookupClassSusiData():Promise.resolve()).catch(error=>{console.warn('수시 지원 반별 자료 조회 실패:',error);return null;})
+    ]);
     if(getLookupSelectedStudent()!==s && lookupSusiDocId(getLookupSelectedStudent()||{})!==lookupSusiDocId(s))return;
     const classChoices=getLookupClassSusiChoices(s);
     const savedChoices=saved&&Array.isArray(saved.choices)?saved.choices:[];
