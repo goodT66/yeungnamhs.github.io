@@ -2218,8 +2218,9 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const value = id => document.getElementById(id).value.trim().toLowerCase();
             const univ=value('adigaSusiUniversity'), type=value('adigaSusiType'),
                   major=value('adigaSusiMajor'), track=value('adigaSusiTrack');
+            const exactUniversity = !!univ && adigaSusiData.some(item => String(item['대학명']||'').trim().toLowerCase() === univ);
             adigaSusiFiltered = adigaSusiData.filter(r =>
-                (!univ || (adigaSusiData.some(item => String(item['대학명']||'').trim().toLowerCase() === univ) ? String(r['대학명']||'').trim().toLowerCase() === univ : String(r['대학명']||'').toLowerCase().includes(univ))) &&
+                (!univ || (exactUniversity ? String(r['대학명']||'').trim().toLowerCase() === univ : String(r['대학명']||'').toLowerCase().includes(univ))) &&
                 (!type || String(r['전형유형']||'').toLowerCase() === type) &&
                 (!major || String(r['모집단위']||'').toLowerCase().includes(major)) &&
                 (!track || String(r['전형명']||'').toLowerCase().includes(track))
