@@ -522,7 +522,7 @@ nav.yn-pill-nav>button.yn-pill-button:nth-child(8){--tab-bg:#fff2b8;--tab-border
 @media(min-width:1250px){nav.yn-pill-nav{grid-template-columns:repeat(8,minmax(0,1fr))!important}}
 @media(prefers-reduced-motion:reduce){nav.yn-pill-nav>button.yn-pill-button{transition:none!important}}
 /* 실제 종이 인덱스 탭: 흰 카드가 포스트잇 하단을 앞에서 살짝 가림 */
-nav.yn-pill-nav{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:10px 7px 0!important;margin-bottom:-18px!important;position:relative!important;z-index:0!important;isolation:isolate!important}
+nav.yn-pill-nav{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:10px 7px 0!important;margin-bottom:-12px!important;position:relative!important;z-index:0!important;isolation:isolate!important}
 nav.yn-pill-nav::after{content:none!important}
 nav.yn-pill-nav>button.yn-pill-button{
   min-height:73px!important;padding-bottom:19px!important;
@@ -542,10 +542,6 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
 }
 #mainDashboard,nav.yn-pill-nav ~ div[id$="View"]{position:relative;z-index:3}
 #mainDashboard>div>section:first-child{position:relative}
-/* 모든 메뉴 탭 하단을 동일하게 가리는 흰색 앞면 레이어 */
-nav.yn-pill-nav::after{content:"" !important;display:block !important;position:absolute !important;left:0 !important;right:0 !important;bottom:0 !important;height:18px !important;background:#fff !important;z-index:10 !important;pointer-events:none !important;border:0 !important;box-shadow:none !important}
-/* 흰 본문이 포스트잇 아래쪽을 앞에서 덮도록 층위 유지 */
-#mainDashboard::before{content:"";position:absolute;left:0;right:0;top:0;height:18px;background:#fff;z-index:4;pointer-events:none}
 
 @media(max-width:699px){nav.yn-pill-nav{margin-bottom:8px!important}}
 </style>
