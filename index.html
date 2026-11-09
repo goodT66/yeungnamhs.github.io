@@ -3083,6 +3083,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         let chartInstance = null;
         const selectedSubjectTrends = new Set();
         let currentMockRecords = [];
+        let mockStudentInfoRows = null;
+        let mockStudentInfoIndex = new Map();
 
         async function fetchMockData() {
             try {
@@ -3174,9 +3176,11 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const sSel = document.getElementById('studentSelect');
             sSel.innerHTML = '<option value="">▼ 번호-이름 선택</option>';
             if (!g || !c) return;
+            const optionsFragment = document.createDocumentFragment();
             Array.from(studentMap.keys())
                 .filter(id => id.startsWith(g + c)).sort()
-                .forEach(id => sSel.appendChild(new Option(`${parseInt(id.substring(3,5),10)}번 - ${studentMap.get(id).name}`, id)));
+                .forEach(id => optionsFragment.appendChild(new Option(`${parseInt(id.substring(3,5),10)}번 - ${studentMap.get(id).name}`, id)));
+            sSel.appendChild(optionsFragment);
         }
         window.onClassChange = onClassChange;
         
@@ -3198,11 +3202,20 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             if (grade5El) grade5El.textContent = '-';
             if (grade9El) grade9El.textContent = '-';
             loadStudentInfoRows().then(rows => {
-                const cleanId = v => String(v ?? '').replace(/학년|반|번/g, '').trim();
-                const student = rows.find(s => cleanId(s.grade) === sid.charAt(0) && cleanId(s.cls).padStart(2, '0') === sid.substring(1, 3) && cleanId(s.no).padStart(2, '0') === sid.substring(3, 5) && String(s.name).trim() === String(info.name).trim());
+                if (document.getElementById('studentSelect').value !== sid) return;
+                if (mockStudentInfoRows !== rows) {
+                    const cleanId = v => String(v ?? '').replace(/학년|반|번/g, '').trim();
+                    mockStudentInfoIndex = new Map();
+                    rows.forEach(student => {
+                        const key = cleanId(student.grade) + cleanId(student.cls).padStart(2, '0') + cleanId(student.no).padStart(2, '0') + '|' + String(student.name).trim();
+                        if (!mockStudentInfoIndex.has(key)) mockStudentInfoIndex.set(key, student);
+                    });
+                    mockStudentInfoRows = rows;
+                }
+                const student = mockStudentInfoIndex.get(sid + '|' + String(info.name).trim());
                 if (grade5El) grade5El.textContent = student && student.grade5 ? student.grade5 : '-';
                 if (grade9El) grade9El.textContent = student && student.grade9 ? student.grade9 : '-';
-            }).catch(() => { if (grade5El) grade5El.textContent = '-'; if (grade9El) grade9El.textContent = '-'; });
+            }).catch(() => { if (document.getElementById('studentSelect').value !== sid) return; if (grade5El) grade5El.textContent = '-'; if (grade9El) grade9El.textContent = '-'; });
             const ctx = document.getElementById('scoreChart').getContext('2d');
             if (chartInstance) chartInstance.destroy();
 
@@ -3221,7 +3234,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 plugins: [ChartDataLabels], 
                 options: { 
                     maintainAspectRatio: false,
-                    animation: false, 
+
                     plugins: { 
                         title: { display: false },
                         legend: {
