@@ -590,6 +590,9 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
             <button type="button" onclick="openGradView()" class="yn-pill-button">
                 <span class="yn-pill-span" aria-hidden="true">🎓</span><span class="yn-pill-span">졸업생 수시/정시 결과</span>
             </button>
+            <button type="button" onclick="openAdigaSusiView()" class="yn-pill-button">
+                <span class="yn-pill-span" aria-hidden="true">📊</span><span class="yn-pill-span">수시 입결 조회</span>
+            </button>
             <button type="button" onclick="openSusiResultView()" class="yn-pill-button">
                 <span class="yn-pill-span" aria-hidden="true">📝</span><span class="yn-pill-span">정시 입결 조회</span>
             </button>
@@ -1065,6 +1068,39 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <!-- 2026 수시 입결 조회: 별도 화면 -->
+        <div id="adigaSusiView" class="hidden bg-white rounded-2xl shadow-lg p-4 sm:p-8 w-full border-t-8 border-green-600">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 pb-4 border-b gap-3">
+                <div><h3 class="text-2xl font-bold text-gray-800">📊 2026학년도 수시 입결 조회</h3>
+                <p class="text-sm text-gray-500 mt-1">대학어디가 전년도 전형결과 · 학생부교과 / 학생부종합</p></div>
+                <button type="button" onclick="showMainDashboard()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg">◀ 메인 화면으로</button>
+            </div>
+            <div id="adigaSusiAuth" class="text-center py-10 text-red-500 font-bold">🔒 교사 인증이 필요합니다.</div>
+            <div id="adigaSusiContent" class="hidden">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                    <label class="text-sm font-bold text-gray-700">대학명<input id="adigaSusiUniversity" oninput="filterAdigaSusi()" placeholder="대학교 검색" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"></label>
+                    <label class="text-sm font-bold text-gray-700">전형 유형<select id="adigaSusiType" onchange="filterAdigaSusi()" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"><option value="">전체</option><option>학생부교과</option><option>학생부종합</option></select></label>
+                    <label class="text-sm font-bold text-gray-700">학과명<input id="adigaSusiMajor" oninput="filterAdigaSusi()" placeholder="학과 검색" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"></label>
+                    <label class="text-sm font-bold text-gray-700">세부 전형명<input id="adigaSusiTrack" oninput="filterAdigaSusi()" placeholder="전형 검색" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"></label>
+                </div>
+                <p id="adigaSusiStatus" class="text-sm text-gray-600 mb-3">데이터를 불러오지 않았습니다.</p>
+                <div class="overflow-x-auto border rounded-lg">
+                    <table class="min-w-full text-sm text-center border-collapse" style="min-width:980px">
+                        <thead class="bg-green-50 text-gray-800"><tr>
+                            <th class="p-3 border">대학명</th><th class="p-3 border">캠퍼스</th><th class="p-3 border">전형 유형</th><th class="p-3 border">세부 전형명</th><th class="p-3 border">모집단위</th><th class="p-3 border">경쟁률</th><th class="p-3 border">충원인원</th><th class="p-3 border">50% 등급</th><th class="p-3 border">70% 등급</th>
+                        </tr></thead>
+                        <tbody id="adigaSusiRows"><tr><td colspan="9" class="p-6 text-gray-500">검색 결과가 여기에 표시됩니다.</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="flex items-center justify-center gap-3 mt-4">
+                    <button type="button" onclick="adigaSusiPageChange(-1)" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg">이전</button>
+                    <span id="adigaSusiPageInfo" class="text-sm text-gray-600"></span>
+                    <button type="button" onclick="adigaSusiPageChange(1)" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg">다음</button>
+                </div>
+                <p class="mt-3 text-xs text-gray-500">등급 0.0 및 미제공 값은 '미공개'로 표시합니다. 대학별 산출 방식이 다를 수 있습니다.</p>
             </div>
         </div>
 
@@ -2063,7 +2099,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
 
         // 화면 전환 시 메인 대시보드와 각 조회 화면 중 하나만 표시합니다.
         function hideAllContentViews() {
-            ['mainDashboard', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView', 'studentLookupView', 'admissions2028View', 'universityAdmissionsInfoView']
+            ['mainDashboard', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView', 'adigaSusiView', 'studentLookupView', 'admissions2028View', 'universityAdmissionsInfoView']
                 .forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.classList.add('hidden');
@@ -2108,6 +2144,76 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             if (window.getCurrentUser && window.getCurrentUser() && !interviewData.length) {
                 fetchInterviewData();
             }
+        }
+
+
+        // 2026 수시 입결 조회: 기존 화면과 독립된 데이터 로딩 및 필터
+        let adigaSusiData = null;
+        let adigaSusiFiltered = [];
+        let adigaSusiPage = 0;
+        const adigaSusiPageSize = 100;
+        function adigaSusiEscape(v) {
+            return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+        function openAdigaSusiView() {
+            hideAllContentViews();
+            document.getElementById('adigaSusiView').classList.remove('hidden');
+            const authenticated = !!(window.getCurrentUser && window.getCurrentUser());
+            document.getElementById('adigaSusiAuth').classList.toggle('hidden', authenticated);
+            document.getElementById('adigaSusiContent').classList.toggle('hidden', !authenticated);
+            if (authenticated && !adigaSusiData) loadAdigaSusi();
+            else if (authenticated) filterAdigaSusi();
+        }
+        async function loadAdigaSusi() {
+            const status = document.getElementById('adigaSusiStatus');
+            status.textContent = '수시 입결 데이터를 불러오는 중입니다...';
+            try {
+                const response = await fetch('./adiga_2026_susi_221.csv', {cache:'no-cache'});
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const csv = await response.text();
+                const parsed = Papa.parse(csv, {header:true, skipEmptyLines:true, transformHeader: h => h.replace(/^\uFEFF/,'').trim()});
+                if (!parsed.data.length || !('대학명' in parsed.data[0])) throw new Error('CSV 열 형식을 확인해 주세요.');
+                adigaSusiData = parsed.data;
+                filterAdigaSusi();
+            } catch (err) {
+                status.textContent = '데이터를 불러오지 못했습니다: ' + err.message;
+            }
+        }
+        function filterAdigaSusi() {
+            if (!adigaSusiData) return;
+            const value = id => document.getElementById(id).value.trim().toLowerCase();
+            const univ=value('adigaSusiUniversity'), type=value('adigaSusiType'),
+                  major=value('adigaSusiMajor'), track=value('adigaSusiTrack');
+            adigaSusiFiltered = adigaSusiData.filter(r =>
+                (!univ || String(r['대학명']||'').toLowerCase().includes(univ)) &&
+                (!type || String(r['전형유형']||'').toLowerCase() === type) &&
+                (!major || String(r['모집단위']||'').toLowerCase().includes(major)) &&
+                (!track || String(r['전형명']||'').toLowerCase().includes(track))
+            );
+            adigaSusiPage=0;
+            renderAdigaSusi();
+        }
+        function adigaSusiPageChange(delta) {
+            const max = Math.max(0, Math.ceil(adigaSusiFiltered.length/adigaSusiPageSize)-1);
+            adigaSusiPage = Math.max(0,Math.min(max,adigaSusiPage+delta));
+            renderAdigaSusi();
+        }
+        function renderAdigaSusi() {
+            const total=adigaSusiFiltered.length;
+            const start=adigaSusiPage*adigaSusiPageSize;
+            const items=adigaSusiFiltered.slice(start,start+adigaSusiPageSize);
+            const grade=v => {
+                const n=Number(String(v??'').trim());
+                return String(v??'').trim() && Number.isFinite(n) && n>0 ? adigaSusiEscape(v) : '미공개';
+            };
+            document.getElementById('adigaSusiRows').innerHTML = items.length ? items.map(r =>
+                '<tr class="hover:bg-gray-50">' +
+                ['대학명','캠퍼스','전형유형','전형명','모집단위','경쟁률','충원인원'].map(k=>'<td class="border px-2 py-2">'+adigaSusiEscape(r[k]||'-')+'</td>').join('') +
+                '<td class="border px-2 py-2">'+grade(r['환산등급50'])+'</td>'+
+                '<td class="border px-2 py-2">'+grade(r['환산등급70'])+'</td></tr>'
+            ).join('') : '<tr><td colspan="9" class="p-6 text-gray-500">검색 결과가 없습니다.</td></tr>';
+            document.getElementById('adigaSusiStatus').textContent='검색 결과 '+total.toLocaleString()+'건 / 전체 '+adigaSusiData.length.toLocaleString()+'건';
+            document.getElementById('adigaSusiPageInfo').textContent=total ? (adigaSusiPage+1)+' / '+Math.ceil(total/adigaSusiPageSize)+' 페이지' : '0 / 0 페이지';
         }
 
         function openSusiResultView() {
