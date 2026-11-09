@@ -526,14 +526,28 @@ nav.yn-pill-nav>button.yn-pill-button:nth-child(8){--tab-bg:#fff2b8;--tab-border
 @media(min-width:700px){nav.yn-pill-nav{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 @media(min-width:1250px){nav.yn-pill-nav{grid-template-columns:repeat(8,minmax(0,1fr))!important}}
 @media(prefers-reduced-motion:reduce){nav.yn-pill-nav>button.yn-pill-button{transition:none!important}}
-/* 메인 화면에서는 포스트잇을 공지·달력 카드 윗변에 붙여 보이게 함 */
-nav.yn-pill-nav{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:10px 7px 0!important;margin-bottom:-13px!important;position:relative!important;z-index:4!important}
+/* 실제 종이 인덱스 탭: 흰 카드가 포스트잇 하단을 앞에서 살짝 가림 */
+nav.yn-pill-nav{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:10px 7px 0!important;margin-bottom:-18px!important;position:relative!important;z-index:1!important;isolation:auto!important}
 nav.yn-pill-nav::after{content:none!important}
-nav.yn-pill-nav>button.yn-pill-button{min-height:70px!important;padding-bottom:16px!important;box-shadow:0 3px 5px rgba(15,23,42,.1)!important;border-bottom-width:1px!important}
-#mainDashboard{position:relative;z-index:2}
+nav.yn-pill-nav>button.yn-pill-button{
+  min-height:73px!important;padding-bottom:19px!important;
+  background:linear-gradient(158deg,rgba(255,255,255,.53) 0%,rgba(255,255,255,.12) 29%,transparent 56%),linear-gradient(to bottom,var(--tab-bg) 0%,var(--tab-bg) 66%,var(--tab-border) 100%)!important;
+  border-top:1px solid rgba(255,255,255,.85)!important;
+  border-left:1px solid var(--tab-border)!important;
+  border-right:1px solid var(--tab-border)!important;
+  border-bottom:2px solid var(--tab-edge)!important;
+  box-shadow:inset 2px 2px 2px rgba(255,255,255,.55),inset -2px 0 3px rgba(15,23,42,.07),0 4px 5px rgba(15,23,42,.12),0 9px 13px rgba(15,23,42,.09)!important;
+  border-radius:23px 23px 4px 4px!important;
+}
+nav.yn-pill-nav>button.yn-pill-button:hover,
+nav.yn-pill-nav>button.yn-pill-button:focus-visible{
+  transform:translateY(-5px)!important;
+  border-color:#67f7f5!important;
+  box-shadow:0 0 0 2px #8affff,0 0 10px 3px rgba(40,240,245,.75),0 0 19px 5px rgba(40,240,245,.35)!important;
+}
+#mainDashboard{position:relative;z-index:3}
 #mainDashboard>div>section:first-child{position:relative}
 @media(max-width:699px){nav.yn-pill-nav{margin-bottom:8px!important}}
-
 </style>
 <!-- 메인 헤더 바로 아래 메뉴: 버튼별 테두리와 배경색으로 구분 -->
         <nav aria-label="주요 메뉴" class="yn-pill-nav">
