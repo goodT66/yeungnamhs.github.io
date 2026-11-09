@@ -542,6 +542,8 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
 }
 #mainDashboard,nav.yn-pill-nav ~ div[id$="View"]{position:relative;z-index:3}
 #mainDashboard>div>section:first-child{position:relative}
+/* 모든 메뉴 탭 하단을 동일하게 가리는 흰색 앞면 레이어 */
+nav.yn-pill-nav::after{content:"" !important;display:block !important;position:absolute !important;left:0 !important;right:0 !important;bottom:0 !important;height:18px !important;background:#fff !important;z-index:10 !important;pointer-events:none !important;border:0 !important;box-shadow:none !important}
 /* 흰 본문이 포스트잇 아래쪽을 앞에서 덮도록 층위 유지 */
 #mainDashboard::before{content:"";position:absolute;left:0;right:0;top:0;height:18px;background:#fff;z-index:4;pointer-events:none}
 
