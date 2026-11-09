@@ -3079,6 +3079,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         // [기능 1] 학생 모의고사 관련 스크립트
         // =====================================================================
         let mockDataLoaded = false;
+        let mockDataLoadingPromise = null;
         let studentMap = new Map();
         let chartInstance = null;
         const selectedSubjectTrends = new Set();
@@ -3087,6 +3088,9 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         let mockStudentInfoIndex = new Map();
 
         async function fetchMockData() {
+            if (mockDataLoaded) { if (document.getElementById('gradeSelect')?.options.length <= 1) populateGradeDropdown(); return; }
+            if (mockDataLoadingPromise) return mockDataLoadingPromise;
+            mockDataLoadingPromise = (async () => {
             try {
                 const response = await fetch(MOCK_CSV_URL);
                 if (!response.ok) throw new Error("네트워크 오류");
@@ -3143,10 +3147,14 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                         }
                         mockDataLoaded = true;
                         window.mockDataLoaded = true;
+                        populateGradeDropdown();
                         document.getElementById('mockLoadingSpinner').style.display = 'none';
                     }
                 });
             } catch (error) { console.error(error); }
+            finally { mockDataLoadingPromise = null; }
+            })();
+            return mockDataLoadingPromise;
         }
         
         function populateGradeDropdown() {
