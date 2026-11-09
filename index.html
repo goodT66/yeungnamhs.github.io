@@ -607,7 +607,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                     </section>
 
                     <section id="mealView" class="bg-white rounded-xl shadow-sm border border-gray-200 border-t-4 border-lime-500 p-4 min-w-0">
-                        <div class="flex flex-col items-start gap-2 mb-1 pb-1 border-b">
+                        <div class="flex flex-col items-start gap-2 mb-0 pb-1 border-b">
                             <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2 shrink-0"><span class="text-2xl">🍚</span> 급식 메뉴</h2>
                             <div class="flex flex-wrap items-center gap-2">
                                 <button onclick="changeMealDate(-1)" class="px-2 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm font-bold">◀ 전날</button>
@@ -616,7 +616,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                                 <button onclick="loadMealForSelectedDate(true)" class="px-3 py-2 rounded-lg bg-lime-600 text-white hover:bg-lime-700 text-sm font-bold">새로고침</button>
                             </div>
                         </div>
-                        <div id="mealStatus" class="text-center text-gray-500 py-2 text-sm">급식 메뉴를 불러올 준비가 되었습니다.</div>
+                        <div id="mealStatus" class="text-center text-gray-500 py-0 text-sm">급식 메뉴를 불러올 준비가 되었습니다.</div>
                         <div id="mealCards" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
                         <p class="text-xs text-gray-400 mt-4">나이스 교육정보 개방 포털 자료 기준</p>
                     </section>
@@ -6259,6 +6259,7 @@ function loadMealForSelectedDate(force) {
     cards.innerHTML = html;
     status.textContent = data.meals.length ? '' : '선택한 날짜에는 등록된 급식 정보가 없습니다.';
     status.classList.toggle('hidden', data.meals.length > 0);
+    status.style.display = data.meals.length > 0 ? 'none' : '';
   };
   script.onerror = () => { cleanup(); if(serial===mealRequestSerial) status.textContent = '급식 프록시를 불러오지 못했습니다. 웹 앱 배포 URL과 권한을 확인해 주세요.'; };
   script.src = `${NEIS_MEAL_PROXY_URL}?action=meal&date=${encodeURIComponent(date.replaceAll('-',''))}&callback=${encodeURIComponent(callbackName)}${force?'&refresh=1':''}&t=${Date.now()}`;
