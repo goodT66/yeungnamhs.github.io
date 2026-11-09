@@ -1081,14 +1081,19 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
             <div id="adigaSusiAuth" class="text-center py-10 text-red-500 font-bold">🔒 교사 인증이 필요합니다.</div>
             <div id="adigaSusiContent" class="hidden">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-                    <label class="text-sm font-bold text-gray-700">대학명<input id="adigaSusiUniversity" oninput="filterAdigaSusi()" placeholder="대학교 검색" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"></label>
+                    <div class="relative min-w-0">
+                        <label for="adigaSusiUniversity" class="text-sm font-bold text-gray-700">대학명</label>
+                        <input id="adigaSusiUniversity" type="text" autocomplete="off" oninput="filterAdigaSusi();showAdigaSusiUniversityOptions()" onfocus="showAdigaSusiUniversityOptions()" placeholder="대학교 검색 및 선택" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal">
+                        <div id="adigaSusiUniversityOptions" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border rounded-lg shadow-lg overflow-y-auto" style="max-height:240px;z-index:110"></div>
+                    </div>
                     <label class="text-sm font-bold text-gray-700">전형 유형<select id="adigaSusiType" onchange="filterAdigaSusi()" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"><option value="">전체</option><option>학생부교과</option><option>학생부종합</option></select></label>
                     <label class="text-sm font-bold text-gray-700">학과명<input id="adigaSusiMajor" oninput="filterAdigaSusi()" placeholder="학과 검색" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"></label>
                     <label class="text-sm font-bold text-gray-700">세부 전형명<input id="adigaSusiTrack" oninput="filterAdigaSusi()" placeholder="전형 검색" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"></label>
                 </div>
                 <p id="adigaSusiStatus" class="text-sm text-gray-600 mb-3">데이터를 불러오지 않았습니다.</p>
                 <div class="overflow-x-auto border rounded-lg">
-                    <table class="min-w-full text-sm text-center border-collapse" style="min-width:980px">
+                    <table class="w-full text-sm text-center border-collapse" style="min-width:1180px;table-layout:fixed">
+                        <colgroup><col style="width:12%"><col style="width:6%"><col style="width:9%"><col style="width:27%"><col style="width:17%"><col style="width:7%"><col style="width:7%"><col style="width:7.5%"><col style="width:7.5%"></colgroup>
                         <thead class="bg-green-50 text-gray-800"><tr>
                             <th class="p-3 border">대학명</th><th class="p-3 border">캠퍼스</th><th class="p-3 border">전형 유형</th><th class="p-3 border">세부 전형명</th><th class="p-3 border">모집단위</th><th class="p-3 border">경쟁률</th><th class="p-3 border">충원인원</th><th class="p-3 border">50% 등급</th><th class="p-3 border">70% 등급</th>
                         </tr></thead>
@@ -2179,6 +2184,34 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 status.textContent = '데이터를 불러오지 못했습니다: ' + err.message;
             }
         }
+
+        function showAdigaSusiUniversityOptions() {
+            const dropdown = document.getElementById('adigaSusiUniversityOptions');
+            const input = document.getElementById('adigaSusiUniversity');
+            if (!adigaSusiData) { dropdown.classList.add('hidden'); return; }
+            const keyword = input.value.trim().toLowerCase();
+            const names = [...new Set(adigaSusiData.map(r => String(r['대학명'] || '').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+            const matches = names.filter(name => !keyword || name.toLowerCase().includes(keyword)).slice(0,40);
+            dropdown.innerHTML = matches.length
+                ? matches.map(name => '<button type="button" class="block w-full text-left px-3 py-2 hover:bg-green-50 text-sm border-b last:border-0" data-university="'+adigaSusiEscape(name)+'">'+adigaSusiEscape(name)+'</button>').join('')
+                : '<div class="px-3 py-3 text-sm text-gray-500">일치하는 대학이 없습니다.</div>';
+            dropdown.classList.remove('hidden');
+        }
+        function selectAdigaSusiUniversity(name) {
+            document.getElementById('adigaSusiUniversity').value = name;
+            document.getElementById('adigaSusiUniversityOptions').classList.add('hidden');
+            filterAdigaSusi();
+        }
+        document.addEventListener('click', event => {
+            const dropdown = document.getElementById('adigaSusiUniversityOptions');
+            if (!dropdown) return;
+            const option = event.target.closest('[data-university]');
+            if (option && dropdown.contains(option)) {
+                selectAdigaSusiUniversity(option.getAttribute('data-university'));
+            } else if (!event.target.closest('#adigaSusiUniversity') && !dropdown.contains(event.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
         function filterAdigaSusi() {
             if (!adigaSusiData) return;
             const value = id => document.getElementById(id).value.trim().toLowerCase();
