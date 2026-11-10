@@ -2361,7 +2361,24 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 const trendColor = (a,b) => b>a ? '#dc2626' : b<a ? '#2563eb' : '#94a3b8';
                 const segments=[]; for(let i=1;i<3;i++) if(points[i-1]&&points[i]) segments.push('<line x1="'+points[i-1][0]+'" y1="'+points[i-1][1]+'" x2="'+points[i][0]+'" y2="'+points[i][1]+'" stroke="'+trendColor(values[i-1],values[i])+'" stroke-width="3" stroke-linecap="round"/>');
                 const dots=points.map((p,i)=>p?'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="4" fill="'+(i>0&&values[i-1]!==null?trendColor(values[i-1],values[i]):'#64748b')+'" stroke="white" stroke-width="1.5"/>':'').join('');
-                const chart=valid.length>1?'<svg viewBox="0 0 232 50" width="100%" height="50" style="display:block;margin:5px auto 0" role="img" aria-label="2024~2026 수치 추이"><line x1="38.67" y1="46" x2="193.33" y2="46" stroke="#e2e8f0" stroke-width="1"/>'+segments.join('')+dots+'</svg>':'<div style="height:50px"></div>';
+                // 학생의 9등급제 값이 2025~2026 입결 사이에 있을 때만 검은 점을 표시합니다.
+                const studentRaw = document.getElementById('adigaStudentGrade9')?.textContent.trim() || '';
+                const studentGrade = /^\\d+(?:\\.\\d+)?$/.test(studentRaw) ? Number(studentRaw) : NaN;
+                let studentMarker = '';
+                if (k.startsWith('환산등급') && Number.isFinite(studentGrade) && studentGrade>0 && studentGrade<=9 &&
+                    values[1]!==null && values[2]!==null && points[1] && points[2] &&
+                    studentGrade>=Math.min(values[1],values[2]) && studentGrade<=Math.max(values[1],values[2])) {
+                    const fraction = values[1]===values[2] ? 0.5 : (studentGrade-values[1])/(values[2]-values[1]);
+                    const x = points[1][0]+fraction*(points[2][0]-points[1][0]);
+                    const y = points[1][1]+fraction*(points[2][1]-points[1][1]);
+                    const label = adigaSusiEscape(studentRaw);
+                    const labelX = Math.max(29,Math.min(203,x));
+                    const labelY = Math.max(13,y-11);
+                    studentMarker = '<rect x="'+(labelX-27)+'" y="'+(labelY-12)+'" width="54" height="16" rx="5" fill="#111827"/>'+
+                        '<text x="'+labelX+'" y="'+labelY+'" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">학생 '+label+'</text>'+
+                        '<circle cx="'+x+'" cy="'+y+'" r="5.5" fill="#111827" stroke="#ffffff" stroke-width="2"/>';
+                }
+                const chart=valid.length>1?'<svg viewBox="0 0 232 62" width="100%" height="62" style="display:block;margin:5px auto 0" role="img" aria-label="2024~2026 수치 추이 및 학생 등급"><line x1="38.67" y1="46" x2="193.33" y2="46" stroke="#e2e8f0" stroke-width="1"/>'+segments.join('')+dots+studentMarker+'</svg>':'<div style="height:62px"></div>';
                 const numbers=years.map((y,i)=>'<div style="box-sizing:border-box;min-width:0;width:33.333%;text-align:center;padding:7px 2px;border-radius:7px;'+(i===2?'background:#ecfdf5;':'')+'"><div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:4px">'+y+'</div><div style="font-size:18px;font-weight:800;letter-spacing:-.4px;line-height:1.4;white-space:nowrap;color:'+(values[i]===null?'#94a3b8':red?'#dc2626':'#0f172a')+'">'+(values[i]===null?'–':adigaSusiEscape(String(values[i])))+'</div></div>').join('');
                 return '<div style="box-sizing:border-box;width:232px;min-width:232px;margin:0 auto;padding:4px 0"><div style="display:flex;align-items:stretch;width:100%;gap:0">'+numbers+'</div>'+chart+'</div>';
             };
@@ -2414,6 +2431,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const student=studentLookupRows.find(s=>s.grade===g&&s.cls===c&&s.no===no&&s.name===name);
             document.getElementById('adigaStudentGrade5').textContent=student?.grade5||'-';
             document.getElementById('adigaStudentGrade9').textContent=student?.grade9||'-';
+            if (adigaSusiCompareMode && adigaSusiData) renderAdigaSusiComparison();
         }
         function showAdigaSusiUniversityOptions() {
             const dropdown = document.getElementById('adigaSusiUniversityOptions');
