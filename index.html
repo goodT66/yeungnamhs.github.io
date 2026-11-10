@@ -2425,6 +2425,13 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             };
             // 학생 9등급제 내신과 2026학년도 70%컷 비교: 6단계 지원 범위
             const stabilityLabel = r => {
+                // 지정 대학 또는 모집단위가 정확히 일치하는 의약학 계열만 지원 범위 표시
+                const university = String(r['대학명'] || '').trim().replace(/\\s+/g,'');
+                const major = String(r['모집단위'] || '').trim();
+                const allowedUniversities = new Set(['서울대','연세대','고려대','성균관대','한양대','서강대','중앙대','경희대','한국외국어대','서울시립대','시립대','국민대','숭실대','세종대','단국대','광운대','명지대','상명대','경북대','영남대','부산대','충남대','충북대','전남대','전북대','부경대'].flatMap(name => [name, name.endsWith('대') ? name.slice(0,-1)+'대학교' : name+'학교']));
+                const allowedMajors = new Set(['의예과','의학과','의학부','약학부','약학과','치의예과','한의예과','한약학과']);
+                const allowedUniversity = allowedUniversities.has(university) || /교육대학교$/.test(university) || /교대$/.test(university);
+                if (!allowedUniversity && !allowedMajors.has(major)) return '';
                 if (!document.getElementById('adigaStudentName')?.value) return '';
                 const rawStudent = document.getElementById('adigaStudentGrade9')?.textContent.trim() || '';
                 const studentPart = rawStudent.split('/').map(v=>v.trim()).filter(Boolean).pop() || '';
