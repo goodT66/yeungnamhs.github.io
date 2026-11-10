@@ -2429,6 +2429,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             };
             // 학생 9등급제 내신과 2026학년도 70%컷 비교: 6단계 지원 범위
             const stabilityLabel = r => {
+                // 학생부교과 전형에만 6단계 지원 범위 표시 (종합 등은 제외)
+                if (String(r['전형유형'] || '').trim() !== '교과') return '';
                 // 지정 대학 또는 모집단위가 정확히 일치하는 의약학 계열만 지원 범위 표시
                 const university = String(r['대학명'] || '').trim().replace(/\\s+/g,'');
                 const major = String(r['모집단위'] || '').trim();
