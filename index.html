@@ -2363,7 +2363,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 const dots=points.map((p,i)=>p?'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="4" fill="'+(i>0&&values[i-1]!==null?trendColor(values[i-1],values[i]):'#64748b')+'" stroke="white" stroke-width="1.5"/>':'').join('');
                 // 학생의 9등급제 값이 2025~2026 입결 사이에 있을 때만 검은 점을 표시합니다.
                 const studentRaw = document.getElementById('adigaStudentGrade9')?.textContent.trim() || '';
-                const studentGrade = /^\\d+(?:\\.\\d+)?$/.test(studentRaw) ? Number(studentRaw) : NaN;
+                const studentGrade = /^\d+(?:\.\d+)?$/.test(studentRaw.replace(/등급/g,'').trim()) ? Number(studentRaw.replace(/등급/g,'').trim()) : NaN;
                 let studentMarker = '';
                 if (k.startsWith('환산등급') && Number.isFinite(studentGrade) && studentGrade>0 && studentGrade<=9 &&
                     values[1]!==null && values[2]!==null && points[1] && points[2] &&
