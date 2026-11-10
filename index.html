@@ -2400,7 +2400,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const popularityLabel = r => {
                 const values = key => years.map(y => {
                     const raw = String(r._years[y]?.[key] ?? '').trim().replace(/,/g,'');
-                    if (!raw || !/^\\d+(?:\\.\\d+)?$/.test(raw)) return null;
+                    if (!raw || !/^\d+(?:\.\d+)?$/.test(raw)) return null;
                     const n = Number(raw);
                     return Number.isFinite(n) ? n : null;
                 });
