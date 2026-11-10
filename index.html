@@ -1100,7 +1100,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                     </div>
                     <label class="text-sm font-bold text-gray-700">전형 유형<select id="adigaSusiType" onchange="filterAdigaSusi()" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"><option value="">전체</option><option>학생부교과</option><option>학생부종합</option></select></label>
                     <label class="text-sm font-bold text-gray-700">세부 전형명<input id="adigaSusiTrack" oninput="filterAdigaSusi()" placeholder="전형 검색" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"></label>
-                    <div class="flex gap-2 min-w-0"><label class="text-sm font-bold text-gray-700 flex-1 min-w-0">학과명<input id="adigaSusiMajor" oninput="filterAdigaSusi()" placeholder="학과 검색" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"></label><label class="text-sm font-bold text-gray-700 w-32 shrink-0">인기도<select id="adigaSusiPopularity" onchange="filterAdigaSusi()" class="mt-1 w-full border rounded-lg px-2 py-2 font-normal"><option value="">전체</option><option value="popular">인기학과</option><option value="unpopular">비인기학과</option></select></label></div>
+                    <div class="flex gap-2 min-w-0"><div class="relative flex-1 min-w-0"><label for="adigaSusiMajor" class="text-sm font-bold text-gray-700">학과명</label><input id="adigaSusiMajor" type="text" autocomplete="off" oninput="filterAdigaSusi();showAdigaSusiMajorOptions()" onfocus="showAdigaSusiMajorOptions()" placeholder="학과 검색 및 선택" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"><div id="adigaSusiMajorOptions" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border rounded-lg shadow-lg overflow-y-auto" style="max-height:240px;z-index:110"></div></div><label class="text-sm font-bold text-gray-700 w-32 shrink-0">인기도<select id="adigaSusiPopularity" onchange="filterAdigaSusi()" class="mt-1 w-full border rounded-lg px-2 py-2 font-normal"><option value="">전체</option><option value="popular">인기학과</option><option value="unpopular">비인기학과</option></select></label></div>
                 </div>
                 <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 mb-3">
                     <p id="adigaSusiStatus" class="text-sm text-gray-600 flex-1 min-w-0">데이터를 불러오지 않았습니다.</p>
@@ -2536,6 +2536,37 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 dropdown.classList.add('hidden');
             }
         });
+        function showAdigaSusiMajorOptions() {
+            const dropdown = document.getElementById('adigaSusiMajorOptions');
+            const input = document.getElementById('adigaSusiMajor');
+            if (!dropdown || !input || !adigaSusiData) {
+                if (dropdown) dropdown.classList.add('hidden');
+                return;
+            }
+            const keyword = input.value.trim().toLowerCase();
+            const names = [...new Set(adigaSusiData.map(r => String(r['모집단위'] || '').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+            const exactName = names.find(name => name.toLowerCase() === keyword);
+            const matches = (exactName ? [exactName] : names.filter(name => !keyword || name.toLowerCase().includes(keyword))).slice(0,40);
+            dropdown.innerHTML = matches.length
+                ? matches.map(name => '<button type="button" class="block w-full text-left px-3 py-2 hover:bg-green-50 text-sm border-b last:border-0" data-adiga-major="'+adigaSusiEscape(name)+'">'+adigaSusiEscape(name)+'</button>').join('')
+                : '<div class="px-3 py-3 text-sm text-gray-500">일치하는 학과가 없습니다.</div>';
+            dropdown.classList.remove('hidden');
+        }
+        function selectAdigaSusiMajor(name) {
+            document.getElementById('adigaSusiMajor').value = name;
+            document.getElementById('adigaSusiMajorOptions').classList.add('hidden');
+            filterAdigaSusi();
+        }
+        document.addEventListener('click', event => {
+            const dropdown = document.getElementById('adigaSusiMajorOptions');
+            if (!dropdown) return;
+            const option = event.target.closest('[data-adiga-major]');
+            if (option && dropdown.contains(option)) {
+                selectAdigaSusiMajor(option.getAttribute('data-adiga-major'));
+            } else if (!event.target.closest('#adigaSusiMajor') && !dropdown.contains(event.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
         function getAdigaSusiPopularity(r) {
             if (!r._years) return '';
             const years = [2024,2025,2026];
@@ -2565,10 +2596,11 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const univ=value('adigaSusiUniversity'), type=value('adigaSusiType'),
                   major=value('adigaSusiMajor'), track=value('adigaSusiTrack'), popularity=value('adigaSusiPopularity');
             const exactUniversity = !!univ && adigaSusiData.some(item => String(item['대학명']||'').trim().toLowerCase() === univ);
+            const exactMajor = !!major && adigaSusiData.some(item => String(item['모집단위']||'').trim().toLowerCase() === major);
             adigaSusiFiltered = adigaSusiData.filter(r =>
                 (!univ || (exactUniversity ? String(r['대학명']||'').trim().toLowerCase() === univ : String(r['대학명']||'').toLowerCase().includes(univ))) &&
                 (!type || String(r['전형유형']||'').toLowerCase() === type) &&
-                (!major || String(r['모집단위']||'').toLowerCase().includes(major)) &&
+                (!major || (exactMajor ? String(r['모집단위']||'').trim().toLowerCase() === major : String(r['모집단위']||'').toLowerCase().includes(major))) &&
                 (!track || String(r['전형명']||'').toLowerCase().includes(track)) &&
                 (!popularity || (adigaSusiCompareMode && getAdigaSusiPopularity(r) === popularity))
             );
