@@ -2512,10 +2512,11 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const competition = values('경쟁률');
             const additional = values('충원인원');
             const grade50 = values('환산등급50');
-            if (additional.every(v => v === 0)) return 'popular';
+            const rising = v => v.every(x=>x!==null) && v[0]<v[1] && v[1]<v[2];
+            const falling = v => v.every(x=>x!==null) && v[0]>v[1] && v[1]>v[2];
+            // 2025·2026 충원 0명인 경우에도 경쟁률 연속 상승과 50%컷 연속 개선을 모두 요구
+            if (additional[1] === 0 && additional[2] === 0 && rising(competition) && falling(grade50)) return 'popular';
             if ([...competition,...additional].some(v=>v===null)) return '';
-            const rising = v => v[0]<v[1] && v[1]<v[2];
-            const falling = v => v[0]>v[1] && v[1]>v[2];
             if (rising(competition) && falling(additional)) return 'popular';
             if (falling(competition) && rising(additional) && grade50.every(v=>v!==null) && rising(grade50)) return 'unpopular';
             return '';
