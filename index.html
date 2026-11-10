@@ -4737,6 +4737,10 @@ function applyGradFilter() {
         window.saveClassSusiEdits = saveClassSusiEdits;
 
         async function fetchClassSusiData() {
+            // CSV와 저장값 조회를 동시에 시작하여 최초 화면 로딩 대기를 줄입니다.
+            const editsLoad = (window.getCurrentUser && window.getCurrentUser())
+                ? loadClassSusiEdits().catch(error => { console.error('수시 지원 반별 조회 저장값 불러오기 실패:', error); })
+                : Promise.resolve();
             try {
                 const response = await fetch(SUSI_2026_CSV_URL + '&_refresh=' + Date.now(), { cache: 'no-store' });
                 if (!response.ok) throw new Error("네트워크 오류");
@@ -4750,7 +4754,7 @@ function applyGradFilter() {
                             classSusiFailureMatchSet = null;
                             window.classSusiData = classSusiData;
                             if (window.getCurrentUser && window.getCurrentUser()) {
-                                try { await loadClassSusiEdits(); } catch (error) { console.error('수시 지원 반별 조회 저장값 불러오기 실패:', error); }
+                                await editsLoad;
                                 populateClassGradeDropdown();
                                 if (window.renderInterviewTable && window.interviewData?.length) window.renderInterviewTable();
                             }
