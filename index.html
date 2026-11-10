@@ -2273,15 +2273,15 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             if (adigaSusiCompareMode) {
                 thead.innerHTML = '<tr>'+['대학명','전형 유형','세부 전형명','모집단위','모집 인원','경쟁률','충원 인원','50% 등급','70% 등급'].map((v,i)=>'<th class="p-2 border bg-green-50 font-bold"'+(i===8?' style="color:#dc2626"':'')+'>'+v+'</th>').join('')+'</tr>';
                 const comparisonTable = thead.closest('table');
-                comparisonTable.style.width='2070px';
-                comparisonTable.style.minWidth='2070px';
+                comparisonTable.style.width='1905px';
+                comparisonTable.style.minWidth='1905px';
                 comparisonTable.style.tableLayout='fixed';
                 const comparisonCols = comparisonTable.querySelectorAll('colgroup col');
-                [170,115,220,210,271,271,271,271,271].forEach((width,i)=>{ if(comparisonCols[i]) { comparisonCols[i].style.width=width+'px'; comparisonCols[i].setAttribute('width',String(width)); } });
-                thead.querySelectorAll('th').forEach((th,i)=>{ th.style.boxSizing='border-box'; th.style.width=[170,115,220,210,271,271,271,271,271][i]+'px'; });
+                [125,100,165,160,271,271,271,271,271].forEach((width,i)=>{ if(comparisonCols[i]) { comparisonCols[i].style.width=width+'px'; comparisonCols[i].setAttribute('width',String(width)); } });
+                thead.querySelectorAll('th').forEach((th,i)=>{ th.style.boxSizing='border-box'; th.style.width=[125,100,165,160,271,271,271,271,271][i]+'px'; });
                 const scroll = thead.closest('.overflow-x-auto');
                 if (scroll) { scroll.style.maxHeight='72vh'; scroll.style.overflowY='auto'; }
-                thead.querySelectorAll('th').forEach((th,i) => { th.style.position='sticky'; th.style.top='0'; th.style.zIndex=i<4?'35':'20'; th.style.backgroundColor='#f0fdf4'; th.style.boxShadow=i===3?'3px 1px 5px -4px #64748b':'0 1px 0 #cbd5e1'; if(i<4) th.style.left=[0,170,285,505][i]+'px'; });
+                thead.querySelectorAll('th').forEach((th,i) => { th.style.position='sticky'; th.style.top='0'; th.style.zIndex=i<4?'35':'20'; th.style.backgroundColor='#f0fdf4'; th.style.boxShadow=i===3?'3px 1px 5px -4px #64748b':'0 1px 0 #cbd5e1'; if(i<4) th.style.left=[0,125,225,390][i]+'px'; });
             } else {
                 thead.innerHTML=adigaSusiOriginalHeader; thead.closest('table').style.minWidth='1180px'; thead.closest('table').style.width='100%';
                 const comparisonCols = thead.closest('table').querySelectorAll('colgroup col');
@@ -2356,7 +2356,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             };
             document.getElementById('adigaSusiRows').innerHTML = items.length ? items.map((r,i) =>
                 '<tr style="background:'+(i%2?'#f8fafc':'#ffffff')+'" class="hover:bg-green-50">'+
-                ['대학명','전형유형','전형명','모집단위'].map((k,j)=>'<td class="border px-3 py-3" style="position:sticky;left:'+([0,170,285,505][j])+'px;z-index:5;background:'+(i%2?'#f8fafc':'#ffffff')+';box-shadow:'+(j===3?'3px 0 5px -4px #64748b':'none')+';font-size:16px;font-weight:700;color:#1e293b;line-height:1.5;word-break:keep-all">'+adigaSusiEscape(r[k]||'-')+'</td>').join('')+
+                ['대학명','전형유형','전형명','모집단위'].map((k,j)=>'<td class="border px-2 py-3" style="position:sticky;left:'+([0,125,225,390][j])+'px;z-index:5;background:'+(i%2?'#f8fafc':'#ffffff')+';box-shadow:'+(j===3?'3px 0 5px -4px #64748b':'none')+';font-size:16px;font-weight:700;color:#1e293b;line-height:1.5;word-break:keep-all">'+adigaSusiEscape(r[k]||'-')+'</td>').join('')+
                 ['모집인원','경쟁률','충원인원','환산등급50','환산등급70'].map(k=>'<td class="border px-2 py-2" style="vertical-align:middle">'+metric(r,k)+'</td>').join('')+
                 '</tr>').join('') : '<tr><td colspan="9" class="p-6 text-gray-500">검색 결과가 없습니다.</td></tr>';
             document.getElementById('adigaSusiStatus').textContent='3개년 비교 · 검색 결과 '+total.toLocaleString()+'건 / 전체 '+adigaSusiData.length.toLocaleString()+'건 (–: 미공개 또는 해당 연도 자료 없음, 연도별 동일 전형명·학과명 기준)';
