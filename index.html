@@ -2161,8 +2161,12 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         function openInterviewView() {
             hideAllContentViews();
             document.getElementById('interviewView').classList.remove('hidden');
-            if (window.getCurrentUser && window.getCurrentUser() && !interviewData.length) {
-                fetchInterviewData();
+            if (window.getCurrentUser && window.getCurrentUser()) {
+                // 면접표의 1단계 불합격 판정은 2026수시 자료에 의존하므로
+                // 면접 자료와 별개로 반드시 수시 자료를 준비하고 갱신 후 다시 그립니다.
+                if (!classSusiData.length) fetchClassSusiData();
+                if (!interviewData.length) fetchInterviewData();
+                else renderInterviewTable();
             }
         }
 
@@ -5458,6 +5462,8 @@ const ivColOrder = [1, 5, 18, 19, 20, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16
                         }
                         interviewData = data.slice(1);
                         window.interviewData = interviewData;
+                        // 먼저 면접 CSV가 도착한 경우에도 수시 판정 자료를 별도로 확보합니다.
+                        if (!classSusiData.length) fetchClassSusiData();
                         const tSelect = document.getElementById('ivTeacherSelect');
                         if (tSelect) {
                             const selectedTeacher = tSelect.value;
