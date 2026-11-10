@@ -2423,9 +2423,22 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 if (category === 'unpopular') return '<div style="font-size:11px;font-weight:600;color:#6b7280;margin-top:3px">(비인기학과)</div>';
                 return '';
             };
+            // 최신 2026학년도 50%컷 대비 학생 9등급제 내신이 0.5등급 이상 우수할 때 표시
+            const stabilityLabel = r => {
+                const selected = document.getElementById('adigaStudentName')?.value || '';
+                if (!selected) return '';
+                const rawStudent = document.getElementById('adigaStudentGrade9')?.textContent.trim() || '';
+                const studentPart = rawStudent.split('/').map(v=>v.trim()).filter(Boolean).pop() || '';
+                const studentMatch = studentPart.match(/\d+(?:[.,]\d+)?/);
+                const student = studentMatch ? Number(studentMatch[0].replace(',','.')) : NaN;
+                const rawCut = String(r._years?.[2026]?.['환산등급50'] ?? '').trim().replace(/,/g,'');
+                const cut = /^\d+(?:\.\d+)?$/.test(rawCut) ? Number(rawCut) : NaN;
+                if (!(student > 0 && student <= 9 && cut > 0 && cut <= 9 && cut - student >= 0.5 - 1e-9)) return '';
+                return '<div style="margin-top:4px"><span title="2026학년도 50%컷보다 학생 내신이 0.5등급 이상 우수" style="display:inline-block;padding:2px 8px;border-radius:6px;background:#dcfce7;color:#166534;border:1px solid #86efac;font-size:11px;font-weight:800;line-height:1.5">안정</span></div>';
+            };
             document.getElementById('adigaSusiRows').innerHTML = items.length ? items.map((r,i) =>
                 '<tr style="background:'+(i%2?'#f8fafc':'#ffffff')+'" class="hover:bg-green-50">'+
-                ['대학명','전형유형','전형명','모집단위'].map((k,j)=>'<td class="border px-2 py-3" style="position:sticky;left:'+([0,125,225,390][j])+'px;z-index:5;background:'+(i%2?'#f8fafc':'#ffffff')+';box-shadow:'+(j===3?'3px 0 5px -4px #64748b':'none')+';font-size:16px;font-weight:700;color:#1e293b;line-height:1.5;word-break:keep-all">'+adigaSusiEscape(r[k]||'-')+(j===3?popularityLabel(r):'')+'</td>').join('')+
+                ['대학명','전형유형','전형명','모집단위'].map((k,j)=>'<td class="border px-2 py-3" style="position:sticky;left:'+([0,125,225,390][j])+'px;z-index:5;background:'+(i%2?'#f8fafc':'#ffffff')+';box-shadow:'+(j===3?'3px 0 5px -4px #64748b':'none')+';font-size:16px;font-weight:700;color:#1e293b;line-height:1.5;word-break:keep-all">'+adigaSusiEscape(r[k]||'-')+(j===0?stabilityLabel(r):'')+(j===3?popularityLabel(r):'')+'</td>').join('')+
                 ['모집인원','경쟁률','충원인원','환산등급50','환산등급70'].map(k=>'<td class="border px-2 py-2" style="vertical-align:middle">'+metric(r,k)+'</td>').join('')+
                 '</tr>').join('') : '<tr><td colspan="9" class="p-6 text-gray-500">검색 결과가 없습니다.</td></tr>';
             document.getElementById('adigaSusiStatus').textContent='3개년 비교 · 검색 결과 '+total.toLocaleString()+'건 / 전체 '+adigaSusiData.length.toLocaleString()+'건 (–: 미공개 또는 해당 연도 자료 없음, 연도별 동일 전형명·학과명 기준)';
