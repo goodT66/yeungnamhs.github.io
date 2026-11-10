@@ -1074,13 +1074,24 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
         <!-- 2026 수시 입결 조회: 별도 화면 -->
         <div id="adigaSusiView" class="hidden bg-white rounded-2xl shadow-lg p-4 sm:p-8 w-full border-t-8 border-green-600">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 pb-4 border-b gap-3">
-                <div><h3 class="text-2xl font-bold text-gray-800">📊 <span id="adigaSusiYearTitle">2026</span>학년도 수시 입결 조회</h3>
+                <div><h3 class="text-2xl font-bold text-gray-800">📊 <span id="adigaSusiYearTitle">2024~2026</span>학년도 수시 입결 조회</h3>
                 <p class="text-sm text-gray-500 mt-1">대학어디가 전년도 전형결과 · 학생부교과 / 학생부종합</p></div>
                 <button type="button" onclick="showMainDashboard()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg">◀ 메인 화면으로</button>
             </div>
             <div id="adigaSusiAuth" class="text-center py-10 text-red-500 font-bold">🔒 교사 인증이 필요합니다.</div>
             <div id="adigaSusiContent" class="hidden">
-                <div class="mb-3"><label for="adigaSusiYear" class="text-sm font-bold text-gray-700">학년도</label><select id="adigaSusiYear" onchange="changeAdigaSusiYear()" class="ml-2 border rounded-lg px-3 py-2 font-normal"><option value="compare">최근 3개년 비교</option><option value="2026">2026학년도</option><option value="2025">2025학년도</option><option value="2024">2024학년도</option></select></div>
+                <select id="adigaSusiYear" class="hidden" aria-hidden="true" tabindex="-1"><option value="compare" selected>최근 3개년 비교</option></select>
+                <div class="mb-4 rounded-xl border border-blue-100 bg-blue-50 p-3 sm:p-4">
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <strong class="text-sm font-bold text-blue-900 mr-1">학생 내신 등급 조회</strong>
+                        <select id="adigaStudentGrade" onchange="onAdigaStudentGradeChange()" class="h-10 border border-gray-300 rounded-lg bg-white px-3 font-medium"><option value="">학년</option></select>
+                        <select id="adigaStudentClass" onchange="onAdigaStudentClassChange()" disabled class="h-10 border border-gray-300 rounded-lg bg-white px-3 font-medium"><option value="">반</option></select>
+                        <select id="adigaStudentName" onchange="onAdigaStudentChange()" disabled class="h-10 border border-gray-300 rounded-lg bg-white px-3 font-medium"><option value="">번호-이름</option></select>
+                        <div class="flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2"><span class="text-sm font-bold text-blue-700">5등급제</span><strong id="adigaStudentGrade5" class="text-xl font-extrabold text-blue-800">-</strong></div>
+                        <div class="flex items-center gap-2 rounded-lg border border-violet-200 bg-white px-3 py-2"><span class="text-sm font-bold text-violet-700">9등급제</span><strong id="adigaStudentGrade9" class="text-xl font-extrabold text-violet-800">-</strong></div>
+                    </div>
+                    <p id="adigaStudentStatus" class="text-xs text-gray-500 mt-2">학년·반·번호-이름을 선택하면 학생정보 시트의 내신 등급이 표시됩니다.</p>
+                </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                     <div class="relative min-w-0">
                         <label for="adigaSusiUniversity" class="text-sm font-bold text-gray-700">대학명</label>
@@ -2205,7 +2216,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const authenticated = !!(window.getCurrentUser && window.getCurrentUser());
             document.getElementById('adigaSusiAuth').classList.toggle('hidden', authenticated);
             document.getElementById('adigaSusiContent').classList.toggle('hidden', !authenticated);
-            if (authenticated) changeAdigaSusiYear();
+            if (authenticated) { changeAdigaSusiYear(); initializeAdigaStudentLookup(); }
         }
         async function loadAdigaSusi() {
             const status = document.getElementById('adigaSusiStatus');
@@ -2361,6 +2372,48 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 '</tr>').join('') : '<tr><td colspan="9" class="p-6 text-gray-500">검색 결과가 없습니다.</td></tr>';
             document.getElementById('adigaSusiStatus').textContent='3개년 비교 · 검색 결과 '+total.toLocaleString()+'건 / 전체 '+adigaSusiData.length.toLocaleString()+'건 (–: 미공개 또는 해당 연도 자료 없음, 연도별 동일 전형명·학과명 기준)';
             document.getElementById('adigaSusiPageInfo').textContent=total ? (adigaSusiPage+1)+' / '+Math.ceil(total/adigaSusiPageSize)+' 페이지':'0 / 0 페이지';
+        }
+        // 기존 학생 개별 조회와 같은 학생정보 시트 및 등급 값을 재사용합니다.
+        async function initializeAdigaStudentLookup() {
+            const grade = document.getElementById('adigaStudentGrade');
+            const status = document.getElementById('adigaStudentStatus');
+            if (grade.dataset.loaded === 'true') return;
+            status.textContent = '학생 명단을 불러오는 중입니다...';
+            try {
+                await loadStudentInfoRows();
+                grade.innerHTML = '<option value="">학년</option>';
+                [...new Set(studentLookupRows.map(s=>s.grade))].sort((a,b)=>Number(a)-Number(b)).forEach(g=>grade.add(new Option(g+'학년',g)));
+                grade.dataset.loaded = 'true';
+                status.textContent = '학년·반·번호-이름을 선택하면 내신 등급이 표시됩니다.';
+            } catch(error) {
+                console.error('수시 입결 학생 조회 실패:',error);
+                status.textContent = '학생 명단을 불러오지 못했습니다.';
+            }
+        }
+        function clearAdigaStudentGrades() {
+            document.getElementById('adigaStudentGrade5').textContent='-';
+            document.getElementById('adigaStudentGrade9').textContent='-';
+        }
+        function onAdigaStudentGradeChange() {
+            const g=document.getElementById('adigaStudentGrade').value;
+            const c=document.getElementById('adigaStudentClass'), n=document.getElementById('adigaStudentName');
+            c.innerHTML='<option value="">반</option>'; n.innerHTML='<option value="">번호-이름</option>';
+            [...new Set(studentLookupRows.filter(s=>s.grade===g).map(s=>s.cls))].sort((a,b)=>Number(a)-Number(b)).forEach(v=>c.add(new Option(v+'반',v)));
+            c.disabled=!g; n.disabled=true; clearAdigaStudentGrades();
+        }
+        function onAdigaStudentClassChange() {
+            const g=document.getElementById('adigaStudentGrade').value,c=document.getElementById('adigaStudentClass').value;
+            const n=document.getElementById('adigaStudentName');
+            n.innerHTML='<option value="">번호-이름</option>';
+            studentLookupRows.filter(s=>s.grade===g&&s.cls===c).sort((a,b)=>Number(a.no)-Number(b.no)).forEach(s=>n.add(new Option(s.no+'번 - '+s.name,s.no+'|'+s.name)));
+            n.disabled=!(g&&c);clearAdigaStudentGrades();
+        }
+        function onAdigaStudentChange() {
+            const g=document.getElementById('adigaStudentGrade').value,c=document.getElementById('adigaStudentClass').value;
+            const [no,name]=document.getElementById('adigaStudentName').value.split('|');
+            const student=studentLookupRows.find(s=>s.grade===g&&s.cls===c&&s.no===no&&s.name===name);
+            document.getElementById('adigaStudentGrade5').textContent=student?.grade5||'-';
+            document.getElementById('adigaStudentGrade9').textContent=student?.grade9||'-';
         }
         function showAdigaSusiUniversityOptions() {
             const dropdown = document.getElementById('adigaSusiUniversityOptions');
