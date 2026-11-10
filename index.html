@@ -2272,12 +2272,17 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             if (!adigaSusiOriginalHeader) adigaSusiOriginalHeader = thead.innerHTML;
             if (adigaSusiCompareMode) {
                 thead.innerHTML = '<tr>'+['대학명','전형 유형','세부 전형명','모집단위','모집 인원','경쟁률','충원 인원','50% 등급','70% 등급'].map((v,i)=>'<th class="p-2 border bg-green-50 font-bold"'+(i===8?' style="color:#dc2626"':'')+'>'+v+'</th>').join('')+'</tr>';
-                thead.closest('table').style.minWidth='1740px';
+                thead.closest('table').style.minWidth='2000px';
+                thead.closest('table').style.tableLayout='fixed';
+                const comparisonCols = thead.closest('table').querySelectorAll('colgroup col');
+                [170,115,220,210,255,255,255,255,255].forEach((width,i)=>{ if(comparisonCols[i]) comparisonCols[i].style.width=width+'px'; });
                 const scroll = thead.closest('.overflow-x-auto');
                 if (scroll) { scroll.style.maxHeight='72vh'; scroll.style.overflowY='auto'; }
                 thead.querySelectorAll('th').forEach(th => { th.style.position='sticky'; th.style.top='0'; th.style.zIndex='20'; th.style.backgroundColor='#f0fdf4'; th.style.boxShadow='0 1px 0 #cbd5e1'; });
             } else {
                 thead.innerHTML=adigaSusiOriginalHeader; thead.closest('table').style.minWidth='1180px';
+                const comparisonCols = thead.closest('table').querySelectorAll('colgroup col');
+                ['12%','6%','9%','27%','17%','7%','7%','7.5%','7.5%'].forEach((width,i)=>{ if(comparisonCols[i]) comparisonCols[i].style.width=width; });
                 const scroll = thead.closest('.overflow-x-auto');
                 if (scroll) { scroll.style.maxHeight=''; scroll.style.overflowY=''; }
             }
@@ -2337,14 +2342,14 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 const valid = values.filter(v=>v!==null);
                 const min = valid.length ? Math.min(...valid) : 0, max = valid.length ? Math.max(...valid) : 0;
                 const red = k === '환산등급70';
-                const points = values.map((v,i) => v===null ? null : [18+i*54, 31-(max===min?9:(v-min)/(max-min)*23)]);
-                // 한국 주식 차트 관례: 수치 상승 빨강, 하락 파랑, 보합 회색
+                const points = values.map((v,i) => v===null ? null : [32+i*84, 43-(max===min?12:(v-min)/(max-min)*30)]);
+                // 국내 주식형 수치 상승 빨강 / 하락 파랑 / 보합 회색
                 const trendColor = (a,b) => b>a ? '#dc2626' : b<a ? '#2563eb' : '#94a3b8';
                 const segments=[]; for(let i=1;i<3;i++) if(points[i-1]&&points[i]) segments.push('<line x1="'+points[i-1][0]+'" y1="'+points[i-1][1]+'" x2="'+points[i][0]+'" y2="'+points[i][1]+'" stroke="'+trendColor(values[i-1],values[i])+'" stroke-width="3" stroke-linecap="round"/>');
-                const dots=points.map((p,i)=>p?'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3.5" fill="'+(i>0&&values[i-1]!==null?trendColor(values[i-1],values[i]):'#64748b')+'" stroke="white" stroke-width="1.5"/>':'').join('');
-                const chart=valid.length>1?'<svg viewBox="0 0 144 38" width="144" height="38" style="display:block;margin:3px auto 0;max-width:100%" role="img" aria-label="2024~2026 수치 추이"><line x1="18" y1="34" x2="126" y2="34" stroke="#e2e8f0" stroke-width="1"/>'+segments.join('')+dots+'</svg>':'<div style="height:38px"></div>';
-                const numbers=years.map((y,i)=>'<div style="min-width:0;flex:1;text-align:center;padding:5px 1px;border-radius:7px;'+(i===2?'background:#ecfdf5;':'')+'"><div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:3px">'+y+'</div><div style="font-size:17px;font-weight:800;letter-spacing:-.5px;line-height:1.4;color:'+(values[i]===null?'#94a3b8':red?'#dc2626':'#0f172a')+'">'+(values[i]===null?'–':adigaSusiEscape(String(values[i])))+'</div></div>').join('');
-                return '<div style="min-width:172px;padding:4px 2px"><div style="display:flex;align-items:stretch;gap:3px">'+numbers+'</div>'+chart+'</div>';
+                const dots=points.map((p,i)=>p?'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="4" fill="'+(i>0&&values[i-1]!==null?trendColor(values[i-1],values[i]):'#64748b')+'" stroke="white" stroke-width="1.5"/>':'').join('');
+                const chart=valid.length>1?'<svg viewBox="0 0 232 50" width="100%" height="50" style="display:block;margin:5px auto 0" role="img" aria-label="2024~2026 수치 추이"><line x1="32" y1="46" x2="200" y2="46" stroke="#e2e8f0" stroke-width="1"/>'+segments.join('')+dots+'</svg>':'<div style="height:50px"></div>';
+                const numbers=years.map((y,i)=>'<div style="box-sizing:border-box;min-width:0;width:33.333%;text-align:center;padding:7px 2px;border-radius:7px;'+(i===2?'background:#ecfdf5;':'')+'"><div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:4px">'+y+'</div><div style="font-size:18px;font-weight:800;letter-spacing:-.4px;line-height:1.4;white-space:nowrap;color:'+(values[i]===null?'#94a3b8':red?'#dc2626':'#0f172a')+'">'+(values[i]===null?'–':adigaSusiEscape(String(values[i])))+'</div></div>').join('');
+                return '<div style="box-sizing:border-box;width:232px;min-width:232px;margin:0 auto;padding:4px 0"><div style="display:flex;align-items:stretch;width:100%;gap:0">'+numbers+'</div>'+chart+'</div>';
             };
             document.getElementById('adigaSusiRows').innerHTML = items.length ? items.map((r,i) =>
                 '<tr style="background:'+(i%2?'#f8fafc':'#ffffff')+'" class="hover:bg-green-50">'+
