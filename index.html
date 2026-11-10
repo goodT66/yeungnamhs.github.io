@@ -2364,7 +2364,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 // 학생정보 시트의 9등급제 값(단일 숫자 또는 5등급/9등급 형식)을 읽습니다.
                 const studentRaw = document.getElementById('adigaStudentGrade9')?.textContent.trim() || '';
                 const gradePart = studentRaw.split('/').map(v=>v.trim()).filter(Boolean).pop() || '';
-                const gradeMatch = gradePart.match(/\\d+(?:[.,]\\d+)?/);
+                const gradeMatch = gradePart.match(/\d+(?:[.,]\d+)?/);
                 const studentGrade = gradeMatch ? Number(gradeMatch[0].replace(',','.')) : NaN;
                 let studentMarker = '';
                 if ((k === '환산등급50' || k === '환산등급70') && Number.isFinite(studentGrade) && studentGrade>0 && studentGrade<=9 &&
