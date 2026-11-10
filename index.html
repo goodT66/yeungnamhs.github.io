@@ -1100,7 +1100,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                     </div>
                     <label class="text-sm font-bold text-gray-700">전형 유형<select id="adigaSusiType" onchange="filterAdigaSusi()" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"><option value="">전체</option><option>학생부교과</option><option>학생부종합</option></select></label>
                     <label class="text-sm font-bold text-gray-700">세부 전형명<input id="adigaSusiTrack" oninput="filterAdigaSusi()" placeholder="전형 검색" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"></label>
-                    <label class="text-sm font-bold text-gray-700">학과명<input id="adigaSusiMajor" oninput="filterAdigaSusi()" placeholder="학과 검색" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"></label>
+                    <div class="flex gap-2 min-w-0"><label class="text-sm font-bold text-gray-700 flex-1 min-w-0">학과명<input id="adigaSusiMajor" oninput="filterAdigaSusi()" placeholder="학과 검색" class="mt-1 w-full border rounded-lg px-3 py-2 font-normal"></label><label class="text-sm font-bold text-gray-700 w-32 shrink-0">인기도<select id="adigaSusiPopularity" onchange="filterAdigaSusi()" class="mt-1 w-full border rounded-lg px-2 py-2 font-normal"><option value="">전체</option><option value="popular">인기학과</option><option value="unpopular">비인기학과</option></select></label></div>
                 </div>
                 <p id="adigaSusiStatus" class="text-sm text-gray-600 mb-3">데이터를 불러오지 않았습니다.</p>
                 <div class="overflow-x-auto border rounded-lg">
@@ -2398,22 +2398,9 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             };
             // 2024→2025와 2025→2026 두 구간 모두 같은 방향일 때만 분류
             const popularityLabel = r => {
-                const values = key => years.map(y => {
-                    const raw = String(r._years[y]?.[key] ?? '').trim().replace(/,/g,'');
-                    if (!raw || !/^\d+(?:\.\d+)?$/.test(raw)) return null;
-                    const n = Number(raw);
-                    return Number.isFinite(n) ? n : null;
-                });
-                const competition = values('경쟁률');
-                const additional = values('충원인원');
-                const grade50 = values('환산등급50');
-                if ([...competition,...additional].some(v=>v===null)) return '';
-                const rising = v => v[0]<v[1] && v[1]<v[2];
-                const falling = v => v[0]>v[1] && v[1]>v[2];
-                if (rising(competition) && falling(additional))
-                    return '<div style="font-size:11px;font-weight:700;color:#dc2626;margin-top:3px">(인기학과)</div>';
-                if (falling(competition) && rising(additional) && grade50.every(v=>v!==null) && rising(grade50))
-                    return '<div style="font-size:11px;font-weight:600;color:#6b7280;margin-top:3px">(비인기학과)</div>';
+                const category = getAdigaSusiPopularity(r);
+                if (category === 'popular') return '<div style="font-size:11px;font-weight:700;color:#dc2626;margin-top:3px">(인기학과)</div>';
+                if (category === 'unpopular') return '<div style="font-size:11px;font-weight:600;color:#6b7280;margin-top:3px">(비인기학과)</div>';
                 return '';
             };
             document.getElementById('adigaSusiRows').innerHTML = items.length ? items.map((r,i) =>
@@ -2495,17 +2482,37 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 dropdown.classList.add('hidden');
             }
         });
+        function getAdigaSusiPopularity(r) {
+            if (!r._years) return '';
+            const years = [2024,2025,2026];
+            const values = key => years.map(y => {
+                const raw = String(r._years[y]?.[key] ?? '').trim().replace(/,/g,'');
+                if (!raw || !/^\\d+(?:\\.\\d+)?$/.test(raw)) return null;
+                const n = Number(raw);
+                return Number.isFinite(n) ? n : null;
+            });
+            const competition = values('경쟁률');
+            const additional = values('충원인원');
+            const grade50 = values('환산등급50');
+            if ([...competition,...additional].some(v=>v===null)) return '';
+            const rising = v => v[0]<v[1] && v[1]<v[2];
+            const falling = v => v[0]>v[1] && v[1]>v[2];
+            if (rising(competition) && falling(additional)) return 'popular';
+            if (falling(competition) && rising(additional) && grade50.every(v=>v!==null) && rising(grade50)) return 'unpopular';
+            return '';
+        }
         function filterAdigaSusi() {
             if (!adigaSusiData) return;
             const value = id => document.getElementById(id).value.trim().toLowerCase();
             const univ=value('adigaSusiUniversity'), type=value('adigaSusiType'),
-                  major=value('adigaSusiMajor'), track=value('adigaSusiTrack');
+                  major=value('adigaSusiMajor'), track=value('adigaSusiTrack'), popularity=value('adigaSusiPopularity');
             const exactUniversity = !!univ && adigaSusiData.some(item => String(item['대학명']||'').trim().toLowerCase() === univ);
             adigaSusiFiltered = adigaSusiData.filter(r =>
                 (!univ || (exactUniversity ? String(r['대학명']||'').trim().toLowerCase() === univ : String(r['대학명']||'').toLowerCase().includes(univ))) &&
                 (!type || String(r['전형유형']||'').toLowerCase() === type) &&
                 (!major || String(r['모집단위']||'').toLowerCase().includes(major)) &&
-                (!track || String(r['전형명']||'').toLowerCase().includes(track))
+                (!track || String(r['전형명']||'').toLowerCase().includes(track)) &&
+                (!popularity || (adigaSusiCompareMode && getAdigaSusiPopularity(r) === popularity))
             );
             adigaSusiPage=0;
             applyAdigaSusiSort();
