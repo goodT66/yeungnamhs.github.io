@@ -2423,18 +2423,26 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 if (category === 'unpopular') return '<div style="font-size:11px;font-weight:600;color:#6b7280;margin-top:3px">(비인기학과)</div>';
                 return '';
             };
-            // 최신 2026학년도 50%컷 대비 학생 9등급제 내신이 0.5등급 이상 우수할 때 표시
+            // 학생 9등급제 내신과 2026학년도 70%컷 비교: 6단계 지원 범위
             const stabilityLabel = r => {
-                const selected = document.getElementById('adigaStudentName')?.value || '';
-                if (!selected) return '';
+                if (!document.getElementById('adigaStudentName')?.value) return '';
                 const rawStudent = document.getElementById('adigaStudentGrade9')?.textContent.trim() || '';
                 const studentPart = rawStudent.split('/').map(v=>v.trim()).filter(Boolean).pop() || '';
                 const studentMatch = studentPart.match(/\d+(?:[.,]\d+)?/);
                 const student = studentMatch ? Number(studentMatch[0].replace(',','.')) : NaN;
-                const rawCut = String(r._years?.[2026]?.['환산등급50'] ?? '').trim().replace(/,/g,'');
+                const rawCut = String(r._years?.[2026]?.['환산등급70'] ?? '').trim().replace(/,/g,'');
                 const cut = /^\d+(?:\.\d+)?$/.test(rawCut) ? Number(rawCut) : NaN;
-                if (!(student > 0 && student <= 9 && cut > 0 && cut <= 9 && cut - student >= 0.5 - 1e-9)) return '';
-                return '<div style="margin-top:4px"><span title="2026학년도 50%컷보다 학생 내신이 0.5등급 이상 우수" style="display:inline-block;padding:2px 8px;border-radius:6px;background:#dcfce7;color:#166534;border:1px solid #86efac;font-size:11px;font-weight:800;line-height:1.5">안정</span></div>';
+                if (!(student > 0 && student <= 9 && cut > 0 && cut <= 9)) return '';
+                const diff = Math.round((cut - student)*100)/100;
+                let label, bg, fg, border;
+                if (diff >= 0.50) { label='절대 안정'; bg='#dcfce7'; fg='#166534'; border='#86efac'; }
+                else if (diff >= 0.30) { label='안정'; bg='#ecfdf5'; fg='#047857'; border='#6ee7b7'; }
+                else if (diff >= -0.10) { label='적정'; bg='#dbeafe'; fg='#1d4ed8'; border='#93c5fd'; }
+                else if (diff > -0.30) { label='소신·상향'; bg='#fef3c7'; fg='#92400e'; border='#fcd34d'; }
+                else if (diff > -0.40) { label='과도 상향'; bg='#ffedd5'; fg='#c2410c'; border='#fdba74'; }
+                else { label='우주 상향'; bg='#fee2e2'; fg='#b91c1c'; border='#fca5a5'; }
+                const detail = '2026학년도 70%컷 '+cut+' / 학생 내신 '+student+' / 차이 '+(diff>0?'+':'')+diff.toFixed(2);
+                return '<div style="margin-top:4px"><span title="'+adigaSusiEscape(detail)+'" style="display:inline-block;padding:2px 7px;border-radius:6px;background:'+bg+';color:'+fg+';border:1px solid '+border+';font-size:11px;font-weight:800;line-height:1.5;white-space:nowrap">'+label+'</span></div>';
             };
             document.getElementById('adigaSusiRows').innerHTML = items.length ? items.map((r,i) =>
                 '<tr style="background:'+(i%2?'#f8fafc':'#ffffff')+'" class="hover:bg-green-50">'+
