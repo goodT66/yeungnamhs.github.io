@@ -2340,6 +2340,18 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     if (!group._years[year]) group._years[year] = r;
                 }
             }
+            // 서울대: 경쟁률이 공개된 학년도의 미기재 충원 인원은 0명으로 표시
+            for (const group of grouped.values()) {
+                if (!/서울(대학교|대)$/.test(String(group['대학명']||'').trim())) continue;
+                for (const year of [2024,2025,2026]) {
+                    const item = group._years[year];
+                    if (!item) continue;
+                    const competition = String(item['경쟁률'] ?? '').trim();
+                    const additional = String(item['충원인원'] ?? '').trim();
+                    if (competition && competition !== '-' && competition !== '–' &&
+                        (!additional || additional === '-' || additional === '–')) item['충원인원'] = '0';
+                }
+            }
             return [...grouped.values()];
         }
         function renderAdigaSusiComparison() {
@@ -2487,7 +2499,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const years = [2024,2025,2026];
             const values = key => years.map(y => {
                 const raw = String(r._years[y]?.[key] ?? '').trim().replace(/,/g,'');
-                if (!raw || !/^\\d+(?:\\.\\d+)?$/.test(raw)) return null;
+                if (!raw || !/^\d+(?:\.\d+)?$/.test(raw)) return null;
                 const n = Number(raw);
                 return Number.isFinite(n) ? n : null;
             });
