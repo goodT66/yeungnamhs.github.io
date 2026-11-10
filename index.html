@@ -2406,12 +2406,13 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 });
                 const competition = values('경쟁률');
                 const additional = values('충원인원');
+                const grade50 = values('환산등급50');
                 if ([...competition,...additional].some(v=>v===null)) return '';
                 const rising = v => v[0]<v[1] && v[1]<v[2];
                 const falling = v => v[0]>v[1] && v[1]>v[2];
                 if (rising(competition) && falling(additional))
                     return '<div style="font-size:11px;font-weight:700;color:#dc2626;margin-top:3px">(인기학과)</div>';
-                if (falling(competition) && rising(additional))
+                if (falling(competition) && rising(additional) && grade50.every(v=>v!==null) && rising(grade50))
                     return '<div style="font-size:11px;font-weight:600;color:#6b7280;margin-top:3px">(비인기학과)</div>';
                 return '';
             };
