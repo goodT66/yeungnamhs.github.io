@@ -2512,6 +2512,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const competition = values('경쟁률');
             const additional = values('충원인원');
             const grade50 = values('환산등급50');
+            if (additional.every(v => v === 0)) return 'popular';
             if ([...competition,...additional].some(v=>v===null)) return '';
             const rising = v => v[0]<v[1] && v[1]<v[2];
             const falling = v => v[0]>v[1] && v[1]>v[2];
