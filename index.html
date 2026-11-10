@@ -2272,7 +2272,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             if (!adigaSusiOriginalHeader) adigaSusiOriginalHeader = thead.innerHTML;
             if (adigaSusiCompareMode) {
                 thead.innerHTML = '<tr>'+['대학명','전형 유형','세부 전형명','모집단위','모집 인원','경쟁률','충원 인원','50% 등급','70% 등급'].map((v,i)=>'<th class="p-2 border bg-green-50 font-bold"'+(i===8?' style="color:#dc2626"':'')+'>'+v+'</th>').join('')+'</tr>';
-                thead.closest('table').style.minWidth='1450px';
+                thead.closest('table').style.minWidth='1740px';
             } else { thead.innerHTML=adigaSusiOriginalHeader; thead.closest('table').style.minWidth='1180px'; }
             document.getElementById('adigaSusiUniversityOptions').classList.add('hidden');
             const status = document.getElementById('adigaSusiStatus');
@@ -2329,16 +2329,20 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 });
                 const valid = values.filter(v=>v!==null);
                 const min = valid.length ? Math.min(...valid) : 0, max = valid.length ? Math.max(...valid) : 0;
-                const points = values.map((v,i) => v===null ? null : [10+i*35, 25-(max===min?0:(v-min)/(max-min)*18)]);
-                const segments=[]; for(let i=1;i<3;i++) if(points[i-1]&&points[i]) segments.push('<line x1="'+points[i-1][0]+'" y1="'+points[i-1][1]+'" x2="'+points[i][0]+'" y2="'+points[i][1]+'" stroke="#16a34a" stroke-width="2"/>');
-                const dots=points.filter(Boolean).map(p=>'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="2.8" fill="#16a34a"/>').join('');
-                const chart=valid.length>1?'<svg viewBox="0 0 90 30" width="90" height="30" role="img" aria-label="3개년 추이">'+segments.join('')+dots+'</svg>':'';
-                return '<div class="flex flex-col items-center gap-1"><div class="flex gap-2 text-xs whitespace-nowrap">'+years.map((y,i)=>'<span class="flex flex-col items-center"><span class="text-gray-400">'+String(y).slice(-2)+'</span><b class="'+(k==='환산등급70'?'text-red-600':'text-gray-800')+'">'+(values[i]===null?'–':adigaSusiEscape(String(values[i])))+'</b></span>').join('')+'</div>'+chart+'</div>';
+                const grade = k.startsWith('환산등급');
+                const red = k === '환산등급70';
+                const color = red ? '#dc2626' : '#059669';
+                const points = values.map((v,i) => v===null ? null : [18+i*54, 31-(max===min?9:(v-min)/(max-min)*23)]);
+                const segments=[]; for(let i=1;i<3;i++) if(points[i-1]&&points[i]) segments.push('<line x1="'+points[i-1][0]+'" y1="'+points[i-1][1]+'" x2="'+points[i][0]+'" y2="'+points[i][1]+'" stroke="'+color+'" stroke-width="2.5" stroke-linecap="round"/>');
+                const dots=points.filter(Boolean).map(p=>'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3.5" fill="'+color+'" stroke="white" stroke-width="1.5"/>').join('');
+                const chart=valid.length>1?'<svg viewBox="0 0 144 38" width="144" height="38" style="display:block;margin:3px auto 0;max-width:100%" role="img" aria-label="2024~2026 수치 추이"><line x1="18" y1="34" x2="126" y2="34" stroke="#e2e8f0" stroke-width="1"/>'+segments.join('')+dots+'</svg>':'<div style="height:38px"></div>';
+                const numbers=years.map((y,i)=>'<div style="min-width:0;flex:1;text-align:center;padding:5px 1px;border-radius:7px;'+(i===2?'background:#ecfdf5;':'')+'"><div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:3px">'+y+'</div><div style="font-size:17px;font-weight:800;letter-spacing:-.5px;line-height:1.4;color:'+(values[i]===null?'#94a3b8':red?'#dc2626':'#0f172a')+'">'+(values[i]===null?'–':adigaSusiEscape(String(values[i])))+'</div></div>').join('');
+                return '<div style="min-width:172px;padding:4px 2px"><div style="display:flex;align-items:stretch;gap:3px">'+numbers+'</div>'+chart+'</div>';
             };
-            document.getElementById('adigaSusiRows').innerHTML = items.length ? items.map(r =>
-                '<tr class="hover:bg-gray-50">'+
-                ['대학명','전형유형','전형명','모집단위'].map(k=>'<td class="border px-2 py-3 text-sm">'+adigaSusiEscape(r[k]||'-')+'</td>').join('')+
-                ['모집인원','경쟁률','충원인원','환산등급50','환산등급70'].map(k=>'<td class="border px-2 py-2">'+metric(r,k)+'</td>').join('')+
+            document.getElementById('adigaSusiRows').innerHTML = items.length ? items.map((r,i) =>
+                '<tr style="background:'+(i%2?'#f8fafc':'#ffffff')+'" class="hover:bg-green-50">'+
+                ['대학명','전형유형','전형명','모집단위'].map((k,j)=>'<td class="border px-3 py-3" style="font-size:'+(j===0||j===3?'14':'13')+'px;font-weight:'+(j===0||j===3?'700':'500')+';color:#1e293b;line-height:1.5;word-break:keep-all">'+adigaSusiEscape(r[k]||'-')+'</td>').join('')+
+                ['모집인원','경쟁률','충원인원','환산등급50','환산등급70'].map(k=>'<td class="border px-2 py-2" style="vertical-align:middle">'+metric(r,k)+'</td>').join('')+
                 '</tr>').join('') : '<tr><td colspan="9" class="p-6 text-gray-500">검색 결과가 없습니다.</td></tr>';
             document.getElementById('adigaSusiStatus').textContent='3개년 비교 · 검색 결과 '+total.toLocaleString()+'건 / 전체 '+adigaSusiData.length.toLocaleString()+'건 (–: 미공개 또는 해당 연도 자료 없음, 연도별 동일 전형명·학과명 기준)';
             document.getElementById('adigaSusiPageInfo').textContent=total ? (adigaSusiPage+1)+' / '+Math.ceil(total/adigaSusiPageSize)+' 페이지':'0 / 0 페이지';
