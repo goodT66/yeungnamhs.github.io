@@ -3194,8 +3194,14 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             }
             renderSupervisorDutyRoster();
         }
+        function placeSupervisorModalAboveDashboard() {
+            const modal = document.getElementById('supervisorModal');
+            if (modal.parentElement !== document.body) document.body.appendChild(modal);
+            modal.style.zIndex = '10050';
+        }
         function openSupervisorModal() {
             if (!requireCloudEditor()) return;
+            placeSupervisorModalAboveDashboard();
             document.getElementById('supervisorModalTitle').textContent = '감독 변경';
             document.getElementById('supervisorDutyDate').value = selectedCalendarDate || todayISO();
             document.getElementById('supervisorDutyTeacher').value = '';
@@ -3212,6 +3218,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const type = slot === '청운관 감독' ? 'cheongun'
                 : slot.startsWith('오전') ? 'morning'
                 : slot.startsWith('오후') ? 'afternoon' : 'night';
+            placeSupervisorModalAboveDashboard();
             document.getElementById('supervisorModalTitle').textContent = '감독 근무 변경';
             document.getElementById('supervisorDutyDate').value = selectedCalendarDate || todayISO();
             document.getElementById('supervisorDutyTeacher').value = String(teacherName || '').replace(/\s*선생님\s*$/, '').trim();
