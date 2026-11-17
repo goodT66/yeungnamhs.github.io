@@ -5188,6 +5188,12 @@ function applyGradFilter() {
             }
         }
 
+        // 졸업생: B열(학년)은 빈칸, C열(반)은 '졸업생 반', D열은 졸업연도입니다.
+        function isAlumniSusiRow(row) {
+            return String(row[1] ?? '').trim() === '' &&
+                String(row[2] ?? '').replace(/\s+/g, '') === '졸업생반';
+        }
+
         function populateClassGradeDropdown() {
             const select = document.getElementById('classGradeSelect');
             if(!select) return;
@@ -5233,7 +5239,8 @@ function applyGradFilter() {
             
             const classes = new Set();
             classSusiData.forEach(row => {
-                if(String(row[1]).trim() === g && row[2]) classes.add(String(row[2]).trim());
+                if (isAlumniSusiRow(row)) classes.add('졸업생');
+                else if (String(row[1] ?? '').trim() === g && row[2]) classes.add(String(row[2]).trim());
             });
             // 졸업생은 숫자 반과 구분하여 드롭다운 맨 아래에 표시합니다.
             // 2026수시 시트의 반 열에 '졸업생'이 들어온 경우에도 조회할 수 있도록 합니다.
@@ -5280,7 +5287,8 @@ function applyGradFilter() {
             const names = new Set(), univs = new Set(), admissions = new Set(), majors = new Set();
 
             classSusiData.forEach(row => {
-                if (String(row[1]).trim() === g && String(row[2]).trim() === c) {
+                if (c === '졸업생' ? isAlumniSusiRow(row) :
+                    String(row[1] ?? '').trim() === g && String(row[2] ?? '').trim() === c) {
                     if (row[4]) names.add(String(row[4]).trim()); 
                     if (row[5]) univs.add(String(row[5]).trim()); 
                     if (row[7]) admissions.add(String(row[7]).trim());
@@ -5344,7 +5352,9 @@ function applyGradFilter() {
                 const rowAdmission = String(row[7] || '').trim();
                 const rowM = String(row[9] || '').trim();
 
-                if (rowG !== g || (c && rowC !== c)) return false;
+                if (c === '졸업생') {
+                    if (!isAlumniSusiRow(row)) return false;
+                } else if (rowG !== g || (c && rowC !== c)) return false;
                 if (nameSearch && !rowN.toLocaleLowerCase().includes(nameSearch.toLocaleLowerCase())) return false;
                 if (u && !rowU.includes(u)) return false;
                 if (admission && !rowAdmission.toLocaleLowerCase().includes(admission.toLocaleLowerCase())) return false;
