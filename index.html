@@ -1362,9 +1362,9 @@ window.fetchTeacherSheetCsv = async (sheetKey, url, options) => {
     const rows = await window.fetchTeacherSheetRows(sheetKey);
     const escapeCsv = value => {
         const v = String(value ?? "");
-        return /[",\\r\\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+        return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
     };
-    return new Response(rows.map(row => row.map(escapeCsv).join(",")).join("\\r\\n"), {
+    return new Response(rows.map(row => row.map(escapeCsv).join(",")).join("\r\n"), {
         status: 200, headers: { "Content-Type": "text/csv;charset=utf-8" }
     });
 };
