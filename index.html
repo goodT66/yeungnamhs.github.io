@@ -1359,6 +1359,18 @@ window.fetchIndividualMockRows = async () => {
     if (response.data?.success !== true || !Array.isArray(response.data.values)) throw new Error("모의고사 시트 응답 오류");
     return response.data.values;
 };
+window.fetchGraduatesSheetRows = async (sheetKey) => {
+    const allowed = ['graduates', 'gradJeongsi', 'gradSuneung', 'susiResult'];
+    if (!allowed.includes(sheetKey)) throw new Error('허용되지 않은 시트');
+    const user = currentUser;
+    if (!user || !ALLOWED_EMAILS.includes(user.email)) throw new Error('교사 로그인이 필요합니다.');
+    const idToken = await user.getIdToken();
+    if (currentUser?.uid !== user.uid) throw new Error('로그인 계정이 변경되었습니다.');
+    const response = await getTeacherSheetCallable({ idToken, sheetKey });
+    if (currentUser?.uid !== user.uid || auth.currentUser?.uid !== user.uid) throw new Error('로그인 상태가 변경되었습니다.');
+    if (response.data?.success !== true || !Array.isArray(response.data.values)) throw new Error('졸업생 시트 응답 오류');
+    return response.data.values;
+};
 window.fetch2026InterviewRows = async () => {
     const user = currentUser;
     if (!user || !ALLOWED_EMAILS.includes(user.email)) throw new Error("교사 로그인이 필요합니다.");
@@ -4150,14 +4162,10 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             if (tbody) tbody.innerHTML = '<tr><td colspan="30" class="text-center py-10 text-gray-500">정시 결과 및 졸업생 수능 성적 데이터를 불러오는 중입니다...</td></tr>';
             try {
                 // 표를 먼저 표시할 수 있도록 핵심 정시 결과와 수능 성적만 우선 가져옵니다.
-                const [jeongsiResponse, suneungResponse] = await Promise.all([
-                    fetch(`${GRAD_JEONGSI_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' }),
-                    fetch(`${GRAD_SUNEUNG_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' })
+                const [jeongsiRows, suneungRows] = await Promise.all([
+                    window.fetchGraduatesSheetRows('gradJeongsi'),
+                    window.fetchGraduatesSheetRows('gradSuneung')
                 ]);
-                if (!jeongsiResponse.ok || !suneungResponse.ok) throw new Error('네트워크 오류');
-                const [jeongsiCsv, suneungCsv] = await Promise.all([jeongsiResponse.text(), suneungResponse.text()]);
-                const jeongsiRows = Papa.parse(jeongsiCsv, { skipEmptyLines: true }).data || [];
-                const suneungRows = Papa.parse(suneungCsv, { skipEmptyLines: true }).data || [];
                 if (jeongsiRows.length <= 1) {
                     if (tbody) tbody.innerHTML = '<tr><td colspan="30" class="text-center py-10 text-gray-500">졸업생 정시 결과 데이터가 없습니다.</td></tr>';
                     gradJeongsiDataLoaded = true;
@@ -4186,16 +4194,13 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 loadGradJeongsiPercentiles();
             } catch (error) {
                 console.error('졸업생 정시 결과 및 수능 성적 데이터 로드 실패:', error);
-                if (tbody) tbody.innerHTML = '<tr><td colspan="30" class="text-center py-10 text-red-500">데이터를 불러오지 못했습니다. Google Sheets 공개 설정과 네트워크를 확인해 주세요.</td></tr>';
+                if (tbody) tbody.innerHTML = '<tr><td colspan="30" class="text-center py-10 text-red-500">데이터를 불러오지 못했습니다. 교사 로그인 및 서버 권한을 확인해 주세요.</td></tr>';
             }
         }
 
         async function loadGradJeongsiPercentiles() {
             try {
-                const response = await fetch(`${SUSI_RESULT_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' });
-                if (!response.ok) throw new Error('네트워크 오류');
-                const percentileCsv = await response.text();
-                const percentileRows = (Papa.parse(percentileCsv, { skipEmptyLines: true }).data || []).slice(1);
+                const percentileRows = (await window.fetchGraduatesSheetRows('susiResult')).slice(1);
                 const normalizePercentileKey = value => String(value ?? '').normalize('NFKC').replace(/\s+/g, '').trim();
                 const normalizePercentileUniversity = value => normalizePercentileKey(value).replace(/대학교$/, '대');
                 const percentileMap = new Map();
@@ -4538,17 +4543,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const requestSequence = ++gradFetchSequence;
             document.getElementById('gradLoadingSpinner')?.classList.remove('hidden');
             try {
-                const requestUrl = `${GRAD_CSV_URL}&cacheBust=${Date.now()}`;
-                const response = await fetch(requestUrl, { cache: 'no-store' });
+                const data = await window.fetchGraduatesSheetRows('graduates');
                 if (requestSequence !== gradFetchSequence) return;
-                if (!response.ok) throw new Error("네트워크 오류");
-                const text = await response.text();
-                
-                Papa.parse(text, {
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        if (requestSequence !== gradFetchSequence) return;
-                        const data = results.data;
                         if(data.length > 1) {
                             gradHeaders = (data[0] || []).map(v => String(v || '').trim());
                             rawGradData = data.slice(1);
@@ -4563,14 +4559,12 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                             if (tbody) tbody.innerHTML = '<tr><td colspan="19" class="text-center py-10 text-gray-500">졸업생 수시 결과 데이터가 없습니다.</td></tr>';
                         }
                         document.getElementById('gradLoadingSpinner')?.classList.add('hidden');
-                    }
-                });
             } catch (error) {
                 if (requestSequence !== gradFetchSequence) return;
                 console.error('졸업생 수시 결과 데이터 로드 실패:', error);
                 document.getElementById('gradLoadingSpinner')?.classList.add('hidden');
                 const tbody = document.getElementById('gradTableBody');
-                if(tbody) tbody.innerHTML = '<tr><td colspan="19" class="text-center py-10 text-red-500">데이터를 불러오지 못했습니다. Google Sheets 공개 설정과 네트워크를 확인해 주세요.</td></tr>';
+                if(tbody) tbody.innerHTML = '<tr><td colspan="19" class="text-center py-10 text-red-500">데이터를 불러오지 못했습니다. 교사 로그인 및 서버 권한을 확인해 주세요.</td></tr>';
             }
         }
 
