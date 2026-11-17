@@ -40,3 +40,16 @@ test('private mode has no public-sheet fallback on callable failure', () => {
   assert.match(reader, /await window\.fetchTeacherSheetRows\(sheetKey\)/);
   assert.doesNotMatch(reader, /catch\s*\([^)]*\)\s*\{[^}]*fetch\(url/s);
 });
+
+test('public GET replacement does not read any spreadsheet', () => {
+  const shutdown = readFileSync(new URL('./apps-script-disable-public-get.gs', import.meta.url), 'utf8');
+  const code = shutdown.slice(shutdown.indexOf('function doGet(e) {'), shutdown.indexOf('\n}', shutdown.indexOf('function doGet(e) {')) + 2);
+  assert.match(code, /success: false/);
+  assert.doesNotMatch(code, /SpreadsheetApp|openById|getDataRange|values:/);
+});
+
+test('independent supervisor API is explicitly tracked as a migration risk', () => {
+  const gates = readFileSync(new URL('./DEPLOYMENT_GATES.md', import.meta.url), 'utf8');
+  assert.match(html, /SUPERVISOR_SHEET_API_URL/);
+  assert.match(gates, /별도 감독표 Apps Script/);
+});
