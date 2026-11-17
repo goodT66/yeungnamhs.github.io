@@ -5235,7 +5235,16 @@ function applyGradFilter() {
             classSusiData.forEach(row => {
                 if(String(row[1]).trim() === g && row[2]) classes.add(String(row[2]).trim());
             });
-            Array.from(classes).sort((a,b) => parseInt(a) - parseInt(b)).forEach(c => select.appendChild(new Option(`${c}반`, c)));
+            // 졸업생은 숫자 반과 구분하여 드롭다운 맨 아래에 표시합니다.
+            // 2026수시 시트의 반 열에 '졸업생'이 들어온 경우에도 조회할 수 있도록 합니다.
+            classes.add('졸업생');
+            Array.from(classes)
+                .sort((a, b) => {
+                    if (a === '졸업생') return 1;
+                    if (b === '졸업생') return -1;
+                    return Number(a) - Number(b);
+                })
+                .forEach(c => select.appendChild(new Option(c === '졸업생' ? '졸업생' : `${c}반`, c)));
             renderClassTable();
         }
         window.onClassGradeChange = onClassGradeChange;
