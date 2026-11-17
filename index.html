@@ -5924,7 +5924,7 @@ async function fetchSusiResultData() {
                     }
 
                     if (window.getCurrentUser && window.getCurrentUser()) {
-                        if (typeof applySusiResultFilter === 'function') applySusiResultFilter();
+                        renderSusiResultTable();
                     }
                 }
                 if (!susiResultData.length) susiResultFetchStarted = false;
