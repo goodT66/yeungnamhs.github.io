@@ -48,3 +48,8 @@
 
 ## 최신 CI
 - 실행 44013951272: **success**, 보안 불변조건 테스트 포함 (2026-11-17).
+
+## 사용자가 제공한 Apps Script 통합본
+- `migration/apps-script-integrated-deploy.gs`: 제공된 doGet/doPost/교사 인증/R~U열 저장 코드를 통합한 배포 후보. 기존 함수명과 중복 선언하지 말고 실제 프로젝트 구조 확인 후 적용.
+- **현재 doGet과 doPost가 동일한 Apps Script 프로젝트에 있는지 확인 필요.** 별도 감독표 프로젝트라면 각 배포를 개별 차단해야 함.
+- 이 파일을 GitHub에 저장한 것만으로 운영 Apps Script가 변경되지는 않음.
