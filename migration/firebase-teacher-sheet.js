@@ -25,7 +25,7 @@ exports.getTeacherSheet = onCall(
       throw new HttpsError('invalid-argument', '인증 또는 시트 요청이 올바르지 않습니다.');
     }
     const keys = new Set([
-      'mock', 'studentInfo', 'graduates', 'gradJeongsi',
+      'mock', 'studentInfo', 'graduates', 'gradJeongsi', 'susiSchedule',
       'gradSuneung', 'susi2026', 'interview2026', 'susiResult',
       'cheongun', 'grade3Supervisor'
     ]);
