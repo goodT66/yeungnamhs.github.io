@@ -53,3 +53,17 @@ test('independent supervisor API is explicitly tracked as a migration risk', () 
   assert.match(html, /SUPERVISOR_SHEET_API_URL/);
   assert.match(gates, /별도 감독표 Apps Script/);
 });
+
+test('deployment requires checking the independent supervisor endpoint and published links', () => {
+  const runbook = readFileSync(new URL('./LIVE_DEPLOY_RUNBOOK.md', import.meta.url), 'utf8');
+  assert.match(runbook, /SUPERVISOR_SHEET_API_URL/);
+  assert.match(runbook, /웹에 게시/);
+  assert.match(runbook, /시크릿 창/);
+  assert.match(runbook, /R~U열 저장/);
+});
+
+test('private-mode supervisor and schedule readers use authenticated callable', () => {
+  assert.match(html, /fetchTeacherSheetRows\('grade3Supervisor'\)/);
+  assert.match(html, /fetchTeacherSheetRows\('susiSchedule'\)/);
+  assert.match(html, /window\.ENABLE_PRIVATE_SHEETS/);
+});
