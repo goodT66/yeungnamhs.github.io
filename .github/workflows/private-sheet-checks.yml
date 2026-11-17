@@ -31,21 +31,20 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
-          import vm from 'node:vm';
+          import { spawnSync } from 'node:child_process';
+          import os from 'node:os';
+          import path from 'node:path';
           const html = fs.readFileSync('index.html', 'utf8');
-          const matches = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
+          const matches = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)];
           let checked = 0;
           for (const [, attributes, source] of matches) {
-            if (!source.trim()) continue;
-            if (/\bsrc\s*=/.test(attributes)) continue;
-            if (/\btype\s*=\s*["']module["']/.test(attributes)) {
-              // Strip only static import declarations; vm.Script validates remaining syntax.
-              const withoutImports = source.replace(/^\s*import\s*\{[\s\S]*?\}\s*from\s*["'][^"']+["'];/gm, '')
-                .replace(/^\s*import\s+[^\n]+;\s*$/gm, '');
-              new vm.Script(withoutImports);
-            } else {
-              new vm.Script(source);
-            }
+            if (!source.trim() || /\\bsrc\\s*=/.test(attributes)) continue;
+            const isModule = /\\btype\\s*=\\s*["']module["']/.test(attributes);
+            const temp = path.join(os.tmpdir(), 'private-sheet-script-' + checked + (isModule ? '.mjs' : '.js'));
+            fs.writeFileSync(temp, source);
+            const result = spawnSync(process.execPath, ['--check', temp], { encoding: 'utf8' });
+            fs.unlinkSync(temp);
+            if (result.status !== 0) throw new Error('Inline script ' + checked + ': ' + result.stderr);
             checked++;
           }
           if (!checked) throw new Error('No inline scripts checked');
