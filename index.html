@@ -3339,6 +3339,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
 
         async function loadCheongunSupervisorSheet() {
             if (cheongunSheetValues) return cheongunSheetValues;
+            if (cheongunSheetError) return null;
             if (!cheongunSheetLoadPromise) {
                 cheongunSheetLoadPromise = fetch(CHEONGUN_SHEET_CSV_URL, { cache: 'no-store' })
                     .then(response => {
@@ -3397,6 +3398,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
 
         async function loadSupervisorSheet() {
             if (supervisorSheetValues) return supervisorSheetValues;
+            if (supervisorSheetError) return null;
             if (!supervisorSheetLoadPromise) {
                 supervisorSheetLoadPromise = fetch(SUPERVISOR_SHEET_API_URL, { cache: 'no-store' })
                     .then(response => {
@@ -3513,11 +3515,11 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         function renderSupervisorDutyRoster() {
             const target = document.getElementById('supervisorDutyRoster');
             if (!target) return;
-            if (!supervisorSheetValues && !supervisorSheetLoadPromise) loadSupervisorSheet();
+            if (!supervisorSheetValues && !supervisorSheetLoadPromise && !supervisorSheetError) loadSupervisorSheet();
 
             const base = getBaseSupervisorDuty(selectedCalendarDate);
             Object.assign(base, getBaseCheongunDuty(selectedCalendarDate));
-            if (!cheongunSheetValues && !cheongunSheetLoadPromise) loadCheongunSupervisorSheet();
+            if (!cheongunSheetValues && !cheongunSheetLoadPromise && !cheongunSheetError) loadCheongunSupervisorSheet();
             const records = (window.cloudDataStore && window.getCurrentUser && window.getCurrentUser())
                 ? window.cloudDataStore.getSupervisorDuties().filter(item => item.date === selectedCalendarDate)
                 : [];
