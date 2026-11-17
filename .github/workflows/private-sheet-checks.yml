@@ -35,7 +35,7 @@ jobs:
           import os from 'node:os';
           import path from 'node:path';
           const html = fs.readFileSync('index.html', 'utf8');
-          const matches = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)];
+          const matches = [...html.matchAll(new RegExp('<script\\b([^>]*)>([\\s\\S]*?)<\\/script>', 'gi'))];
           let checked = 0;
           for (const [, attributes, source] of matches) {
             if (!source.trim() || /\\bsrc\\s*=/.test(attributes)) continue;
