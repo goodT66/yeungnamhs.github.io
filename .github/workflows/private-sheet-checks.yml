@@ -21,12 +21,13 @@ jobs:
         with:
           node-version: '22'
       - name: Run offline tests
-        run: node --test migration/teacher-sheet-browser-adapter.test.mjs
+        run: node --test migration/teacher-sheet-browser-adapter.test.mjs migration/private-sheet-security.test.mjs
       - name: Check staged JS syntax
         run: |
           node --check migration/firebase-teacher-sheet.js
           node --check migration/teacher-sheet-browser-adapter.js
           node --check migration/teacher-sheet-browser-adapter.test.mjs
+          node --check migration/private-sheet-security.test.mjs
       - name: Check HTML inline module syntax
         run: |
           node --input-type=module <<'NODE'
