@@ -1360,7 +1360,7 @@ window.fetchIndividualMockRows = async () => {
     return response.data.values;
 };
 window.fetchGraduatesSheetRows = async (sheetKey) => {
-    const allowed = ['graduates', 'gradJeongsi', 'gradSuneung', 'susiResult'];
+    const allowed = ['graduates', 'gradJeongsi', 'gradSuneung', 'susiResult', 'susiSchedule'];
     if (!allowed.includes(sheetKey)) throw new Error('허용되지 않은 시트');
     const user = currentUser;
     if (!user || !ALLOWED_EMAILS.includes(user.email)) throw new Error('교사 로그인이 필요합니다.');
@@ -3006,29 +3006,14 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         let susiScheduleLoading = false;
         let susiScheduleLoaded = false;
         let susiScheduleError = '';
-        function requestSusiScheduleJsonp() {
-            return new Promise((resolve, reject) => {
-                const callbackName = `__susiScheduleCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-                const script = document.createElement('script');
-                let finished = false;
-                const cleanup = () => {
-                    if (finished) return;
-                    finished = true;
-                    clearTimeout(timeoutId);
-                    script.onerror = null;
-                    script.remove();
-                    try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
-                };
-                const timeoutId = setTimeout(() => { cleanup(); reject(new Error('수시 발표 일정을 불러오는 데 시간이 초과되었습니다. 시트 공유 설정을 확인해 주세요.')); }, 15000);
-                window[callbackName] = data => { cleanup(); resolve(data); };
-                script.onerror = () => { cleanup(); reject(new Error('수시일정 시트를 읽지 못했습니다. 링크가 있는 사용자가 볼 수 있도록 공유 설정을 확인해 주세요.')); };
-                script.onload = () => setTimeout(() => {
-                    if (!finished) { cleanup(); reject(new Error('수시일정 시트에서 데이터를 받지 못했습니다. 시트 공유 권한을 확인해 주세요.')); }
-                }, 0);
-                const tqx = `out:json;responseHandler:${callbackName}`;
-                script.src = `https://docs.google.com/spreadsheets/d/${SUSI_SHEET_ID}/gviz/tq?gid=${SUSI_SHEET_GID}&tqx=${encodeURIComponent(tqx)}&t=${Date.now()}`;
-                document.head.appendChild(script);
-            });
+        async function requestSusiScheduleJsonp() {
+            const values = await window.fetchGraduatesSheetRows('susiSchedule');
+            if (!Array.isArray(values) || values.length < 2) throw new Error('수시일정 자료가 비어 있습니다.');
+            return { table: { rows: values.map(row => ({
+                c: (Array.isArray(row) ? row : []).map(value => ({
+                    v: String(value ?? ''), f: String(value ?? '')
+                }))
+            })) } };
         }
         function susiCellValue(cell) {
             if (!cell) return '';
