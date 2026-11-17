@@ -1348,6 +1348,16 @@ window.fetch2026SusiRows = async () => {
     if (response.data?.success !== true || !Array.isArray(response.data.values)) throw new Error("2026 수시 시트 응답 오류");
     return response.data.values;
 };
+window.fetch2026InterviewRows = async () => {
+    const user = currentUser;
+    if (!user || !ALLOWED_EMAILS.includes(user.email)) throw new Error("교사 로그인이 필요합니다.");
+    const idToken = await user.getIdToken();
+    if (currentUser?.uid !== user.uid) throw new Error("로그인 계정이 변경되었습니다.");
+    const response = await getTeacherSheetCallable({ idToken, sheetKey: 'interview2026' });
+    if (currentUser?.uid !== user.uid || auth.currentUser?.uid !== user.uid) throw new Error("로그인 상태가 변경되었습니다.");
+    if (response.data?.success !== true || !Array.isArray(response.data.values)) throw new Error("2026 면접 시트 응답 오류");
+    return response.data.values;
+};
 
 let interviewDateCache = {};
 let unsubscribeInterviewDates = null;
@@ -5519,20 +5529,12 @@ const ivColOrder = [1, 5, 18, 19, 20, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16
             const tbody = document.getElementById('interviewTableBody');
             if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-gray-500">면접 자료를 새로 불러오는 중입니다...</td></tr>';
             try {
-                const requestUrl = `${INTERVIEW_2026_CSV_URL}&cacheBust=${Date.now()}`;
-                const response = await fetch(requestUrl, { cache: 'no-store' });
+                const data = await window.fetch2026InterviewRows();
                 if (requestSequence !== interviewFetchSequence) return;
-                if (!response.ok) throw new Error('네트워크 응답 오류');
-                const text = await response.text();
-                Papa.parse(text, {
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        if (requestSequence !== interviewFetchSequence) return;
-                        const data = results.data;
-                        if (data.length <= 1) {
-                            if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-red-500">면접 자료가 비어 있습니다. 시트 공유 설정과 시트 이름을 확인해 주세요.</td></tr>';
-                            return;
-                        }
+                if (data.length <= 1) {
+                    if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-red-500">면접 자료가 비어 있습니다. 2026면접 시트를 확인해 주세요.</td></tr>';
+                    return;
+                }
                         interviewData = data.slice(1);
                         window.interviewData = interviewData;
                         // 먼저 면접 CSV가 도착한 경우에도 수시 판정 자료를 별도로 확보합니다.
@@ -5552,17 +5554,11 @@ const ivColOrder = [1, 5, 18, 19, 20, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16
                         if (window.getCurrentUser && window.getCurrentUser()) renderInterviewTable();
                         const lookupStudent = typeof getLookupSelectedStudent === 'function' ? getLookupSelectedStudent() : null;
                         if (lookupStudent && String(lookupStudent.grade).replace(/\\D/g,'') === '3' && typeof loadLookupSusiPlan === 'function') loadLookupSusiPlan();
-                    },
-                    error: function(error) {
-                        if (requestSequence !== interviewFetchSequence) return;
-                        console.error('면접 자료 CSV 파싱 오류:', error);
-                        if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-red-500">면접 자료 형식을 읽지 못했습니다.</td></tr>';
-                    }
-                });
+
             } catch (error) {
                 if (requestSequence !== interviewFetchSequence) return;
                 console.error('2026면접 데이터 로드 실패', error);
-                if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-red-500">면접 자료를 불러오지 못했습니다. 네트워크와 Google 시트 공유 권한을 확인해 주세요.</td></tr>';
+                if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-red-500">면접 자료를 불러오지 못했습니다. 교사 로그인 및 서버 권한을 확인해 주세요.</td></tr>';
             }
         }
 function setIvSort(colIndex) {
