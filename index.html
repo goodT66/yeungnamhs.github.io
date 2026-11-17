@@ -3376,11 +3376,12 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         async function loadSupervisorSheet() {
             if (supervisorSheetValues) return supervisorSheetValues;
             if (!supervisorSheetLoadPromise) {
-                supervisorSheetLoadPromise = fetch(SUPERVISOR_SHEET_API_URL, { cache: 'no-store' })
-                    .then(response => {
+                supervisorSheetLoadPromise = (window.ENABLE_PRIVATE_SHEETS
+                    ? window.fetchTeacherSheetRows('grade3Supervisor').then(values => ({ success: true, values }))
+                    : fetch(SUPERVISOR_SHEET_API_URL, { cache: 'no-store' }).then(response => {
                         if (!response.ok) throw new Error(`HTTP ${response.status}`);
                         return response.json();
-                    })
+                    }))
                     .then(data => {
                         if (!data || data.success !== true || !Array.isArray(data.values)) {
                             throw new Error(data?.message || '감독표 데이터 형식이 올바르지 않습니다.');
