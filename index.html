@@ -5196,7 +5196,7 @@ function applyGradFilter() {
         // 졸업생은 B열 학년 값과 관계없이 3학년으로 간주합니다.
         // C열 '졸업생 반'을 기준으로 식별하며 D열 졸업연도는 변경하지 않습니다.
         function isAlumniSusiRow(row) {
-            return String(row[2] ?? '').replace(/\s+/g, '') === '졸업생반';
+            return ['졸업생', '졸업생반'].includes(String(row[2] ?? '').replace(/\s+/g, ''));
         }
 
         function populateClassGradeDropdown() {
