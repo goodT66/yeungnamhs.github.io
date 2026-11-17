@@ -3708,23 +3708,20 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             if (mockDataLoadingPromise) return mockDataLoadingPromise;
             mockDataLoadingPromise = (async () => {
             try {
-                const response = await fetch(MOCK_CSV_URL);
-                if (!response.ok) throw new Error("네트워크 오류");
-                const text = await response.text();
-                Papa.parse(text, {
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        const data = results.data;
+                const data = await window.fetchIndividualMockRows();
+                if (!Array.isArray(data) || !data.length) throw new Error('모의고사 시트가 비어 있습니다.');
+                studentMap.clear();
                         let headerIndex = -1;
                         for (let i = 0; i < Math.min(5, data.length); i++) {
                             if (data[i].join('').includes('이름') && data[i].join('').includes('국어')) { headerIndex = i; break; }
                         }
-                        if (headerIndex === -1) return;
+                        if (headerIndex === -1) throw new Error('모의고사 성적표 헤더를 찾을 수 없습니다.');
 
                         const headers = data[headerIndex].map(h => String(h).replace(/\s+/g, ''));
                         const idIdx = headers.findIndex(h => h.includes('Number') || h.includes('학번'));
                         const nameIdx = headers.findIndex(h => h.includes('이름'));
-                        const titleIdx = headers.findIndex(h => h.includes('학력평가') || h.includes('고사명'));
+                        const titleIdx = headers.findIndex(h => h.includes('학력평가') || h.includes('고사명')); 
+                        if (idIdx < 0 || nameIdx < 0) throw new Error('학번 또는 이름 열이 없습니다.');
                         
                         const kStd = headers.findIndex(h=>h.includes('국어표점')), kPtc = headers.findIndex(h=>h.includes('국어백분위')), kGrd = headers.findIndex(h=>h.includes('국어등급'));
                         const mStd = headers.findIndex(h=>h.includes('수학표점')), mPtc = headers.findIndex(h=>h.includes('수학백분위')), mGrd = headers.findIndex(h=>h.includes('수학등급'));
@@ -3744,7 +3741,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                         for (let i = headerIndex + 1; i < data.length; i++) {
                             const r = data[i];
                             if (!r || r.length <= idIdx) continue;
-                            const sid = r[idIdx].trim(), sname = r[nameIdx].trim();
+                            const sid = String(r[idIdx] ?? '').trim(), sname = String(r[nameIdx] ?? '').trim();
                             if(sid && sname) {
                                 if(!studentMap.has(sid)) studentMap.set(sid, { name: sname, records: [] });
                                 studentMap.get(sid).records.push({
@@ -3765,9 +3762,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                         window.mockDataLoaded = true;
                         populateGradeDropdown();
                         document.getElementById('mockLoadingSpinner').style.display = 'none';
-                    }
-                });
-            } catch (error) { console.error(error); }
+            } catch (error) { console.error('모의고사 성적 조회 실패:', error); const spinner = document.getElementById('mockLoadingSpinner'); if (spinner) { spinner.style.display = 'block'; spinner.textContent = '모의고사 성적을 불러오지 못했습니다. 교사 로그인 및 서버 권한을 확인해 주세요.'; } }
             finally { mockDataLoadingPromise = null; }
             })();
             return mockDataLoadingPromise;
