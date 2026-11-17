@@ -28,7 +28,7 @@ function getTeacherSheet_(sheetKey) {
       !Object.prototype.hasOwnProperty.call(sheets, sheetKey)) {
     throw new Error('허용되지 않은 시트 조회 요청입니다.');
   }
-  const spreadsheet = SpreadsheetApp.openById(SUSI_SAVE_CONFIG.spreadsheetId);
+  const spreadsheet = SpreadsheetApp.openById('1psYLHk_Wnl-S-yvkTq9BK80byIxqulTMxlPXHLPB-BM');
   const target = sheets[sheetKey];
   const sheet = target.gid !== undefined
     ? spreadsheet.getSheets().find(s => s.getSheetId() === target.gid)
