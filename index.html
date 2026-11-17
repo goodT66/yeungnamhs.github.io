@@ -3544,11 +3544,12 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 bySlot.set(slot, { ...item, source: 'firebase' });
             });
 
-            if ((!supervisorSheetValues && supervisorSheetError) || (!cheongunSheetValues && cheongunSheetError)) {
-                const errors = [supervisorSheetError, cheongunSheetError].filter(Boolean).join(' / ');
-                target.innerHTML = `<p class="text-sm text-red-600">기본 감독표를 불러오지 못했습니다. 연결 및 시트 공유 권한을 확인해 주세요. (${escapeHTML(errors)})</p>`;
-                return;
-            }
+            const rosterErrors = [];
+            if (!supervisorSheetValues && supervisorSheetError) rosterErrors.push('3학년 감독표: ' + supervisorSheetError);
+            if (!cheongunSheetValues && cheongunSheetError) rosterErrors.push('청운관 감독표: ' + cheongunSheetError);
+            const rosterWarning = rosterErrors.length
+                ? '<p class="text-sm text-red-600 mb-2">일부 감독표 조회 실패: ' + escapeHTML(rosterErrors.join(' / ')) + '</p>'
+                : '';
 
             const dateParts = String(selectedCalendarDate || '').split('-').map(Number);
             const isSaturday = dateParts.length === 3 && dateParts.every(Number.isFinite)
@@ -3577,7 +3578,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             target.className = isSaturday ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'grid grid-cols-1 md:grid-cols-3 gap-3';
             target.style.width = '100%';
             target.style.maxWidth = '100%';
-            target.innerHTML = groups.map(group => `
+            target.innerHTML = rosterWarning + groups.map(group => `
                 <section class="space-y-2 border rounded-xl p-3 " style="${group.sectionStyle}">
                     <div class="text-xs font-bold " style="${group.textStyle}">${group.title}</div>
                     <div class="space-y-2">
