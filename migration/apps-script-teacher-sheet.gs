@@ -16,6 +16,7 @@ function getTeacherSheet_(sheetKey) {
     studentInfo: { gid: 750853389 },
     graduates: { name: '졸업생' },
     gradJeongsi: { gid: 1123384481 },
+    susiSchedule: { gid: 1502883874 },
     gradSuneung: { name: '졸업생수능' },
     susi2026: { name: '2026수시' },
     interview2026: { name: '2026면접' },
