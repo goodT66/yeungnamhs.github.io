@@ -36,7 +36,8 @@ test('private mode has no public-sheet fallback on callable failure', () => {
   const end = html.indexOf('window.getInterviewDateCache', start);
   assert.ok(start >= 0 && end > start);
   const reader = html.slice(start, end);
-  assert.match(reader, /if \(!window\.ENABLE_PRIVATE_SHEETS\) return fetch\(url, options\)/);
+  assert.match(reader, /if \(!window\.ENABLE_PRIVATE_SHEETS && sheetKey !== 'susi2026'\) return fetch\(url, options\)/);
+  assert.match(html, /window\.fetchTeacherSheetCsv\('susi2026', SUSI_2026_CSV_URL/);
   assert.match(reader, /await window\.fetchTeacherSheetRows\(sheetKey\)/);
   assert.doesNotMatch(reader, /catch\s*\([^)]*\)\s*\{[^}]*fetch\(url/s);
 });
