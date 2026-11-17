@@ -1299,6 +1299,7 @@ import {
     const auth = getAuth(app);
     const db = getFirestore(app);
     const save2026SusiCallable = httpsCallable(getFunctions(app, "asia-northeast3"), "save2026Susi", { timeout: 65000 });
+    const getStudentInfoCallable = httpsCallable(getFunctions(app, "asia-northeast3"), "getStudentInfo", { timeout: 65000 });
     const provider = new GoogleAuthProvider();
 
     const TEACHER_NAMES = {
@@ -1362,6 +1363,19 @@ window.saveClassSusiToSheet = async (items) => {
         const response = await save2026SusiCallable({ idToken, items: items.slice(start, start + 100) });
         if (response.data?.success !== true) throw new Error("Google 시트 저장 결과를 확인하지 못했습니다.");
     }
+};
+
+// 학생 명단은 인증된 Firebase callable 함수를 통해 비공개 시트에서 조회합니다.
+window.getStudentInfoRowsFromServer = async () => {
+    if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) {
+        throw new Error("학생 명단을 조회하려면 허용된 교사 계정으로 로그인해야 합니다.");
+    }
+    const idToken = await currentUser.getIdToken();
+    const response = await getStudentInfoCallable({ idToken });
+    if (response.data?.success !== true || !Array.isArray(response.data.values)) {
+        throw new Error("학생정보 서버 응답 형식이 올바르지 않습니다.");
+    }
+    return response.data.values;
 };
 
 window.classSusiEditStore = {
@@ -6464,8 +6478,10 @@ let studentLookupRows = [];
 let studentInfoLoadPromise = null;
 async function loadStudentInfoRows(force=false){
   if(studentInfoLoadPromise && !force) return studentInfoLoadPromise;
-  studentInfoLoadPromise=fetch(STUDENT_INFO_CSV_URL,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('학생정보 시트 응답 오류');return r.text();}).then(csv=>{
-    const rows=Papa.parse(csv,{skipEmptyLines:true}).data;
+  studentInfoLoadPromise=(async()=>{
+    if (!window.getStudentInfoRowsFromServer) throw new Error('학생정보 서버 연결 기능을 찾을 수 없습니다.');
+    const rows=await window.getStudentInfoRowsFromServer();
+    if(!Array.isArray(rows)) throw new Error('학생정보 시트 응답 형식이 올바르지 않습니다.');
     if(!rows.length) throw new Error('학생정보 시트가 비어 있습니다.');
     const clean=v=>String(v??'').trim();
     let start=0;
@@ -6477,7 +6493,7 @@ async function loadStudentInfoRows(force=false){
     if(!studentLookupRows.length) throw new Error('A~D열에서 학생 정보를 찾지 못했습니다.');
     document.getElementById('lookupStudentLoadStatus').textContent=`학생정보 시트에서 ${studentLookupRows.length}명의 학생 정보를 불러왔습니다.`;
     return studentLookupRows;
-  }).catch(e=>{studentInfoLoadPromise=null;console.error(e);document.getElementById('lookupStudentLoadStatus').textContent='학생 명단을 불러오지 못했습니다. 학생정보 시트의 공유 권한을 확인해 주세요.';throw e;});
+  })().catch(e=>{studentInfoLoadPromise=null;console.error(e);document.getElementById('lookupStudentLoadStatus').textContent='학생 명단을 불러오지 못했습니다. 교사 로그인 및 서버 권한을 확인해 주세요.';throw e;});
   return studentInfoLoadPromise;
 }
 async function openStudentLookup(){
