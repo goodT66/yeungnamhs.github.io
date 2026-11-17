@@ -1360,7 +1360,7 @@ window.fetchIndividualMockRows = async () => {
     return response.data.values;
 };
 window.fetchGraduatesSheetRows = async (sheetKey) => {
-    const allowed = ['graduates', 'gradJeongsi', 'gradSuneung', 'susiResult'];
+    const allowed = ['graduates', 'gradJeongsi', 'gradSuneung', 'susiResult', 'susiSchedule', 'grade3Supervisor', 'cheongun'];
     if (!allowed.includes(sheetKey)) throw new Error('허용되지 않은 시트');
     const user = currentUser;
     if (!user || !ALLOWED_EMAILS.includes(user.email)) throw new Error('교사 로그인이 필요합니다.');
@@ -3006,29 +3006,12 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         let susiScheduleLoading = false;
         let susiScheduleLoaded = false;
         let susiScheduleError = '';
-        function requestSusiScheduleJsonp() {
-            return new Promise((resolve, reject) => {
-                const callbackName = `__susiScheduleCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-                const script = document.createElement('script');
-                let finished = false;
-                const cleanup = () => {
-                    if (finished) return;
-                    finished = true;
-                    clearTimeout(timeoutId);
-                    script.onerror = null;
-                    script.remove();
-                    try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
-                };
-                const timeoutId = setTimeout(() => { cleanup(); reject(new Error('수시 발표 일정을 불러오는 데 시간이 초과되었습니다. 시트 공유 설정을 확인해 주세요.')); }, 15000);
-                window[callbackName] = data => { cleanup(); resolve(data); };
-                script.onerror = () => { cleanup(); reject(new Error('수시일정 시트를 읽지 못했습니다. 링크가 있는 사용자가 볼 수 있도록 공유 설정을 확인해 주세요.')); };
-                script.onload = () => setTimeout(() => {
-                    if (!finished) { cleanup(); reject(new Error('수시일정 시트에서 데이터를 받지 못했습니다. 시트 공유 권한을 확인해 주세요.')); }
-                }, 0);
-                const tqx = `out:json;responseHandler:${callbackName}`;
-                script.src = `https://docs.google.com/spreadsheets/d/${SUSI_SHEET_ID}/gviz/tq?gid=${SUSI_SHEET_GID}&tqx=${encodeURIComponent(tqx)}&t=${Date.now()}`;
-                document.head.appendChild(script);
-            });
+        async function requestSusiScheduleJsonp() {
+            const values = await window.fetchGraduatesSheetRows('susiSchedule');
+            if (!Array.isArray(values)) throw new Error('수시일정 응답 오류');
+            return { table: { rows: values.map(row => ({
+                c: row.map(value => ({ v: String(value ?? ''), f: String(value ?? '') }))
+            })) } };
         }
         function susiCellValue(cell) {
             if (!cell) return '';
@@ -3340,13 +3323,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         async function loadCheongunSupervisorSheet() {
             if (cheongunSheetValues) return cheongunSheetValues;
             if (!cheongunSheetLoadPromise) {
-                cheongunSheetLoadPromise = fetch(CHEONGUN_SHEET_CSV_URL, { cache: 'no-store' })
-                    .then(response => {
-                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                        return response.text();
-                    })
-                    .then(csv => {
-                        const values = parseSupervisorCsv(csv);
+                cheongunSheetLoadPromise = window.fetchGraduatesSheetRows('cheongun')
+                    .then(values => {
                         if (!values.length || !values.some(row => row.some(cell => String(cell || '').includes('월')))) {
                             throw new Error('청운관감독표 시트 데이터를 확인할 수 없습니다. 시트 공유 권한을 확인해 주세요.');
                         }
@@ -3398,11 +3376,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         async function loadSupervisorSheet() {
             if (supervisorSheetValues) return supervisorSheetValues;
             if (!supervisorSheetLoadPromise) {
-                supervisorSheetLoadPromise = fetch(SUPERVISOR_SHEET_API_URL, { cache: 'no-store' })
-                    .then(response => {
-                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                        return response.json();
-                    })
+                supervisorSheetLoadPromise = window.fetchGraduatesSheetRows('grade3Supervisor').then(values => ({ success: true, values }))
                     .then(data => {
                         if (!data || data.success !== true || !Array.isArray(data.values)) {
                             throw new Error(data?.message || '감독표 데이터 형식이 올바르지 않습니다.');
