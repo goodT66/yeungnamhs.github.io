@@ -2978,6 +2978,13 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         let susiScheduleLoaded = false;
         let susiScheduleError = '';
         function requestSusiScheduleJsonp() {
+            if (window.ENABLE_PRIVATE_SHEETS) {
+                return window.fetchTeacherSheetRows('susiSchedule').then(rows => ({
+                    table: { rows: rows.slice(1).map(row => ({
+                        c: row.map(value => ({ v: String(value ?? ''), f: String(value ?? '') }))
+                    })) }
+                }));
+            }
             return new Promise((resolve, reject) => {
                 const callbackName = `__susiScheduleCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
                 const script = document.createElement('script');
