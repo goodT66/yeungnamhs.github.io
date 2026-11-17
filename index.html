@@ -1360,7 +1360,7 @@ window.fetchIndividualMockRows = async () => {
     return response.data.values;
 };
 window.fetchGraduatesSheetRows = async (sheetKey) => {
-    const allowed = ['graduates', 'gradJeongsi', 'gradSuneung', 'susiResult', 'susiSchedule'];
+    const allowed = ['graduates', 'gradJeongsi', 'gradSuneung', 'susiResult', 'susiSchedule', 'grade3Supervisor', 'cheongun'];
     if (!allowed.includes(sheetKey)) throw new Error('허용되지 않은 시트');
     const user = currentUser;
     if (!user || !ALLOWED_EMAILS.includes(user.email)) throw new Error('교사 로그인이 필요합니다.');
@@ -3341,17 +3341,35 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             return rows;
         }
 
+        function waitForSupervisorTeacherAuth() {
+            if (window.getCurrentUser?.()) return Promise.resolve();
+            return new Promise((resolve, reject) => {
+                const onReady = () => { cleanup(); resolve(); };
+                const cleanup = () => {
+                    clearTimeout(timeout);
+                    window.removeEventListener('teacher-auth-ready', onReady);
+                };
+                const timeout = setTimeout(() => {
+                    cleanup();
+                    reject(new Error('교사 로그인 후 감독표를 다시 확인해 주세요.'));
+                }, 10000);
+                window.addEventListener('teacher-auth-ready', onReady);
+                if (window.getCurrentUser?.()) onReady();
+            });
+        }
+        window.addEventListener('teacher-auth-ready', () => {
+            supervisorSheetError = '';
+            cheongunSheetError = '';
+            if (document.getElementById('supervisorDutyRoster')) renderSupervisorDutyRoster();
+        });
+
         async function loadCheongunSupervisorSheet() {
             if (cheongunSheetValues) return cheongunSheetValues;
             if (cheongunSheetError) return null;
             if (!cheongunSheetLoadPromise) {
-                cheongunSheetLoadPromise = fetch(CHEONGUN_SHEET_CSV_URL, { cache: 'no-store' })
-                    .then(response => {
-                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                        return response.text();
-                    })
-                    .then(csv => {
-                        const values = parseSupervisorCsv(csv);
+                cheongunSheetLoadPromise = waitForSupervisorTeacherAuth()
+                    .then(() => window.fetchGraduatesSheetRows('cheongun'))
+                    .then(values => {
                         if (!values.length || !values.some(row => row.some(cell => String(cell || '').includes('월')))) {
                             throw new Error('청운관감독표 시트 데이터를 확인할 수 없습니다. 시트 공유 권한을 확인해 주세요.');
                         }
@@ -3404,11 +3422,9 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             if (supervisorSheetValues) return supervisorSheetValues;
             if (supervisorSheetError) return null;
             if (!supervisorSheetLoadPromise) {
-                supervisorSheetLoadPromise = fetch(SUPERVISOR_SHEET_API_URL, { cache: 'no-store' })
-                    .then(response => {
-                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                        return response.json();
-                    })
+                supervisorSheetLoadPromise = waitForSupervisorTeacherAuth()
+                    .then(() => window.fetchGraduatesSheetRows('grade3Supervisor'))
+                    .then(values => ({ success: true, values }))
                     .then(data => {
                         if (!data || data.success !== true || !Array.isArray(data.values)) {
                             throw new Error(data?.message || '감독표 데이터 형식이 올바르지 않습니다.');
@@ -3576,11 +3592,12 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 bySlot.set(slot, { ...item, source: 'firebase' });
             });
 
-            if ((!supervisorSheetValues && supervisorSheetError) || (!cheongunSheetValues && cheongunSheetError)) {
-                const errors = [supervisorSheetError, cheongunSheetError].filter(Boolean).join(' / ');
-                target.innerHTML = `<p class="text-sm text-red-600">기본 감독표를 불러오지 못했습니다. 연결 및 시트 공유 권한을 확인해 주세요. (${escapeHTML(errors)})</p>`;
-                return;
-            }
+            const rosterErrors = [];
+            if (!supervisorSheetValues && supervisorSheetError) rosterErrors.push('3학년 감독표: ' + supervisorSheetError);
+            if (!cheongunSheetValues && cheongunSheetError) rosterErrors.push('청운관 감독표: ' + cheongunSheetError);
+            const rosterWarning = rosterErrors.length
+                ? '<p class="text-sm text-red-600 mb-2">감독표 일부 조회 실패: ' + escapeHTML(rosterErrors.join(' / ')) + '</p>'
+                : '';
 
             const dateParts = String(selectedCalendarDate || '').split('-').map(Number);
             const isSaturday = dateParts.length === 3 && dateParts.every(Number.isFinite)
@@ -3609,7 +3626,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             target.className = isSaturday ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'grid grid-cols-1 md:grid-cols-3 gap-3';
             target.style.width = '100%';
             target.style.maxWidth = '100%';
-            target.innerHTML = groups.map(group => `
+            target.innerHTML = rosterWarning + groups.map(group => `
                 <section class="space-y-2 border rounded-xl p-3 " style="${group.sectionStyle}">
                     <div class="text-xs font-bold " style="${group.textStyle}">${group.title}</div>
                     <div class="space-y-2">
