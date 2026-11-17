@@ -1,0 +1,53 @@
+# 배포 전 자동 검사 (읽기 전용)
+# GitHub Actions는 공개 저장소의 테스트용 가상 데이터만 사용합니다.
+# 실제 Firebase/Apps Script 배포 및 Google Sheets 권한 변경은 수행하지 않습니다.
+name: Private sheet migration checks
+on:
+  push:
+    branches: [feature/private-teacher-sheets]
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'migration/**'
+      - '.github/workflows/private-sheet-checks.yml'
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run offline tests
+        run: node --test migration/teacher-sheet-browser-adapter.test.mjs
+      - name: Check staged JS syntax
+        run: |
+          node --check migration/firebase-teacher-sheet.js
+          node --check migration/teacher-sheet-browser-adapter.js
+          node --check migration/teacher-sheet-browser-adapter.test.mjs
+      - name: Check HTML inline module syntax
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import vm from 'node:vm';
+          const html = fs.readFileSync('index.html', 'utf8');
+          const matches = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
+          let checked = 0;
+          for (const [, attributes, source] of matches) {
+            if (!source.trim()) continue;
+            if (/\bsrc\s*=/.test(attributes)) continue;
+            if (/\btype\s*=\s*["']module["']/.test(attributes)) {
+              // Strip only static import declarations; vm.Script validates remaining syntax.
+              const withoutImports = source.replace(/^\s*import\s*\{[\s\S]*?\}\s*from\s*["'][^"']+["'];/gm, '')
+                .replace(/^\s*import\s+[^\n]+;\s*$/gm, '');
+              new vm.Script(withoutImports);
+            } else {
+              new vm.Script(source);
+            }
+            checked++;
+          }
+          if (!checked) throw new Error('No inline scripts checked');
+          console.log('Checked inline scripts:', checked);
+          NODE
