@@ -1629,6 +1629,13 @@ document.getElementById('userEmail').innerText = user.email;
                 window.renderSusiResultTable();
             }
         } else {
+            // 비공개 모드에서 로그아웃하면 성적·학생 데이터 메모리 캐시를 완전히 제거합니다.
+            // 첫 페이지 로드의 미로그인 상태에서는 새로고침하지 않습니다.
+            if (window.ENABLE_PRIVATE_SHEETS && currentUser) {
+                currentUser = null;
+                window.location.reload();
+                return;
+            }
             currentUser = null;
             document.body.classList.remove('teacher-authenticated');
             // 로그아웃 시 보호 화면만 닫습니다. 메뉴 버튼은 계속 표시합니다.
