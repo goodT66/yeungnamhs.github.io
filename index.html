@@ -1605,6 +1605,7 @@ function startInterviewDateSync() {
 
             
 currentUser = user;
+window.dispatchEvent(new Event('teacher-auth-ready'));
 document.body.classList.add('teacher-authenticated');
 
 // 메뉴 버튼은 항상 표시하고, 실제 기능 진입 시 로그인 여부를 확인합니다.
@@ -3006,7 +3007,25 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         let susiScheduleLoading = false;
         let susiScheduleLoaded = false;
         let susiScheduleError = '';
+        window.addEventListener('teacher-auth-ready', () => {
+            if (susiScheduleCache || susiScheduleLoading) return;
+            susiScheduleLoaded = false;
+            if (document.getElementById('calendarGrid')) renderCalendar();
+        });
         async function requestSusiScheduleJsonp() {
+            // Firebase 모듈의 인증 복원이 끝나기 전에는 시트를 요청하지 않습니다.
+            if (!window.getCurrentUser?.()) {
+                await new Promise((resolve, reject) => {
+                    const onReady = () => { cleanup(); resolve(); };
+                    const cleanup = () => {
+                        window.removeEventListener('teacher-auth-ready', onReady);
+                        clearTimeout(timeout);
+                    };
+                    const timeout = setTimeout(() => { cleanup(); reject(new Error('교사 로그인 후 다시 확인해 주세요.')); }, 10000);
+                    window.addEventListener('teacher-auth-ready', onReady);
+                    if (window.getCurrentUser?.()) onReady();
+                });
+            }
             const values = await window.fetchGraduatesSheetRows('susiSchedule');
             if (!Array.isArray(values) || values.length < 2) throw new Error('수시일정 자료가 비어 있습니다.');
             return { table: { rows: values.map(row => ({
