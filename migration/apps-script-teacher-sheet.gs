@@ -4,8 +4,12 @@
  * verifySusiTeacher_(request.idToken) 실행 직후 아래 분기를 추가하세요.
  *
  * if (request.action === 'getTeacherSheet') {
- *   return jsonResponse(getTeacherSheet_(request.sheetKey));
+ *   return ContentService.createTextOutput(
+ *     JSON.stringify(getTeacherSheet_(request.sheetKey))
+ *   ).setMimeType(ContentService.MimeType.JSON);
  * }
+ *
+ * 위 분기는 반드시 기존 verifySusiTeacher_(request.idToken) 통과 후에만 실행.
  *
  * 기존 doGet()은 이 변경만으로 안전해지지 않습니다.
  * 기존 호출처를 모두 이전한 뒤 별도로 비활성화해야 합니다.
