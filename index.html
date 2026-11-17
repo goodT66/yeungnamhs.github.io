@@ -2720,8 +2720,12 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         document.addEventListener("DOMContentLoaded", () => {
             // 첫 화면에서는 전달 사항과 달력만 준비하고,
             // 무거운 성적·입결 자료는 해당 메뉴에 처음 진입할 때 불러옵니다.
-            renderAllNotices();
-            renderCalendar();
+            // 초기 화면 렌더링은 브라우저가 먼저 화면을 그린 뒤 실행합니다.
+            // 대용량 일정·감독표 연산이 로그인 화면 전체를 멈추지 않도록 분리합니다.
+            try { renderAllNotices(); } catch (error) { console.error('전달 사항 초기화 실패:', error); }
+            window.setTimeout(() => {
+                try { renderCalendar(); } catch (error) { console.error('달력 초기화 실패:', error); }
+            }, 250);
         });
 
         // =====================================================================
