@@ -1364,7 +1364,7 @@ window.fetchTeacherSheetRows = async (sheetKey) => {
     return response.data.values;
 };
 window.fetchTeacherSheetCsv = async (sheetKey, url, options) => {
-    if (!window.ENABLE_PRIVATE_SHEETS) return fetch(url, options);
+    if (!window.ENABLE_PRIVATE_SHEETS && sheetKey !== 'susi2026') return fetch(url, options);
     const rows = await window.fetchTeacherSheetRows(sheetKey);
     const escapeCsv = value => {
         const v = String(value ?? "");
@@ -5189,7 +5189,11 @@ function applyGradFilter() {
                         }
                     }
                 });
-            } catch (error) { console.error("2026수시 데이터 로드 실패", error); }
+            } catch (error) {
+                console.error("2026수시 데이터 로드 실패", error);
+                const tbody = document.getElementById("classTableBody");
+                if (tbody) tbody.innerHTML = '<tr><td colspan="18" class="text-center py-10 text-red-600">2026 수시 자료를 불러오지 못했습니다. 교사 로그인 및 서버 권한을 확인해 주세요.</td></tr>';
+            }
         }
 
         function populateClassGradeDropdown() {
