@@ -1572,6 +1572,12 @@ function startInterviewDateSync() {
         const userInfo = document.getElementById('userInfo');
 
         if (user) {
+            // 비공개 모드에서 교사 계정이 바뀌면 이전 계정의 학생 자료 캐시를 폐기합니다.
+            if (window.ENABLE_PRIVATE_SHEETS && currentUser && currentUser.uid !== user.uid) {
+                currentUser = null;
+                window.location.reload();
+                return;
+            }
             if (!ALLOWED_EMAILS.includes(user.email)) {
                 alert(`[접근 제한] ${user.email} 계정은 교사 인증 권한이 없습니다.`);
                 await signOut(auth);
