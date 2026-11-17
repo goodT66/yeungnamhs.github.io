@@ -68,3 +68,23 @@ test('private-mode supervisor and schedule readers use authenticated callable', 
   assert.match(html, /fetchTeacherSheetRows\('susiSchedule'\)/);
   assert.match(html, /window\.ENABLE_PRIVATE_SHEETS/);
 });
+
+test('2026 Susi read targets the same sheet used for saving', () => {
+  const integrated = readFileSync(new URL('./apps-script-integrated-deploy.gs', import.meta.url), 'utf8');
+  assert.match(integrated, /sheetName:\s*'2026수시'/);
+  assert.match(integrated, /susi2026:\s*\{\s*name:\s*'2026수시'\s*\}/);
+  assert.match(integrated, /getDataRange\(\)\.getDisplayValues\(\)/);
+});
+
+test('2026 Susi class view handles malformed and empty CSV before rendering', () => {
+  const start = html.indexOf('async function fetchClassSusiData()');
+  const end = html.indexOf('function populateClassGradeDropdown()', start);
+  assert.ok(start >= 0 && end > start);
+  const loader = html.slice(start, end);
+  assert.match(loader, /fetchTeacherSheetCsv\('susi2026'/);
+  assert.match(loader, /parsed\.errors\?\.length/);
+  assert.match(loader, /parsed\.data\.length <= 1/);
+  assert.match(loader, /classSusiData = parsed\.data\.slice\(1\)/);
+  assert.match(loader, /populateClassGradeDropdown\(\)/);
+  assert.match(loader, /2026 수시 자료를 불러오지 못했습니다/);
+});
