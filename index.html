@@ -1300,6 +1300,7 @@ import {
     const db = getFirestore(app);
     const save2026SusiCallable = httpsCallable(getFunctions(app, "asia-northeast3"), "save2026Susi", { timeout: 65000 });
     const getStudentInfoCallable = httpsCallable(getFunctions(app, "asia-northeast3"), "getStudentInfo", { timeout: 65000 });
+    const getTeacherSheetCallable = httpsCallable(getFunctions(app, "asia-northeast3"), "getTeacherSheet", { timeout: 65000 });
     const provider = new GoogleAuthProvider();
 
     const TEACHER_NAMES = {
@@ -1347,6 +1348,26 @@ let unsubscribeCalendarEvents = null;
 let noticesReady = false;
 let calendarEventsReady = false;
 window.getCurrentUser = () => currentUser;
+// Disabled until Firebase and Apps Script readers have been deployed and verified.
+window.ENABLE_PRIVATE_SHEETS = false;
+window.fetchTeacherSheetRows = async (sheetKey) => {
+    if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) throw new Error("교사 로그인이 필요합니다.");
+    const idToken = await currentUser.getIdToken();
+    const response = await getTeacherSheetCallable({ idToken, sheetKey });
+    if (response.data?.success !== true || !Array.isArray(response.data.values)) throw new Error("비공개 시트 응답 오류");
+    return response.data.values;
+};
+window.fetchTeacherSheetCsv = async (sheetKey, url, options) => {
+    if (!window.ENABLE_PRIVATE_SHEETS) return fetch(url, options);
+    const rows = await window.fetchTeacherSheetRows(sheetKey);
+    const escapeCsv = value => {
+        const v = String(value ?? "");
+        return /[",\\r\\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    };
+    return new Response(rows.map(row => row.map(escapeCsv).join(",")).join("\\r\\n"), {
+        status: 200, headers: { "Content-Type": "text/csv;charset=utf-8" }
+    });
+};
 window.getInterviewDateCache = () => interviewDateCache;
 // 학생별 수시 지원 희망 자료의 Firestore 접근은 Firebase 모듈 범위에서 처리합니다.
 window.studentSusiPlanStore = {
@@ -3290,7 +3311,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         async function loadCheongunSupervisorSheet() {
             if (cheongunSheetValues) return cheongunSheetValues;
             if (!cheongunSheetLoadPromise) {
-                cheongunSheetLoadPromise = fetch(CHEONGUN_SHEET_CSV_URL, { cache: 'no-store' })
+                cheongunSheetLoadPromise = window.fetchTeacherSheetCsv('cheongun', CHEONGUN_SHEET_CSV_URL, { cache: 'no-store' })
                     .then(response => {
                         if (!response.ok) throw new Error(`HTTP ${response.status}`);
                         return response.text();
@@ -3674,7 +3695,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             if (mockDataLoadingPromise) return mockDataLoadingPromise;
             mockDataLoadingPromise = (async () => {
             try {
-                const response = await fetch(MOCK_CSV_URL);
+                const response = await window.fetchTeacherSheetCsv("mock", MOCK_CSV_URL);
                 if (!response.ok) throw new Error("네트워크 오류");
                 const text = await response.text();
                 Papa.parse(text, {
@@ -4122,8 +4143,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             try {
                 // 표를 먼저 표시할 수 있도록 핵심 정시 결과와 수능 성적만 우선 가져옵니다.
                 const [jeongsiResponse, suneungResponse] = await Promise.all([
-                    fetch(`${GRAD_JEONGSI_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' }),
-                    fetch(`${GRAD_SUNEUNG_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' })
+                    window.fetchTeacherSheetCsv("gradJeongsi", `${GRAD_JEONGSI_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' }),
+                    window.fetchTeacherSheetCsv("gradSuneung", `${GRAD_SUNEUNG_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' })
                 ]);
                 if (!jeongsiResponse.ok || !suneungResponse.ok) throw new Error('네트워크 오류');
                 const [jeongsiCsv, suneungCsv] = await Promise.all([jeongsiResponse.text(), suneungResponse.text()]);
@@ -4163,7 +4184,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
 
         async function loadGradJeongsiPercentiles() {
             try {
-                const response = await fetch(`${SUSI_RESULT_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' });
+                const response = await window.fetchTeacherSheetCsv("susiResult", `${SUSI_RESULT_CSV_URL}&cacheBust=${Date.now()}`, { cache: 'no-store' });
                 if (!response.ok) throw new Error('네트워크 오류');
                 const percentileCsv = await response.text();
                 const percentileRows = (Papa.parse(percentileCsv, { skipEmptyLines: true }).data || []).slice(1);
@@ -4510,7 +4531,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             document.getElementById('gradLoadingSpinner')?.classList.remove('hidden');
             try {
                 const requestUrl = `${GRAD_CSV_URL}&cacheBust=${Date.now()}`;
-                const response = await fetch(requestUrl, { cache: 'no-store' });
+                const response = await window.fetchTeacherSheetCsv('graduates', requestUrl, { cache: 'no-store' });
                 if (requestSequence !== gradFetchSequence) return;
                 if (!response.ok) throw new Error("네트워크 오류");
                 const text = await response.text();
@@ -5122,7 +5143,7 @@ function applyGradFilter() {
                 ? loadClassSusiEdits().catch(error => { console.error('수시 지원 반별 조회 저장값 불러오기 실패:', error); })
                 : Promise.resolve();
             try {
-                const response = await fetch(SUSI_2026_CSV_URL + '&_refresh=' + Date.now(), { cache: 'no-store' });
+                const response = await window.fetchTeacherSheetCsv('susi2026', SUSI_2026_CSV_URL + '&_refresh=' + Date.now(), { cache: 'no-store' });
                 if (!response.ok) throw new Error("네트워크 오류");
                 const text = await response.text();
                 Papa.parse(text, {
@@ -5513,7 +5534,7 @@ const ivColOrder = [1, 5, 18, 19, 20, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16
             if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-gray-500">면접 자료를 새로 불러오는 중입니다...</td></tr>';
             try {
                 const requestUrl = `${INTERVIEW_2026_CSV_URL}&cacheBust=${Date.now()}`;
-                const response = await fetch(requestUrl, { cache: 'no-store' });
+                const response = await window.fetchTeacherSheetCsv('interview2026', requestUrl, { cache: 'no-store' });
                 if (requestSequence !== interviewFetchSequence) return;
                 if (!response.ok) throw new Error('네트워크 응답 오류');
                 const text = await response.text();
@@ -5897,7 +5918,7 @@ async function fetchSusiResultData() {
     if(spinner) spinner.classList.remove('hidden');
     
     try {
-        const response = await fetch(SUSI_RESULT_CSV_URL);
+        const response = await window.fetchTeacherSheetCsv('susiResult', SUSI_RESULT_CSV_URL);
         if (!response.ok) throw new Error("네트워크 오류");
         const text = await response.text();
         
@@ -6678,7 +6699,7 @@ let lookupMockRows = [];
 let lookupMockLoadPromise = null;
 function loadLookupMockRows(){
   if(lookupMockLoadPromise) return lookupMockLoadPromise;
-  lookupMockLoadPromise=fetch(MOCK_CSV_URL,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('시트 응답 오류');return r.text();}).then(csv=>{
+  lookupMockLoadPromise=window.fetchTeacherSheetCsv('mock', MOCK_CSV_URL,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('시트 응답 오류');return r.text();}).then(csv=>{
     const data=Papa.parse(csv,{skipEmptyLines:true}).data; let hi=-1;
     for(let i=0;i<Math.min(8,data.length);i++){const line=(data[i]||[]).map(v=>String(v||'').trim()).join('');if(line.includes('이름')&&line.includes('국어')){hi=i;break;}}
     if(hi<0)throw new Error('헤더 행 없음');
@@ -6771,7 +6792,7 @@ async function ensureLookupClassSusiData(){
   if(Array.isArray(classSusiData) && classSusiData.length) return;
   if(lookupClassSusiLoadPromise) return lookupClassSusiLoadPromise;
   lookupClassSusiLoadPromise=(async()=>{
-    const response=await fetch(SUSI_2026_CSV_URL, {cache:'no-store'});
+    const response=await window.fetchTeacherSheetCsv('susi2026', SUSI_2026_CSV_URL, {cache:'no-store'});
     if(!response.ok)throw new Error('수시 지원 시트 응답 오류');
     const csv=await response.text();
     const parsed=Papa.parse(csv,{skipEmptyLines:true});
