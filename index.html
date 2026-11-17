@@ -5174,6 +5174,11 @@ function applyGradFilter() {
                 const rows = await window.fetch2026SusiRows();
                 if (!Array.isArray(rows) || rows.length <= 1) throw new Error("2026 수시 시트에 조회할 자료가 없습니다.");
                 classSusiData = rows.slice(1);
+                // 졸업생의 비어 있는 학년(B열)은 화면 조회용으로만 3학년 처리합니다.
+                // 원본 시트 데이터와 D열 졸업연도는 변경하지 않습니다.
+                classSusiData.forEach(row => {
+                    if (isAlumniSusiRow(row)) row[1] = '3';
+                });
                 classSusiFailureMatchSet = null;
                 window.classSusiData = classSusiData;
                 if (window.getCurrentUser && window.getCurrentUser()) {
@@ -5188,10 +5193,10 @@ function applyGradFilter() {
             }
         }
 
-        // 졸업생: B열(학년)은 빈칸, C열(반)은 '졸업생 반', D열은 졸업연도입니다.
+        // 졸업생은 B열 학년 값과 관계없이 3학년으로 간주합니다.
+        // C열 '졸업생 반'을 기준으로 식별하며 D열 졸업연도는 변경하지 않습니다.
         function isAlumniSusiRow(row) {
-            return String(row[1] ?? '').trim() === '' &&
-                String(row[2] ?? '').replace(/\s+/g, '') === '졸업생반';
+            return String(row[2] ?? '').replace(/\s+/g, '') === '졸업생반';
         }
 
         function populateClassGradeDropdown() {
@@ -5243,7 +5248,7 @@ function applyGradFilter() {
                 else if (String(row[1] ?? '').trim() === g && row[2]) classes.add(String(row[2]).trim());
             });
             // 졸업생은 숫자 반과 구분하여 드롭다운 맨 아래에 표시합니다.
-            // 2026수시 시트의 반 열에 '졸업생'이 들어온 경우에도 조회할 수 있도록 합니다.
+            // 2026수시 시트 C열의 '졸업생 반'을 '졸업생' 항목으로 조회합니다.
             classes.add('졸업생');
             Array.from(classes)
                 .sort((a, b) => {
