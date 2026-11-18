@@ -2388,7 +2388,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     const selected = csatPrelimSubjectFilter &&
                         csatPrelimSubjectFilter.group === group.label &&
                         csatPrelimSubjectFilter.subject === subject;
-                    badge.className = 'inline-flex items-center rounded-lg border px-2.5 py-1.5 text-xs font-bold shadow-sm cursor-pointer hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 ' +
+                    badge.className = 'inline-flex items-center rounded-lg border px-2.5 py-1.5 text-sm font-bold shadow-sm cursor-pointer hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 ' +
                         group.color + (selected ? ' ring-2 ring-offset-1 ring-slate-600' : '');
                     const isOtherInquiry = group.label === '탐구' && !['물리', '화학', '생명과학', '지구과학'].some(keyword => subject.includes(keyword));
                     badge.style.backgroundColor = isOtherInquiry ? '#FEF3C7' : group.background;
