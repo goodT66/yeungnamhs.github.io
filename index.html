@@ -957,6 +957,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
             <p id="csatPrelimStatus" class="text-gray-600 mb-3" role="status">교사 인증 후 자료를 조회할 수 있습니다.</p>
             <div id="csatPrelimClassSummary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2 mb-4" aria-label="반별 수능 가채점 제출 현황"></div>
             <p class="text-sm text-slate-600 font-medium mb-2" id="csatPrelimSortHelp">↕ 표의 제목을 클릭하면 오름차순·내림차순으로 정렬됩니다. ▲ 오름차순 · ▼ 내림차순 · ↕ 정렬 가능</p>
+            <style>@media (min-width: 768px) { #csatPrelimTable thead th, #csatPrelimTable > tr > th { position: sticky; top: 0; z-index: 10; } }</style>
             <div class="overflow-auto max-h-[75vh]"><table id="csatPrelimTable" class="w-full border-collapse text-[11px]" style="table-layout:fixed; width:100%;"></table></div>
         </section>
         <div id="classView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-green-500">
@@ -2270,6 +2271,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             // 화면에서는 A열 순번을 숨기고, S열 제출일시를 제출 상태 오른쪽에 배치합니다.
             const displayValues = entry => [...entry.values.slice(1, 18), entry.status, entry.values[18] ?? ''];
             const displayHeader = [...header.slice(1, 18), '제출 상태', '제출일시'];
+            displayHeader[4] = '국어';
+            displayHeader[7] = '수학';
             const displayLastIndex = displayHeader.length - 1;
             const clean = value => String(value ?? '').trim();
             const numeric = value => {
@@ -2301,7 +2304,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                         });
                     }
                     cell.className = 'border border-gray-200 px-1 py-2 whitespace-normal break-words leading-tight ' +
-                        (isHeader ? 'font-bold sticky top-0 z-10' : isMissing ? 'bg-amber-50' : '');
+                        (isHeader ? 'font-bold' : isMissing ? 'bg-amber-50' : '');
                     // 긴 과목명과 제출일시도 가로 스크롤 없이 표 너비 안에 표시
                     cell.style.overflowWrap = 'anywhere';
                     if (i === 18) cell.style.fontSize = '10px';
@@ -2309,9 +2312,6 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                         cell.style.backgroundColor = '#1e293b';
                         cell.style.color = '#ffffff';
                         cell.style.borderColor = '#475569';
-                        cell.style.position = 'sticky';
-                        cell.style.top = '0';
-                        cell.style.zIndex = '10';
                     }
                     // 이름(E), 국어 선택(F), 수학 선택(I), 탐구1 선택(N),
                     // 탐구2 선택(P), 국수탐2 원점수 합(R) 데이터만 굵게 표시
