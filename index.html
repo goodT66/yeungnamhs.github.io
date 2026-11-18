@@ -2261,6 +2261,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         
         let csatPrelimTableData = null;
         let csatPrelimSortColumn = 0;
+        let csatPrelimSubjectFilter = null;
         let csatPrelimSortDirection = 1;
         function sortCsatPrelimByColumn(column) {
             if (csatPrelimSortColumn === column) csatPrelimSortDirection *= -1;
@@ -2379,14 +2380,31 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 groupLabel.textContent = group.label;
                 groupRow.appendChild(groupLabel);
                 [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ko')).forEach(([subject, count]) => {
-                    const badge = document.createElement('span');
-                    badge.className = 'inline-flex items-center rounded-lg border px-2.5 py-1.5 text-xs font-bold shadow-sm ' + group.color;
+                    const badge = document.createElement('button');
+                    badge.type = 'button';
+                    const selected = csatPrelimSubjectFilter &&
+                        csatPrelimSubjectFilter.group === group.label &&
+                        csatPrelimSubjectFilter.subject === subject;
+                    badge.className = 'inline-flex items-center rounded-lg border px-2.5 py-1.5 text-xs font-bold shadow-sm cursor-pointer hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 ' +
+                        group.color + (selected ? ' ring-2 ring-offset-1 ring-slate-600' : '');
+                    badge.setAttribute('aria-pressed', String(Boolean(selected)));
+                    badge.title = selected ? '선택과목 필터 해제' : subject + ' 응시 학생만 보기';
                     badge.textContent = subject + ' ' + count + '명';
+                    badge.addEventListener('click', () => {
+                        csatPrelimSubjectFilter = selected ? null : { group: group.label, subject };
+                        renderCsatPrelimTable();
+                    });
                     groupRow.appendChild(badge);
                 });
                 subjectCounts.appendChild(groupRow);
             });
-            const filtered = entries.filter(entry => (!classFilter || numeric(entry.values[2]) === classFilter) && (!submissionFilter || entry.status === submissionFilter));
+            const filtered = entries.filter(entry =>
+                (!classFilter || numeric(entry.values[2]) === classFilter) &&
+                (!submissionFilter || entry.status === submissionFilter) &&
+                (!csatPrelimSubjectFilter || (entry.inRoster && entry.status === '제출' &&
+                    subjectGroups.find(group => group.label === csatPrelimSubjectFilter.group).indices
+                        .some(index => clean(entry.values[index]) === csatPrelimSubjectFilter.subject)))
+            );
             filtered.sort((a, b) => {
                 const x = clean(displayValues(a)[csatPrelimSortColumn]);
                 const y = clean(displayValues(b)[csatPrelimSortColumn]);
