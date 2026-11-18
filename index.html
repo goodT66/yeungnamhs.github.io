@@ -4912,11 +4912,16 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         let gradHeaders = [];
         let currentSortCol = null;
         let gradFetchSequence = 0;
+        let gradDataLoaded = false;
         let isAscending = true;
 
        const gradColOrder = [0, 1, 5, 8, 12, 14, 15, 16, 17, 20, 22, 23, 24, 25, 26, 18];
 
-        async function fetchGradData() {
+        async function fetchGradData(force = false) {
+            if (gradDataLoaded && !force) {
+                if (window.getCurrentUser && window.getCurrentUser()) applyGradFilter();
+                return;
+            }
             const requestSequence = ++gradFetchSequence;
             document.getElementById('gradLoadingSpinner')?.classList.remove('hidden');
             try {
@@ -4926,6 +4931,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                             gradHeaders = (data[0] || []).map(v => String(v || '').trim());
                             rawGradData = data.slice(1);
                             window.rawGradData = rawGradData;
+                            gradDataLoaded = true;
                             renderGradHeaders();
                             populateGradDropdowns();
                             if (window.getCurrentUser && window.getCurrentUser()) {
