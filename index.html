@@ -940,7 +940,18 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
         <section id="csatPrelimView" class="hidden bg-white rounded-2xl shadow-lg p-6 mb-4 border-t-8 border-amber-400">
             <div class="flex justify-between items-center gap-4 mb-4">
                 <h2 class="text-2xl font-bold">수능 가채점 결과</h2>
-                <button type="button" onclick="closeCsatPrelimView()" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg font-bold">닫기</button>
+                <div class="flex flex-wrap items-center justify-end gap-2">
+                    <label for="csatPrelimClassSelect" class="font-semibold text-sm text-gray-700">반 조회</label>
+                    <select id="csatPrelimClassSelect" onchange="renderCsatPrelimTable()" class="border border-gray-300 rounded-lg bg-white px-3 py-2 text-sm font-medium" aria-label="수능 가채점 반 선택">
+                        <option value="">전체 반</option>
+                    </select>
+                    <label for="csatPrelimSortSelect" class="font-semibold text-sm text-gray-700">정렬</label>
+                    <select id="csatPrelimSortSelect" onchange="renderCsatPrelimTable()" class="border border-gray-300 rounded-lg bg-white px-3 py-2 text-sm font-medium" aria-label="수능 가채점 정렬 순서">
+                        <option value="asc">반·번호 오름차순</option>
+                        <option value="desc">반·번호 내림차순</option>
+                    </select>
+                    <button type="button" onclick="closeCsatPrelimView()" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg font-bold">닫기</button>
+                </div>
             </div>
             <p id="csatPrelimStatus" class="text-gray-600 mb-3" role="status">교사 인증 후 자료를 조회할 수 있습니다.</p>
             <div class="overflow-auto max-h-[75vh]"><table id="csatPrelimTable" class="min-w-full border-collapse text-sm"></table></div>
@@ -2241,6 +2252,45 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             if (window.getCurrentUser && window.getCurrentUser()) fetchGradData();
         }
         
+        let csatPrelimTableData = null;
+        function renderCsatPrelimTable() {
+            if (!csatPrelimTableData) return;
+            const { header, entries, roster, maxCols } = csatPrelimTableData;
+            const clean = value => String(value ?? '').trim();
+            const numeric = value => {
+                const v = clean(value).replace(/(?:학년|반|번)$/g, '').trim();
+                return /^\d+$/.test(v) ? String(Number(v)) : '';
+            };
+            const classFilter = document.getElementById('csatPrelimClassSelect').value;
+            const direction = document.getElementById('csatPrelimSortSelect').value === 'desc' ? -1 : 1;
+            const table = document.getElementById('csatPrelimTable');
+            table.replaceChildren();
+            const appendRow = (values, isHeader = false, isMissing = false) => {
+                const tr = document.createElement('tr');
+                for (let i = 0; i <= maxCols; i++) {
+                    const cell = document.createElement(isHeader ? 'th' : 'td');
+                    cell.textContent = clean(values[i]);
+                    cell.className = 'border border-gray-200 px-3 py-2 whitespace-nowrap ' +
+                        (isHeader ? 'bg-slate-800 text-white font-bold sticky top-0 z-10' : isMissing ? 'bg-amber-50' : '');
+                    tr.appendChild(cell);
+                }
+                table.appendChild(tr);
+            };
+            appendRow([...header, '제출 상태'], true);
+            const filtered = entries.filter(entry => !classFilter || numeric(entry.values[2]) === classFilter);
+            filtered.sort((a, b) => direction * (
+                (Number(numeric(a.values[2])) || 0) - (Number(numeric(b.values[2])) || 0) ||
+                (Number(numeric(a.values[3])) || 0) - (Number(numeric(b.values[3])) || 0) ||
+                clean(a.values[4]).localeCompare(clean(b.values[4]), 'ko')
+            ));
+            filtered.forEach(entry => appendRow([...entry.values, entry.status], false, entry.status === '미제출'));
+            const selectedRoster = [...roster.values()].filter(student => !classFilter || student.cls === classFilter);
+            const missingCount = filtered.filter(entry => entry.status === '미제출' && entry.inRoster).length;
+            const label = classFilter ? `3학년 ${classFilter}반` : '3학년 전체';
+            document.getElementById('csatPrelimStatus').textContent =
+                `${label} ${selectedRoster.length}명 · 제출 ${selectedRoster.length - missingCount}명 · 미제출 ${missingCount}명`;
+        }
+        window.renderCsatPrelimTable = renderCsatPrelimTable;
         async function openCsatPrelimView() {
             if (!(window.getCurrentUser && window.getCurrentUser())) {
                 alert('교사 인증 후 이용할 수 있습니다.');
@@ -2250,10 +2300,14 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             document.getElementById('csatPrelimView').classList.remove('hidden');
             const status = document.getElementById('csatPrelimStatus');
             const table = document.getElementById('csatPrelimTable');
+            const classSelect = document.getElementById('csatPrelimClassSelect');
+            const sortSelect = document.getElementById('csatPrelimSortSelect');
+            csatPrelimTableData = null;
             table.replaceChildren();
+            classSelect.value = '';
+            sortSelect.value = 'asc';
             status.textContent = '가채점 결과와 3학년 학생 명단을 대조하는 중입니다...';
             try {
-                // 두 자료 모두 기존 Firebase 교사 인증을 거쳐 비공개로 조회합니다.
                 const [rows, studentRows] = await Promise.all([
                     window.fetchCsatPrelimRows(),
                     window.getStudentInfoRowsFromServer()
@@ -2274,7 +2328,6 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     const no = numeric(row[3]);
                     if (!cls || !no) return;
                     const key = keyFor(cls, no);
-                    // G~Q: 국어/수학/영어/한국사/탐구 원점수. 빈 양식 행은 미제출로 처리합니다.
                     const hasScores = [6, 7, 9, 10, 11, 12, 14, 16].some(i => clean(row[i]) !== '');
                     if (hasScores) submitted.set(key, row);
                 });
@@ -2288,48 +2341,38 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     roster.set(keyFor(cls, no), { cls, no, name });
                 });
                 if (!roster.size) throw new Error('3학년 학생 명단을 확인할 수 없습니다.');
-                const missing = [...roster.entries()]
-                    .filter(([key, student]) => {
-                        const found = submitted.get(key);
-                        return !found || clean(found[4]) !== student.name;
-                    })
-                    .map(([, student]) => student)
-                    .sort((a, b) => Number(a.cls) - Number(b.cls) || Number(a.no) - Number(b.no));
-                const appendRow = (values, isHeader = false, isMissing = false) => {
-                    const tr = document.createElement('tr');
-                    for (let i = 0; i <= maxCols; i++) {
-                        const cell = document.createElement(isHeader ? 'th' : 'td');
-                        cell.textContent = clean(values[i]);
-                        cell.className = 'border border-gray-200 px-3 py-2 whitespace-nowrap ' +
-                            (isHeader ? 'bg-slate-100 font-bold sticky top-0' : isMissing ? 'bg-amber-50' : '');
-                        tr.appendChild(cell);
-                    }
-                    table.appendChild(tr);
-                };
-                appendRow([...header, '제출 상태'], true);
+                const entries = [];
+                const existingKeys = new Set();
                 rows.slice(1).forEach(row => {
                     if (!Array.isArray(row)) return;
                     const key = keyFor(row[2], row[3]);
                     const student = roster.get(key);
                     const isThird = numeric(row[1]) === '3';
-                    const isMissing = isThird && student && (!submitted.has(key) || clean(row[4]) !== student.name);
-                    appendRow([...row, isMissing ? '미제출' : isThird && student ? '제출' : ''], false, Boolean(isMissing));
+                    const isMissing = Boolean(isThird && student && (!submitted.has(key) || clean(row[4]) !== student.name));
+                    if (isThird && student) existingKeys.add(key);
+                    entries.push({ values: row, status: isMissing ? '미제출' : isThird && student ? '제출' : '', inRoster: Boolean(isThird && student) });
                 });
-                missing.filter(student => !rows.slice(1).some(row => Array.isArray(row) && numeric(row[1]) === '3' && keyFor(row[2], row[3]) === keyFor(student.cls, student.no))).forEach(student => {
+                roster.forEach((student, key) => {
+                    if (existingKeys.has(key)) return;
                     const row = Array(maxCols).fill('');
                     row[1] = '3';
                     row[2] = student.cls;
                     row[3] = student.no;
                     row[4] = student.name;
-                    appendRow([...row, '미제출'], false, true);
+                    entries.push({ values: row, status: '미제출', inRoster: true });
                 });
-                status.textContent = `3학년 전체 ${roster.size}명 · 제출 ${roster.size - missing.length}명 · 미제출 ${missing.length}명 (미제출 학생은 표 하단에 표시)`;
+                const classes = [...new Set([...roster.values()].map(student => student.cls))]
+                    .sort((a, b) => Number(a) - Number(b));
+                classSelect.replaceChildren(new Option('전체 반', ''));
+                classes.forEach(cls => classSelect.add(new Option(`${cls}반`, cls)));
+                csatPrelimTableData = { header, entries, roster, maxCols };
+                renderCsatPrelimTable();
             } catch (error) {
                 console.error('수능 가채점 조회 실패:', error);
                 status.textContent = '조회 오류: ' + (error?.message || '가채점 결과 또는 학생 명단을 확인하지 못했습니다.');
             }
         }
-                function closeCsatPrelimView() {
+        function closeCsatPrelimView() {
             document.getElementById('csatPrelimView').classList.add('hidden');
             document.getElementById('mainDashboard').classList.remove('hidden');
         }
