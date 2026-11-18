@@ -2251,28 +2251,85 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const status = document.getElementById('csatPrelimStatus');
             const table = document.getElementById('csatPrelimTable');
             table.replaceChildren();
-            status.textContent = '비공개 시트 자료를 불러오는 중입니다...';
+            status.textContent = '가채점 결과와 3학년 학생 명단을 대조하는 중입니다...';
             try {
-                const rows = await window.fetchCsatPrelimRows();
+                // 두 자료 모두 기존 Firebase 교사 인증을 거쳐 비공개로 조회합니다.
+                const [rows, studentRows] = await Promise.all([
+                    window.fetchCsatPrelimRows(),
+                    window.getStudentInfoRowsFromServer()
+                ]);
                 if (document.getElementById('csatPrelimView').classList.contains('hidden')) return;
-                const maxCols = Math.max(0, ...rows.map(row => Array.isArray(row) ? row.length : 0));
-                rows.forEach((row, rowIndex) => {
+                const clean = value => String(value ?? '').trim();
+                const numeric = value => {
+                    const v = clean(value).replace(/(?:학년|반|번)$/g, '').trim();
+                    return /^\\d+$/.test(v) ? String(Number(v)) : '';
+                };
+                const keyFor = (cls, no) => numeric(cls) + ':' + numeric(no);
+                const header = Array.isArray(rows[0]) ? rows[0] : [];
+                const maxCols = Math.max(18, ...rows.map(row => Array.isArray(row) ? row.length : 0));
+                const submitted = new Map();
+                rows.slice(1).forEach(row => {
+                    if (!Array.isArray(row) || numeric(row[1]) !== '3') return;
+                    const cls = numeric(row[2]);
+                    const no = numeric(row[3]);
+                    if (!cls || !no) return;
+                    const key = keyFor(cls, no);
+                    // G~Q: 국어/수학/영어/한국사/탐구 원점수. 빈 양식 행은 미제출로 처리합니다.
+                    const hasScores = [6, 7, 9, 10, 11, 12, 14, 16].some(i => clean(row[i]) !== '');
+                    if (hasScores) submitted.set(key, row);
+                });
+                const roster = new Map();
+                studentRows.forEach(row => {
+                    if (!Array.isArray(row) || numeric(row[0]) !== '3') return;
+                    const cls = numeric(row[1]);
+                    const no = numeric(row[2]);
+                    const name = clean(row[3]);
+                    if (!cls || !no || !name) return;
+                    roster.set(keyFor(cls, no), { cls, no, name });
+                });
+                if (!roster.size) throw new Error('3학년 학생 명단을 확인할 수 없습니다.');
+                const missing = [...roster.entries()]
+                    .filter(([key, student]) => {
+                        const found = submitted.get(key);
+                        return !found || clean(found[4]) !== student.name;
+                    })
+                    .map(([, student]) => student)
+                    .sort((a, b) => Number(a.cls) - Number(b.cls) || Number(a.no) - Number(b.no));
+                const appendRow = (values, isHeader = false, isMissing = false) => {
                     const tr = document.createElement('tr');
-                    for (let i = 0; i < maxCols; i++) {
-                        const cell = document.createElement(rowIndex === 0 ? 'th' : 'td');
-                        cell.textContent = String((Array.isArray(row) ? row[i] : '') ?? '');
-                        cell.className = 'border border-gray-200 px-3 py-2 whitespace-nowrap ' + (rowIndex === 0 ? 'bg-slate-100 font-bold sticky top-0' : '');
+                    for (let i = 0; i <= maxCols; i++) {
+                        const cell = document.createElement(isHeader ? 'th' : 'td');
+                        cell.textContent = clean(values[i]);
+                        cell.className = 'border border-gray-200 px-3 py-2 whitespace-nowrap ' +
+                            (isHeader ? 'bg-slate-100 font-bold sticky top-0' : isMissing ? 'bg-amber-50' : '');
                         tr.appendChild(cell);
                     }
                     table.appendChild(tr);
+                };
+                appendRow([...header, '제출 상태'], true);
+                rows.slice(1).forEach(row => {
+                    if (!Array.isArray(row)) return;
+                    const key = keyFor(row[2], row[3]);
+                    const student = roster.get(key);
+                    const isThird = numeric(row[1]) === '3';
+                    const isMissing = isThird && student && (!submitted.has(key) || clean(row[4]) !== student.name);
+                    appendRow([...row, isMissing ? '미제출' : isThird && student ? '제출' : ''], false, Boolean(isMissing));
                 });
-                status.textContent = rows.length > 1 ? `총 ${rows.length - 1}행 조회` : '조회할 자료가 없습니다.';
+                missing.forEach(student => {
+                    const row = Array(maxCols).fill('');
+                    row[1] = '3';
+                    row[2] = student.cls;
+                    row[3] = student.no;
+                    row[4] = student.name;
+                    appendRow([...row, '미제출'], false, true);
+                });
+                status.textContent = `3학년 전체 ${roster.size}명 · 제출 ${roster.size - missing.length}명 · 미제출 ${missing.length}명 (미제출 학생은 표 하단에 표시)`;
             } catch (error) {
                 console.error('수능 가채점 조회 실패:', error);
-                status.textContent = '비공개 시트 연결이 아직 준비되지 않았습니다. Firebase getTeacherSheet 함수에 csatPrelim2026 시트 연결 및 접근 권한 설정이 필요합니다.';
+                status.textContent = '가채점 결과 또는 3학년 학생 명단을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
             }
         }
-        function closeCsatPrelimView() {
+                function closeCsatPrelimView() {
             document.getElementById('csatPrelimView').classList.add('hidden');
             document.getElementById('mainDashboard').classList.remove('hidden');
         }
