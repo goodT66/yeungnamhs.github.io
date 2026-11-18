@@ -2363,9 +2363,9 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const subjectCounts = document.getElementById('csatPrelimSubjectCounts');
             subjectCounts.replaceChildren();
             const subjectGroups = [
-                { label: '국어', indices: [5], color: 'bg-blue-100 text-blue-800 border-blue-200' },
-                { label: '수학', indices: [8], color: 'bg-teal-100 text-teal-800 border-teal-200' },
-                { label: '탐구', indices: [13, 15], color: 'bg-violet-100 text-violet-800 border-violet-200' }
+                { label: '국어', indices: [5], color: 'bg-blue-100 text-blue-800 border-blue-200', background: '#DBEAFE', foreground: '#1D4ED8', border: '#93C5FD' },
+                { label: '수학', indices: [8], color: 'bg-teal-100 text-teal-800 border-teal-200', background: '#D1FAE5', foreground: '#047857', border: '#6EE7B7' },
+                { label: '탐구', indices: [13, 15], color: 'bg-violet-100 text-violet-800 border-violet-200', background: '#F3E8FF', foreground: '#7E22CE', border: '#D8B4FE' }
             ];
             const submittedEntries = entries.filter(entry => entry.inRoster && entry.status === '제출' &&
                 (!classFilter || numeric(entry.values[2]) === classFilter));
@@ -2390,6 +2390,9 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                         csatPrelimSubjectFilter.subject === subject;
                     badge.className = 'inline-flex items-center rounded-lg border px-2.5 py-1.5 text-xs font-bold shadow-sm cursor-pointer hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 ' +
                         group.color + (selected ? ' ring-2 ring-offset-1 ring-slate-600' : '');
+                    badge.style.backgroundColor = group.background;
+                    badge.style.color = group.foreground;
+                    badge.style.borderColor = group.border;
                     badge.setAttribute('aria-pressed', String(Boolean(selected)));
                     badge.title = selected ? '선택과목 필터 해제' : subject + ' 응시 학생만 보기';
                     badge.textContent = subject + ' ' + count + '명';
