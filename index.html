@@ -951,6 +951,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                         <option value="제출">제출</option>
                         <option value="미제출">미제출</option>
                     </select>
+                    <div id="csatPrelimSubjectCounts" class="flex flex-wrap items-center gap-1.5" aria-label="과목별 선택 현황"></div>
                 </div>
                 <button type="button" onclick="closeCsatPrelimView()" class="ml-auto bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg font-bold">닫기</button>
             </div>
@@ -2352,6 +2353,34 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 table.appendChild(tr);
             };
             appendRow(displayHeader, true);
+            // 실제 제출한 학생의 과목 선택 인원만 집계합니다. 반 선택은 반영하고 제출 상태 필터와는 독립적으로 표시합니다.
+            const subjectCounts = document.getElementById('csatPrelimSubjectCounts');
+            subjectCounts.replaceChildren();
+            const subjectGroups = [
+                { label: '국어', indices: [5], color: 'bg-blue-100 text-blue-800 border-blue-200' },
+                { label: '수학', indices: [8], color: 'bg-teal-100 text-teal-800 border-teal-200' },
+                { label: '탐구', indices: [13, 15], color: 'bg-violet-100 text-violet-800 border-violet-200' }
+            ];
+            const submittedEntries = entries.filter(entry => entry.inRoster && entry.status === '제출' &&
+                (!classFilter || numeric(entry.values[2]) === classFilter));
+            subjectGroups.forEach(group => {
+                const counts = new Map();
+                submittedEntries.forEach(entry => {
+                    const selected = new Set(group.indices.map(index => clean(entry.values[index])).filter(Boolean));
+                    selected.forEach(subject => counts.set(subject, (counts.get(subject) || 0) + 1));
+                });
+                if (!counts.size) return;
+                const groupLabel = document.createElement('span');
+                groupLabel.className = 'text-xs font-bold text-gray-600 ml-1';
+                groupLabel.textContent = group.label;
+                subjectCounts.appendChild(groupLabel);
+                [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ko')).forEach(([subject, count]) => {
+                    const badge = document.createElement('span');
+                    badge.className = 'inline-flex items-center rounded-lg border px-2.5 py-1.5 text-xs font-bold shadow-sm ' + group.color;
+                    badge.textContent = subject + ' ' + count + '명';
+                    subjectCounts.appendChild(badge);
+                });
+            });
             const filtered = entries.filter(entry => (!classFilter || numeric(entry.values[2]) === classFilter) && (!submissionFilter || entry.status === submissionFilter));
             filtered.sort((a, b) => {
                 const x = clean(displayValues(a)[csatPrelimSortColumn]);
