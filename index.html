@@ -2282,6 +2282,10 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             displayHeader.splice(10, 0, '수학 총점수');
             displayHeader.splice(7, 0, '국어 총점수');
             displayHeader.shift(); // 학년 열은 화면에서만 숨김
+            displayHeader[4] = '공통 점수';
+            displayHeader[5] = '선택과목 점수';
+            displayHeader[8] = '공통 점수';
+            displayHeader[9] = '선택과목 점수';
             const displayLastIndex = displayHeader.length - 1;
             const clean = value => String(value ?? '').trim();
             const numeric = value => {
