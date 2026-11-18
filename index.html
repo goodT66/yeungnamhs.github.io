@@ -954,6 +954,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                 </div>
             </div>
             <p id="csatPrelimStatus" class="text-gray-600 mb-3" role="status">교사 인증 후 자료를 조회할 수 있습니다.</p>
+            <div id="csatPrelimClassSummary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 mb-4" aria-label="반별 수능 가채점 제출 현황"></div>
             <div class="overflow-auto max-h-[75vh]"><table id="csatPrelimTable" class="min-w-full border-collapse text-sm"></table></div>
         </section>
         <div id="classView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-green-500">
@@ -2286,6 +2287,29 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             filtered.forEach(entry => appendRow([...entry.values, entry.status], false, entry.status === '미제출'));
             const selectedRoster = [...roster.values()].filter(student => !classFilter || student.cls === classFilter);
             const missingCount = filtered.filter(entry => entry.status === '미제출' && entry.inRoster).length;
+            const summary = document.getElementById('csatPrelimClassSummary');
+            summary.replaceChildren();
+            const submittedKeys = new Set(entries.filter(entry => entry.inRoster && entry.status === '제출')
+                .map(entry => numeric(entry.values[2]) + ':' + numeric(entry.values[3]) + ':' + clean(entry.values[4])));
+            const classGroups = new Map();
+            roster.forEach(student => {
+                if (classFilter && student.cls !== classFilter) return;
+                if (!classGroups.has(student.cls)) classGroups.set(student.cls, { total: 0, submitted: 0 });
+                const group = classGroups.get(student.cls);
+                group.total++;
+                if (submittedKeys.has(student.cls + ':' + student.no + ':' + student.name)) group.submitted++;
+            });
+            [...classGroups.entries()].sort((a, b) => Number(a[0]) - Number(b[0])).forEach(([cls, group]) => {
+                const item = document.createElement('div');
+                item.className = 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-gray-800';
+                const title = document.createElement('span');
+                title.className = 'font-bold text-slate-800';
+                title.textContent = cls + '반';
+                const detail = document.createElement('span');
+                detail.textContent = ' - ' + group.total + '명 중 ' + group.submitted + '명 제출 (미제출 ' + (group.total - group.submitted) + '명)';
+                item.append(title, detail);
+                summary.appendChild(item);
+            });
             const label = classFilter ? `3학년 ${classFilter}반` : '3학년 전체';
             document.getElementById('csatPrelimStatus').textContent =
                 `${label} ${selectedRoster.length}명 · 제출 ${selectedRoster.length - missingCount}명 · 미제출 ${missingCount}명`;
@@ -2303,6 +2327,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const classSelect = document.getElementById('csatPrelimClassSelect');
             const sortSelect = document.getElementById('csatPrelimSortSelect');
             csatPrelimTableData = null;
+            document.getElementById('csatPrelimClassSummary').replaceChildren();
             table.replaceChildren();
             classSelect.value = '';
             sortSelect.value = 'asc';
