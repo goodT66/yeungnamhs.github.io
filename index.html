@@ -955,7 +955,8 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                 <button type="button" onclick="closeCsatPrelimView()" class="ml-auto bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg font-bold">닫기</button>
             </div>
             <p id="csatPrelimStatus" class="text-gray-600 mb-3" role="status">교사 인증 후 자료를 조회할 수 있습니다.</p>
-            <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-4 mb-4 items-start">
+            <style>@media (min-width: 1024px) { #csatPrelimSummaryLayout { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }</style>
+            <div id="csatPrelimSummaryLayout" class="grid grid-cols-1 gap-4 mb-4 items-start">
                 <div id="csatPrelimClassSummary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 lg:pl-6" aria-label="반별 수능 가채점 제출 현황"></div>
                 <div id="csatPrelimSubjectCounts" class="flex flex-col items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 lg:pl-8" aria-label="과목별 선택 현황"></div>
             </div>
