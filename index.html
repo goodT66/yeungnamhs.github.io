@@ -5522,7 +5522,17 @@ function applyGradFilter() {
         }
         window.saveClassSusiEdits = saveClassSusiEdits;
 
-        async function fetchClassSusiData() {
+        let classSusiFetchPromise = null;
+        function fetchClassSusiData() {
+            if (classSusiFetchPromise) return classSusiFetchPromise;
+            const request = fetchClassSusiDataOnce();
+            classSusiFetchPromise = request;
+            request.finally(() => {
+                if (classSusiFetchPromise === request) classSusiFetchPromise = null;
+            });
+            return request;
+        }
+        async function fetchClassSusiDataOnce() {
             const editsLoad = (window.getCurrentUser && window.getCurrentUser())
                 ? loadClassSusiEdits().catch(error => { console.error('수시 지원 반별 조회 저장값 불러오기 실패:', error); })
                 : Promise.resolve();
