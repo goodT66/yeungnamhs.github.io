@@ -2262,7 +2262,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 const clean = value => String(value ?? '').trim();
                 const numeric = value => {
                     const v = clean(value).replace(/(?:학년|반|번)$/g, '').trim();
-                    return /^\\d+$/.test(v) ? String(Number(v)) : '';
+                    return /^\d+$/.test(v) ? String(Number(v)) : '';
                 };
                 const keyFor = (cls, no) => numeric(cls) + ':' + numeric(no);
                 const header = Array.isArray(rows[0]) ? rows[0] : [];
@@ -2326,7 +2326,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 status.textContent = `3학년 전체 ${roster.size}명 · 제출 ${roster.size - missing.length}명 · 미제출 ${missing.length}명 (미제출 학생은 표 하단에 표시)`;
             } catch (error) {
                 console.error('수능 가채점 조회 실패:', error);
-                status.textContent = '가채점 결과 또는 3학년 학생 명단을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+                status.textContent = '조회 오류: ' + (error?.message || '가채점 결과 또는 학생 명단을 확인하지 못했습니다.');
             }
         }
                 function closeCsatPrelimView() {
