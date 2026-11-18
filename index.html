@@ -2256,7 +2256,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         }
         
         let csatPrelimTableData = null;
-        let csatPrelimSortColumn = 2;
+        let csatPrelimSortColumn = 1;
         let csatPrelimSortDirection = 1;
         function sortCsatPrelimByColumn(column) {
             if (csatPrelimSortColumn === column) csatPrelimSortDirection *= -1;
@@ -2266,7 +2266,11 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         window.sortCsatPrelimByColumn = sortCsatPrelimByColumn;
         function renderCsatPrelimTable() {
             if (!csatPrelimTableData) return;
-            const { header, entries, roster, maxCols } = csatPrelimTableData;
+            const { header, entries, roster } = csatPrelimTableData;
+            // 화면에서는 A열 순번을 숨기고, S열 제출일시를 제출 상태 오른쪽에 배치합니다.
+            const displayValues = entry => [...entry.values.slice(1, 18), entry.status, entry.values[18] ?? ''];
+            const displayHeader = [...header.slice(1, 18), '제출 상태', '제출일시'];
+            const displayLastIndex = displayHeader.length - 1;
             const clean = value => String(value ?? '').trim();
             const numeric = value => {
                 const v = clean(value).replace(/(?:학년|반|번)$/g, '').trim();
@@ -2279,7 +2283,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             table.replaceChildren();
             const appendRow = (values, isHeader = false, isMissing = false) => {
                 const tr = document.createElement('tr');
-                for (let i = 0; i <= maxCols; i++) {
+                for (let i = 0; i <= displayLastIndex; i++) {
                     const cell = document.createElement(isHeader ? 'th' : 'td');
                     cell.textContent = clean(values[i]) + (isHeader ? (csatPrelimSortColumn === i ? (direction === 1 ? ' ▲' : ' ▼') : ' ↕') : '');
                     if (isHeader) {
@@ -2308,10 +2312,10 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     }
                     // 이름(E), 국어 선택(F), 수학 선택(I), 탐구1 선택(N),
                     // 탐구2 선택(P), 국수탐2 원점수 합(R) 데이터만 굵게 표시
-                    if (!isHeader && [4, 5, 8, 13, 15, 17].includes(i)) {
+                    if (!isHeader && [3, 4, 7, 12, 14, 16].includes(i)) {
                         cell.style.fontWeight = '700';
                     }
-                    if (!isHeader && i === maxCols) {
+                    if (!isHeader && i === 17) {
                         cell.style.fontWeight = '700';
                         if (clean(values[i]) === '미제출') cell.style.color = '#dc2626';
                         else if (clean(values[i]) === '제출') cell.style.color = '#2563eb';
@@ -2320,11 +2324,11 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 }
                 table.appendChild(tr);
             };
-            appendRow([...header, '제출 상태'], true);
+            appendRow(displayHeader, true);
             const filtered = entries.filter(entry => (!classFilter || numeric(entry.values[2]) === classFilter) && (!submissionFilter || entry.status === submissionFilter));
             filtered.sort((a, b) => {
-                const x = clean(a.values[csatPrelimSortColumn] ?? (csatPrelimSortColumn === maxCols ? a.status : ''));
-                const y = clean(b.values[csatPrelimSortColumn] ?? (csatPrelimSortColumn === maxCols ? b.status : ''));
+                const x = clean(displayValues(a)[csatPrelimSortColumn]);
+                const y = clean(displayValues(b)[csatPrelimSortColumn]);
                 const xn = Number(x.replace(/,/g, ''));
                 const yn = Number(y.replace(/,/g, ''));
                 const cmp = x !== '' && y !== '' && Number.isFinite(xn) && Number.isFinite(yn)
@@ -2333,7 +2337,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 return direction * (cmp || (Number(numeric(a.values[2])) || 0) - (Number(numeric(b.values[2])) || 0) ||
                     (Number(numeric(a.values[3])) || 0) - (Number(numeric(b.values[3])) || 0));
             });
-            filtered.forEach(entry => appendRow([...entry.values, entry.status], false, entry.status === '미제출'));
+            filtered.forEach(entry => appendRow(displayValues(entry), false, entry.status === '미제출'));
             const selectedRoster = [...roster.values()].filter(student => !classFilter || student.cls === classFilter);
             const missingCount = filtered.filter(entry => entry.status === '미제출' && entry.inRoster).length;
             const summary = document.getElementById('csatPrelimClassSummary');
@@ -2383,7 +2387,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             table.replaceChildren();
             classSelect.value = '';
             document.getElementById('csatPrelimSubmissionSelect').value = '';
-            csatPrelimSortColumn = 2;
+            csatPrelimSortColumn = 1;
             csatPrelimSortDirection = 1;
             status.textContent = '가채점 결과와 3학년 학생 명단을 대조하는 중입니다...';
             try {
