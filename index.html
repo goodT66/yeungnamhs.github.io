@@ -955,9 +955,9 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                 <button type="button" onclick="closeCsatPrelimView()" class="ml-auto bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg font-bold">닫기</button>
             </div>
             <p id="csatPrelimStatus" class="text-gray-600 mb-3" role="status">교사 인증 후 자료를 조회할 수 있습니다.</p>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 items-start">
-                <div id="csatPrelimClassSummary" class="grid grid-cols-1 sm:grid-cols-2 gap-2" aria-label="반별 수능 가채점 제출 현황"></div>
-                <div id="csatPrelimSubjectCounts" class="flex flex-wrap content-start items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 p-3" aria-label="과목별 선택 현황"></div>
+            <div class="grid grid-cols-1 lg:grid-cols-[48%_minmax(0,1fr)] gap-4 mb-4 items-start">
+                <div id="csatPrelimClassSummary" class="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:pl-6" aria-label="반별 수능 가채점 제출 현황"></div>
+                <div id="csatPrelimSubjectCounts" class="flex flex-col items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 lg:pl-8" aria-label="과목별 선택 현황"></div>
             </div>
             <p class="text-sm text-slate-600 font-medium mb-2" id="csatPrelimSortHelp">↕ 표의 제목을 클릭하면 오름차순·내림차순으로 정렬됩니다. ▲ 오름차순 · ▼ 내림차순 · ↕ 정렬 가능</p>
             <style>@media (min-width: 768px) { #csatPrelimTable thead th, #csatPrelimTable > tr > th { position: sticky; top: 0; z-index: 10; } }</style>
@@ -2372,16 +2372,19 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     selected.forEach(subject => counts.set(subject, (counts.get(subject) || 0) + 1));
                 });
                 if (!counts.size) return;
+                const groupRow = document.createElement('div');
+                groupRow.className = 'flex flex-wrap items-center gap-1.5';
                 const groupLabel = document.createElement('span');
-                groupLabel.className = 'text-xs font-bold text-gray-600 ml-1';
+                groupLabel.className = 'text-xs font-bold text-gray-800 w-8 shrink-0';
                 groupLabel.textContent = group.label;
-                subjectCounts.appendChild(groupLabel);
+                groupRow.appendChild(groupLabel);
                 [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ko')).forEach(([subject, count]) => {
                     const badge = document.createElement('span');
                     badge.className = 'inline-flex items-center rounded-lg border px-2.5 py-1.5 text-xs font-bold shadow-sm ' + group.color;
                     badge.textContent = subject + ' ' + count + '명';
-                    subjectCounts.appendChild(badge);
+                    groupRow.appendChild(badge);
                 });
+                subjectCounts.appendChild(groupRow);
             });
             const filtered = entries.filter(entry => (!classFilter || numeric(entry.values[2]) === classFilter) && (!submissionFilter || entry.status === submissionFilter));
             filtered.sort((a, b) => {
