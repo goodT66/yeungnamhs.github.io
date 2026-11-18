@@ -496,6 +496,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                 </div>
             </div>
 
+            <button id="csatPrelimBtn" type="button" onclick="openCsatPrelimView()" class="hidden bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2 rounded-lg shadow transition">수능 가채점 결과</button>
             <div class="bg-white/10 p-3 rounded-xl border border-white/20 backdrop-blur-sm text-right">
                 <button id="loginBtn" onclick="loginWithGoogle()" class="bg-white text-[#094b83] font-bold px-4 py-2 rounded-lg shadow hover:bg-gray-100 transition">
                     🔑 교사 인증 (Google 로그인)
@@ -510,6 +511,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
         <style>
 /* 교사 인증 전 모든 대시보드·조회 화면 비공개 */
 body:not(.teacher-authenticated) .yn-pill-nav,
+body:not(.teacher-authenticated) #csatPrelimView,
 body:not(.teacher-authenticated) #mainDashboard,
 body:not(.teacher-authenticated) #mockView,
 body:not(.teacher-authenticated) #gradView,
@@ -935,6 +937,14 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
         </div>
 
         <!-- [화면 4] 반별 전체 조회 (2026 수시) 화면 -->
+        <section id="csatPrelimView" class="hidden bg-white rounded-2xl shadow-lg p-6 mb-4 border-t-8 border-amber-400">
+            <div class="flex justify-between items-center gap-4 mb-4">
+                <h2 class="text-2xl font-bold">수능 가채점 결과</h2>
+                <button type="button" onclick="closeCsatPrelimView()" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg font-bold">닫기</button>
+            </div>
+            <p id="csatPrelimStatus" class="text-gray-600 mb-3" role="status">교사 인증 후 자료를 조회할 수 있습니다.</p>
+            <div class="overflow-auto max-h-[75vh]"><table id="csatPrelimTable" class="min-w-full border-collapse text-sm"></table></div>
+        </section>
         <div id="classView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-green-500">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
                 <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -1337,6 +1347,16 @@ import {
 
     
 let currentUser = null;
+// 비공개 수능 가채점 시트는 인증된 서버 함수에서만 가져옵니다.
+window.fetchCsatPrelimRows = async () => {
+    const user = currentUser;
+    if (!user || !ALLOWED_EMAILS.includes(user.email)) throw new Error('교사 인증이 필요합니다.');
+    const idToken = await user.getIdToken();
+    const response = await getTeacherSheetCallable({ idToken, sheetKey: 'csatPrelim2026' });
+    if (currentUser?.uid !== user.uid || auth.currentUser?.uid !== user.uid) throw new Error('로그인 상태가 변경되었습니다.');
+    if (response.data?.success !== true || !Array.isArray(response.data.values)) throw new Error('서버에서 수능 가채점 시트 조회가 허용되지 않았습니다.');
+    return response.data.values;
+};
 // 2026 수시 조회만 인증된 Firebase callable을 통해 처리합니다.
 window.fetch2026SusiRows = async () => {
     const user = currentUser;
@@ -1607,6 +1627,7 @@ function startInterviewDateSync() {
 currentUser = user;
 window.dispatchEvent(new Event('teacher-auth-ready'));
 document.body.classList.add('teacher-authenticated');
+document.getElementById('csatPrelimBtn')?.classList.remove('hidden');
 
 // 메뉴 버튼은 항상 표시하고, 실제 기능 진입 시 로그인 여부를 확인합니다.
 
@@ -1657,6 +1678,8 @@ document.getElementById('userEmail').innerText = user.email;
         } else {
             currentUser = null;
             document.body.classList.remove('teacher-authenticated');
+document.getElementById('csatPrelimBtn')?.classList.add('hidden');
+document.getElementById('csatPrelimView')?.classList.add('hidden');
             // 로그아웃 시 보호 화면만 닫습니다. 메뉴 버튼은 계속 표시합니다.
             ['studentLookupView','admissions2028View'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
             document.getElementById('mainDashboard')?.classList.remove('hidden');
@@ -2022,7 +2045,7 @@ function filterAdmissions2028() {
 function resetAdmissionsFilters(){["admFilterUniversity","admFilterUnit","admFilterType","admFilterName","admFilterCsat"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});filterAdmissions2028();}
 function openAdmissions2028(){
   if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) { alert("이 메뉴는 허용된 교사 계정으로 로그인한 뒤 이용할 수 있습니다."); return; }
-  ["mainDashboard","classView","interviewView","mockView","gradView","susiResultView","studentLookupView","admissions2028View","universityAdmissionsInfoView"].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add("hidden");});
+  ["mainDashboard","csatPrelimView","classView","interviewView","mockView","gradView","susiResultView","studentLookupView","admissions2028View","universityAdmissionsInfoView"].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add("hidden");});
   const view=document.getElementById("admissions2028View");if(view)view.classList.remove("hidden");
   loadAdmissions2028();
 }
@@ -2064,7 +2087,7 @@ function setUniversityAdmissionsInitial(initial){
 }
 
 function openUniversityAdmissionsInfo(){
-  ["mainDashboard","classView","interviewView","mockView","gradView","susiResultView","studentLookupView","admissions2028View","universityAdmissionsInfoView"].forEach(id=>{
+  ["mainDashboard","csatPrelimView","classView","interviewView","mockView","gradView","susiResultView","studentLookupView","admissions2028View","universityAdmissionsInfoView"].forEach(id=>{
     const el=document.getElementById(id); if(el)el.classList.add("hidden");
   });
   const view=document.getElementById("universityAdmissionsInfoView");
@@ -2218,6 +2241,43 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             if (window.getCurrentUser && window.getCurrentUser()) fetchGradData();
         }
         
+        async function openCsatPrelimView() {
+            if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) {
+                alert('교사 인증 후 이용할 수 있습니다.');
+                return;
+            }
+            hideAllContentViews();
+            document.getElementById('csatPrelimView').classList.remove('hidden');
+            const status = document.getElementById('csatPrelimStatus');
+            const table = document.getElementById('csatPrelimTable');
+            table.replaceChildren();
+            status.textContent = '비공개 시트 자료를 불러오는 중입니다...';
+            try {
+                const rows = await window.fetchCsatPrelimRows();
+                if (document.getElementById('csatPrelimView').classList.contains('hidden')) return;
+                const maxCols = Math.max(0, ...rows.map(row => Array.isArray(row) ? row.length : 0));
+                rows.forEach((row, rowIndex) => {
+                    const tr = document.createElement('tr');
+                    for (let i = 0; i < maxCols; i++) {
+                        const cell = document.createElement(rowIndex === 0 ? 'th' : 'td');
+                        cell.textContent = String((Array.isArray(row) ? row[i] : '') ?? '');
+                        cell.className = 'border border-gray-200 px-3 py-2 whitespace-nowrap ' + (rowIndex === 0 ? 'bg-slate-100 font-bold sticky top-0' : '');
+                        tr.appendChild(cell);
+                    }
+                    table.appendChild(tr);
+                });
+                status.textContent = rows.length > 1 ? `총 ${rows.length - 1}행 조회` : '조회할 자료가 없습니다.';
+            } catch (error) {
+                console.error('수능 가채점 조회 실패:', error);
+                status.textContent = '비공개 시트 연결이 아직 준비되지 않았습니다. Firebase getTeacherSheet 함수에 csatPrelim2026 시트 연결 및 접근 권한 설정이 필요합니다.';
+            }
+        }
+        function closeCsatPrelimView() {
+            document.getElementById('csatPrelimView').classList.add('hidden');
+            document.getElementById('mainDashboard').classList.remove('hidden');
+        }
+        window.openCsatPrelimView = openCsatPrelimView;
+        window.closeCsatPrelimView = closeCsatPrelimView;
         function openClassView() {
             hideAllContentViews();
             document.getElementById('classView').classList.remove('hidden');
