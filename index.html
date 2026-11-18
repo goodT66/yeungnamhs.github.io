@@ -496,7 +496,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                 </div>
             </div>
 
-            <button id="csatPrelimBtn" type="button" onclick="openCsatPrelimView()" class="hidden font-bold px-5 py-3 rounded-lg shadow-lg transition" style="background-color:#facc15 !important;color:#172554 !important;border:2px solid #ffffff !important;cursor:pointer !important;position:relative;z-index:20;white-space:nowrap;">수능 가채점 결과</button>
+            <button id="csatPrelimBtn" type="button" onclick="openCsatPrelimView()" class="hidden font-bold px-5 py-3 rounded-lg shadow-lg transition sm:mr-auto" style="background-color:#facc15 !important;color:#172554 !important;border:2px solid #ffffff !important;cursor:pointer !important;position:relative;z-index:20;white-space:nowrap;">수능 가채점 결과</button>
             <div class="bg-white/10 p-3 rounded-xl border border-white/20 backdrop-blur-sm text-right">
                 <button id="loginBtn" onclick="loginWithGoogle()" class="bg-white text-[#094b83] font-bold px-4 py-2 rounded-lg shadow hover:bg-gray-100 transition">
                     🔑 교사 인증 (Google 로그인)
@@ -944,11 +944,6 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                     <label for="csatPrelimClassSelect" class="font-semibold text-sm text-gray-700">반 조회</label>
                     <select id="csatPrelimClassSelect" onchange="renderCsatPrelimTable()" class="border border-gray-300 rounded-lg bg-white px-3 py-2 text-sm font-medium" aria-label="수능 가채점 반 선택">
                         <option value="">전체 반</option>
-                    </select>
-                    <label for="csatPrelimSortSelect" class="font-semibold text-sm text-gray-700">정렬</label>
-                    <select id="csatPrelimSortSelect" onchange="renderCsatPrelimTable()" class="border border-gray-300 rounded-lg bg-white px-3 py-2 text-sm font-medium" aria-label="수능 가채점 정렬 순서">
-                        <option value="asc">반·번호 오름차순</option>
-                        <option value="desc">반·번호 내림차순</option>
                     </select>
                     <button type="button" onclick="closeCsatPrelimView()" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg font-bold">닫기</button>
                 </div>
@@ -2254,6 +2249,14 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         }
         
         let csatPrelimTableData = null;
+        let csatPrelimSortColumn = 2;
+        let csatPrelimSortDirection = 1;
+        function sortCsatPrelimByColumn(column) {
+            if (csatPrelimSortColumn === column) csatPrelimSortDirection *= -1;
+            else { csatPrelimSortColumn = column; csatPrelimSortDirection = 1; }
+            renderCsatPrelimTable();
+        }
+        window.sortCsatPrelimByColumn = sortCsatPrelimByColumn;
         function renderCsatPrelimTable() {
             if (!csatPrelimTableData) return;
             const { header, entries, roster, maxCols } = csatPrelimTableData;
@@ -2263,14 +2266,28 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 return /^\d+$/.test(v) ? String(Number(v)) : '';
             };
             const classFilter = document.getElementById('csatPrelimClassSelect').value;
-            const direction = document.getElementById('csatPrelimSortSelect').value === 'desc' ? -1 : 1;
+            const direction = csatPrelimSortDirection;
             const table = document.getElementById('csatPrelimTable');
             table.replaceChildren();
             const appendRow = (values, isHeader = false, isMissing = false) => {
                 const tr = document.createElement('tr');
                 for (let i = 0; i <= maxCols; i++) {
                     const cell = document.createElement(isHeader ? 'th' : 'td');
-                    cell.textContent = clean(values[i]);
+                    cell.textContent = clean(values[i]) + (isHeader && csatPrelimSortColumn === i ? (direction === 1 ? ' ▲' : ' ▼') : '');
+                    if (isHeader) {
+                        cell.setAttribute('role', 'button');
+                        cell.setAttribute('tabindex', '0');
+                        cell.setAttribute('aria-sort', csatPrelimSortColumn === i ? (direction === 1 ? 'ascending' : 'descending') : 'none');
+                        cell.title = '클릭하여 오름차순/내림차순 정렬';
+                        cell.style.cursor = 'pointer';
+                        cell.addEventListener('click', () => sortCsatPrelimByColumn(i));
+                        cell.addEventListener('keydown', event => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                sortCsatPrelimByColumn(i);
+                            }
+                        });
+                    }
                     cell.className = 'border border-gray-200 px-3 py-2 whitespace-nowrap ' +
                         (isHeader ? 'font-bold sticky top-0 z-10' : isMissing ? 'bg-amber-50' : '');
                     if (isHeader) {
@@ -2287,11 +2304,17 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             };
             appendRow([...header, '제출 상태'], true);
             const filtered = entries.filter(entry => !classFilter || numeric(entry.values[2]) === classFilter);
-            filtered.sort((a, b) => direction * (
-                (Number(numeric(a.values[2])) || 0) - (Number(numeric(b.values[2])) || 0) ||
-                (Number(numeric(a.values[3])) || 0) - (Number(numeric(b.values[3])) || 0) ||
-                clean(a.values[4]).localeCompare(clean(b.values[4]), 'ko')
-            ));
+            filtered.sort((a, b) => {
+                const x = clean(a.values[csatPrelimSortColumn] ?? (csatPrelimSortColumn === maxCols ? a.status : ''));
+                const y = clean(b.values[csatPrelimSortColumn] ?? (csatPrelimSortColumn === maxCols ? b.status : ''));
+                const xn = Number(x.replace(/,/g, ''));
+                const yn = Number(y.replace(/,/g, ''));
+                const cmp = x !== '' && y !== '' && Number.isFinite(xn) && Number.isFinite(yn)
+                    ? xn - yn
+                    : x.localeCompare(y, 'ko', { numeric: true });
+                return direction * (cmp || (Number(numeric(a.values[2])) || 0) - (Number(numeric(b.values[2])) || 0) ||
+                    (Number(numeric(a.values[3])) || 0) - (Number(numeric(b.values[3])) || 0));
+            });
             filtered.forEach(entry => appendRow([...entry.values, entry.status], false, entry.status === '미제출'));
             const selectedRoster = [...roster.values()].filter(student => !classFilter || student.cls === classFilter);
             const missingCount = filtered.filter(entry => entry.status === '미제출' && entry.inRoster).length;
@@ -2333,12 +2356,12 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const status = document.getElementById('csatPrelimStatus');
             const table = document.getElementById('csatPrelimTable');
             const classSelect = document.getElementById('csatPrelimClassSelect');
-            const sortSelect = document.getElementById('csatPrelimSortSelect');
             csatPrelimTableData = null;
             document.getElementById('csatPrelimClassSummary').replaceChildren();
             table.replaceChildren();
             classSelect.value = '';
-            sortSelect.value = 'asc';
+            csatPrelimSortColumn = 2;
+            csatPrelimSortDirection = 1;
             status.textContent = '가채점 결과와 3학년 학생 명단을 대조하는 중입니다...';
             try {
                 const [rows, studentRows] = await Promise.all([
