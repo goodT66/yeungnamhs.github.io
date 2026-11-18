@@ -5941,7 +5941,18 @@ function applyGradFilter() {
         let isIvAscending = true;
         // 학번(1), 이름(5), 지도교사(18), 지도1~2회(19~20), 대학명(6) ... 환산등급(16)
 const ivColOrder = [1, 5, 18, 19, 20, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16];
-        async function fetchInterviewData() {
+        let interviewFetchPromise = null;
+        function fetchInterviewData() {
+            if (interviewFetchPromise) return interviewFetchPromise;
+            const request = fetchInterviewDataOnce();
+            interviewFetchPromise = request;
+            request.then(
+                () => { if (interviewFetchPromise === request) interviewFetchPromise = null; },
+                () => { if (interviewFetchPromise === request) interviewFetchPromise = null; }
+            );
+            return request;
+        }
+        async function fetchInterviewDataOnce() {
             const requestSequence = ++interviewFetchSequence;
             const tbody = document.getElementById('interviewTableBody');
             if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-gray-500">면접 자료를 새로 불러오는 중입니다...</td></tr>';
