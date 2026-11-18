@@ -2390,12 +2390,19 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                         csatPrelimSubjectFilter.subject === subject;
                     badge.className = 'inline-flex items-center rounded-lg border px-2.5 py-1.5 text-xs font-bold shadow-sm cursor-pointer hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 ' +
                         group.color + (selected ? ' ring-2 ring-offset-1 ring-slate-600' : '');
-                    badge.style.backgroundColor = group.background;
-                    badge.style.color = group.foreground;
-                    badge.style.borderColor = group.border;
+                    const isOtherInquiry = group.label === '탐구' && !['물리', '화학', '생명과학', '지구과학'].some(keyword => subject.includes(keyword));
+                    badge.style.backgroundColor = isOtherInquiry ? '#FEF3C7' : group.background;
+                    badge.style.color = isOtherInquiry ? '#92400E' : group.foreground;
+                    badge.style.borderColor = isOtherInquiry ? '#FCD34D' : group.border;
                     badge.setAttribute('aria-pressed', String(Boolean(selected)));
                     badge.title = selected ? '선택과목 필터 해제' : subject + ' 응시 학생만 보기';
-                    badge.textContent = subject + ' ' + count + '명';
+                    const subjectText = document.createElement('span');
+                    subjectText.textContent = subject + ' ';
+                    const countText = document.createElement('strong');
+                    countText.textContent = count + '명';
+                    countText.style.color = '#111827';
+                    countText.style.fontWeight = '800';
+                    badge.append(subjectText, countText);
                     badge.addEventListener('click', () => {
                         csatPrelimSubjectFilter = selected ? null : { group: group.label, subject };
                         renderCsatPrelimTable();
