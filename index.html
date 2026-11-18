@@ -2272,7 +2272,15 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     const cell = document.createElement(isHeader ? 'th' : 'td');
                     cell.textContent = clean(values[i]);
                     cell.className = 'border border-gray-200 px-3 py-2 whitespace-nowrap ' +
-                        (isHeader ? 'bg-slate-800 text-white font-bold sticky top-0 z-10' : isMissing ? 'bg-amber-50' : '');
+                        (isHeader ? 'font-bold sticky top-0 z-10' : isMissing ? 'bg-amber-50' : '');
+                    if (isHeader) {
+                        cell.style.backgroundColor = '#1e293b';
+                        cell.style.color = '#ffffff';
+                        cell.style.borderColor = '#475569';
+                        cell.style.position = 'sticky';
+                        cell.style.top = '0';
+                        cell.style.zIndex = '10';
+                    }
                     tr.appendChild(cell);
                 }
                 table.appendChild(tr);
@@ -2344,7 +2352,9 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     return /^\d+$/.test(v) ? String(Number(v)) : '';
                 };
                 const keyFor = (cls, no) => numeric(cls) + ':' + numeric(no);
-                const header = Array.isArray(rows[0]) ? rows[0] : [];
+                const defaultHeaders = ['순번', '학년', '반', '번호', '이름', '국어 선택과목', '국어 점수 1', '국어 점수 2', '수학 선택과목', '수학 점수 1', '수학 점수 2', '영어', '한국사', '탐구1 과목', '탐구1 점수', '탐구2 과목', '탐구2 점수', '합계'];
+                const rawHeader = Array.isArray(rows[0]) ? rows[0] : [];
+                const header = Array.from({ length: Math.max(18, rawHeader.length) }, (_, i) => clean(rawHeader[i]) || defaultHeaders[i] || ('항목 ' + (i + 1)));
                 const maxCols = Math.max(18, ...rows.map(row => Array.isArray(row) ? row.length : 0));
                 const submitted = new Map();
                 rows.slice(1).forEach(row => {
