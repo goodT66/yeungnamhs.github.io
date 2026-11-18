@@ -2329,7 +2329,11 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     cell.style.overflowWrap = 'anywhere';
                     if (i === 19) cell.style.fontSize = '10px';
                     if (isHeader) {
-                        cell.style.backgroundColor = '#1e293b';
+                        // 국어·수학·탐구 영역의 제목 행만 색상으로 구분
+                        cell.style.backgroundColor = i >= 3 && i <= 6 ? '#1d4ed8'
+                            : i >= 7 && i <= 10 ? '#0f766e'
+                            : i >= 13 && i <= 16 ? '#7c3aed'
+                            : '#1e293b';
                         cell.style.color = '#ffffff';
                         cell.style.borderColor = '#475569';
                     }
