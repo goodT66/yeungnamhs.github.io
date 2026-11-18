@@ -2305,6 +2305,11 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                         cell.style.top = '0';
                         cell.style.zIndex = '10';
                     }
+                    // 이름(E), 국어 선택(F), 수학 선택(I), 탐구1 선택(N),
+                    // 탐구2 선택(P), 국수탐2 원점수 합(R) 데이터만 굵게 표시
+                    if (!isHeader && [4, 5, 8, 13, 15, 17].includes(i)) {
+                        cell.style.fontWeight = '700';
+                    }
                     if (!isHeader && i === maxCols) {
                         cell.style.fontWeight = '700';
                         if (clean(values[i]) === '미제출') cell.style.color = '#dc2626';
