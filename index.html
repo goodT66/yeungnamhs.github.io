@@ -2314,7 +2314,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 colgroup.appendChild(col);
             }
             table.appendChild(colgroup);
-            const appendRow = (values, isHeader = false, isMissing = false) => {
+            const appendRow = (values, isHeader = false, isMissing = false, target = table) => {
                 const tr = document.createElement('tr');
                 for (let i = 0; i <= displayLastIndex; i++) {
                     const cell = document.createElement(isHeader ? 'th' : 'td');
@@ -2359,7 +2359,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     }
                     tr.appendChild(cell);
                 }
-                (isHeader ? headerSection : table).appendChild(tr);
+                (isHeader ? headerSection : target).appendChild(tr);
             };
             const headerSection = document.createElement('thead');
             table.appendChild(headerSection);
@@ -2434,7 +2434,12 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 return direction * (cmp || (Number(numeric(a.values[2])) || 0) - (Number(numeric(b.values[2])) || 0) ||
                     (Number(numeric(a.values[3])) || 0) - (Number(numeric(b.values[3])) || 0));
             });
-            filtered.forEach(entry => appendRow(displayValues(entry), false, entry.status === '미제출'));
+            // 데이터 행은 메모리에서 조립한 뒤 한 번에 붙여 화면 갱신 횟수를 줄입니다.
+            const dataRowsFragment = document.createDocumentFragment();
+            filtered.forEach(entry => {
+                appendRow(displayValues(entry), false, entry.status === '미제출', dataRowsFragment);
+            });
+            table.appendChild(dataRowsFragment);
             const selectedRoster = [...roster.values()].filter(student => !classFilter || student.cls === classFilter);
             const missingCount = filtered.filter(entry => entry.status === '미제출' && entry.inRoster).length;
             const summary = document.getElementById('csatPrelimClassSummary');
