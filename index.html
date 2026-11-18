@@ -938,15 +938,21 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
 
         <!-- [화면 4] 반별 전체 조회 (2026 수시) 화면 -->
         <section id="csatPrelimView" class="hidden bg-white rounded-2xl shadow-lg p-6 mb-4 border-t-8 border-amber-400">
-            <div class="flex justify-between items-center gap-4 mb-4">
+            <div class="flex flex-wrap items-center gap-4 mb-4">
                 <h2 class="text-2xl font-bold">수능 가채점 결과</h2>
-                <div class="flex flex-wrap items-center justify-end gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                     <label for="csatPrelimClassSelect" class="font-semibold text-sm text-gray-700">반 조회</label>
                     <select id="csatPrelimClassSelect" onchange="renderCsatPrelimTable()" class="border border-gray-300 rounded-lg bg-white px-3 py-2 text-sm font-medium" aria-label="수능 가채점 반 선택">
                         <option value="">전체 반</option>
                     </select>
-                    <button type="button" onclick="closeCsatPrelimView()" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg font-bold">닫기</button>
+                    <label for="csatPrelimSubmissionSelect" class="font-semibold text-sm text-gray-700">제출 상태</label>
+                    <select id="csatPrelimSubmissionSelect" onchange="renderCsatPrelimTable()" class="border border-gray-300 rounded-lg bg-white px-3 py-2 text-sm font-medium" aria-label="수능 가채점 제출 상태 선택">
+                        <option value="">전체</option>
+                        <option value="제출">제출</option>
+                        <option value="미제출">미제출</option>
+                    </select>
                 </div>
+                <button type="button" onclick="closeCsatPrelimView()" class="ml-auto bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg font-bold">닫기</button>
             </div>
             <p id="csatPrelimStatus" class="text-gray-600 mb-3" role="status">교사 인증 후 자료를 조회할 수 있습니다.</p>
             <div id="csatPrelimClassSummary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2 mb-4" aria-label="반별 수능 가채점 제출 현황"></div>
@@ -2267,6 +2273,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             };
             const classFilter = document.getElementById('csatPrelimClassSelect').value;
             const direction = csatPrelimSortDirection;
+            const submissionFilter = document.getElementById('csatPrelimSubmissionSelect').value;
             const table = document.getElementById('csatPrelimTable');
             table.replaceChildren();
             const appendRow = (values, isHeader = false, isMissing = false) => {
@@ -2298,12 +2305,17 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                         cell.style.top = '0';
                         cell.style.zIndex = '10';
                     }
+                    if (!isHeader && i === maxCols) {
+                        cell.style.fontWeight = '700';
+                        if (clean(values[i]) === '미제출') cell.style.color = '#dc2626';
+                        else if (clean(values[i]) === '제출') cell.style.color = '#2563eb';
+                    }
                     tr.appendChild(cell);
                 }
                 table.appendChild(tr);
             };
             appendRow([...header, '제출 상태'], true);
-            const filtered = entries.filter(entry => !classFilter || numeric(entry.values[2]) === classFilter);
+            const filtered = entries.filter(entry => (!classFilter || numeric(entry.values[2]) === classFilter) && (!submissionFilter || entry.status === submissionFilter));
             filtered.sort((a, b) => {
                 const x = clean(a.values[csatPrelimSortColumn] ?? (csatPrelimSortColumn === maxCols ? a.status : ''));
                 const y = clean(b.values[csatPrelimSortColumn] ?? (csatPrelimSortColumn === maxCols ? b.status : ''));
@@ -2360,6 +2372,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             document.getElementById('csatPrelimClassSummary').replaceChildren();
             table.replaceChildren();
             classSelect.value = '';
+            document.getElementById('csatPrelimSubmissionSelect').value = '';
             csatPrelimSortColumn = 2;
             csatPrelimSortDirection = 1;
             status.textContent = '가채점 결과와 3학년 학생 명단을 대조하는 중입니다...';
