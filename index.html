@@ -496,7 +496,7 @@ tr.susi-near-average > td { background-color: #fff3c4 !important; }
                 </div>
             </div>
 
-            <button id="csatPrelimBtn" type="button" onclick="openCsatPrelimView()" class="hidden bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2 rounded-lg shadow transition">수능 가채점 결과</button>
+            <button id="csatPrelimBtn" type="button" onclick="openCsatPrelimView()" class="hidden font-bold px-5 py-3 rounded-lg shadow-lg transition" style="background-color:#facc15 !important;color:#172554 !important;border:2px solid #ffffff !important;cursor:pointer !important;position:relative;z-index:20;white-space:nowrap;">수능 가채점 결과</button>
             <div class="bg-white/10 p-3 rounded-xl border border-white/20 backdrop-blur-sm text-right">
                 <button id="loginBtn" onclick="loginWithGoogle()" class="bg-white text-[#094b83] font-bold px-4 py-2 rounded-lg shadow hover:bg-gray-100 transition">
                     🔑 교사 인증 (Google 로그인)
@@ -2214,7 +2214,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
 
         // 화면 전환 시 메인 대시보드와 각 조회 화면 중 하나만 표시합니다.
         function hideAllContentViews() {
-            ['mainDashboard', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView', 'adigaSusiView', 'studentLookupView', 'admissions2028View', 'universityAdmissionsInfoView']
+            ['mainDashboard', 'csatPrelimView', 'mockView', 'gradView', 'classView', 'interviewView', 'susiResultView', 'adigaSusiView', 'studentLookupView', 'admissions2028View', 'universityAdmissionsInfoView']
                 .forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.classList.add('hidden');
@@ -2242,7 +2242,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         }
         
         async function openCsatPrelimView() {
-            if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) {
+            if (!(window.getCurrentUser && window.getCurrentUser())) {
                 alert('교사 인증 후 이용할 수 있습니다.');
                 return;
             }
