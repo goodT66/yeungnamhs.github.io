@@ -2346,15 +2346,23 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 .map(entry => numeric(entry.values[2]) + ':' + numeric(entry.values[3]) + ':' + clean(entry.values[4])));
             const classGroups = new Map();
             roster.forEach(student => {
-                if (classFilter && student.cls !== classFilter) return;
                 if (!classGroups.has(student.cls)) classGroups.set(student.cls, { total: 0, submitted: 0 });
                 const group = classGroups.get(student.cls);
                 group.total++;
                 if (submittedKeys.has(student.cls + ':' + student.no + ':' + student.name)) group.submitted++;
             });
             [...classGroups.entries()].sort((a, b) => Number(a[0]) - Number(b[0])).forEach(([cls, group]) => {
-                const item = document.createElement('div');
-                item.className = 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-gray-800';
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.setAttribute('aria-pressed', String(classFilter === cls));
+                item.title = cls + '반 학생만 조회 (다시 누르면 전체 반)';
+                item.addEventListener('click', () => {
+                    const select = document.getElementById('csatPrelimClassSelect');
+                    select.value = select.value === cls ? '' : cls;
+                    renderCsatPrelimTable();
+                });
+                item.className = 'w-full text-left rounded-lg border px-3 py-2 text-sm text-gray-800 cursor-pointer transition hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-500 ' +
+                    (classFilter === cls ? 'border-amber-500 bg-amber-100 ring-2 ring-amber-400' : 'border-amber-200 bg-amber-50');
                 const title = document.createElement('span');
                 title.className = 'font-bold text-slate-800';
                 title.textContent = cls + '반';
