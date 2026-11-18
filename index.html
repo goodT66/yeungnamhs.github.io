@@ -961,7 +961,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                 <div id="csatPrelimSubjectCounts" class="flex flex-col items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 lg:pl-8" aria-label="과목별 선택 현황"></div>
             </div>
             <p class="text-sm text-slate-600 font-medium mb-2" id="csatPrelimSortHelp">↕ 표의 제목을 클릭하면 오름차순·내림차순으로 정렬됩니다. ▲ 오름차순 · ▼ 내림차순 · ↕ 정렬 가능</p>
-            <style>@media (min-width: 768px) { #csatPrelimTable thead th, #csatPrelimTable > tr > th { position: sticky; top: 0; z-index: 10; } }</style>
+            <style>#csatPrelimTable thead th { position: sticky; top: 0; z-index: 10; background-clip: padding-box; }</style>
             <div class="overflow-auto max-h-[75vh]"><table id="csatPrelimTable" class="w-full border-collapse text-[11px]" style="table-layout:fixed; width:100%;"></table></div>
         </section>
         <div id="classView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-green-500">
@@ -2354,8 +2354,10 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     }
                     tr.appendChild(cell);
                 }
-                table.appendChild(tr);
+                (isHeader ? headerSection : table).appendChild(tr);
             };
+            const headerSection = document.createElement('thead');
+            table.appendChild(headerSection);
             appendRow(displayHeader, true);
             // 실제 제출한 학생의 과목 선택 인원만 집계합니다. 반 선택은 반영하고 제출 상태 필터와는 독립적으로 표시합니다.
             const subjectCounts = document.getElementById('csatPrelimSubjectCounts');
