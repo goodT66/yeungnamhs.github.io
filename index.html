@@ -5320,6 +5320,7 @@ function applyGradFilter() {
                 return;
             }
 
+    const gradFragment = document.createDocumentFragment();
     finalData.forEach(row => {
                 const tr = document.createElement('tr');
                 const r = String(row[24] || '').trim();
@@ -5348,8 +5349,9 @@ function applyGradFilter() {
                 });
                 
                 tr.innerHTML = rowHtml;
-                tbody.appendChild(tr);
+                gradFragment.appendChild(tr);
             });
+            tbody.appendChild(gradFragment);
         }
 
         // =====================================================================
