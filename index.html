@@ -1457,16 +1457,30 @@ window.saveClassSusiToSheet = async (items) => {
 };
 
 // 학생 명단은 인증된 Firebase callable 함수를 통해 비공개 시트에서 조회합니다.
-window.getStudentInfoRowsFromServer = async () => {
-    if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) {
-        throw new Error("학생 명단을 조회하려면 허용된 교사 계정으로 로그인해야 합니다.");
+// 같은 교사 계정의 동시 요청만 공유하며, 완료된 결과는 저장하지 않아 다음 조회 시 최신 자료를 가져옵니다.
+let studentInfoInFlight = null;
+window.getStudentInfoRowsFromServer = () => {
+    const user = currentUser;
+    if (!user || !ALLOWED_EMAILS.includes(user.email)) {
+        return Promise.reject(new Error("학생 명단을 조회하려면 허용된 교사 계정으로 로그인해야 합니다."));
     }
-    const idToken = await currentUser.getIdToken();
-    const response = await getStudentInfoCallable({ idToken });
-    if (response.data?.success !== true || !Array.isArray(response.data.values)) {
-        throw new Error("학생정보 서버 응답 형식이 올바르지 않습니다.");
-    }
-    return response.data.values;
+    if (studentInfoInFlight?.uid === user.uid) return studentInfoInFlight.promise;
+    const request = (async () => {
+        const idToken = await user.getIdToken();
+        if (currentUser?.uid !== user.uid || auth.currentUser?.uid !== user.uid) throw new Error("로그인 상태가 변경되었습니다.");
+        const response = await getStudentInfoCallable({ idToken });
+        if (currentUser?.uid !== user.uid || auth.currentUser?.uid !== user.uid) throw new Error("로그인 상태가 변경되었습니다.");
+        if (response.data?.success !== true || !Array.isArray(response.data.values)) {
+            throw new Error("학생정보 서버 응답 형식이 올바르지 않습니다.");
+        }
+        return response.data.values;
+    })();
+    studentInfoInFlight = { uid: user.uid, promise: request };
+    request.then(
+        () => { if (studentInfoInFlight?.promise === request) studentInfoInFlight = null; },
+        () => { if (studentInfoInFlight?.promise === request) studentInfoInFlight = null; }
+    );
+    return request;
 };
 
 window.classSusiEditStore = {
