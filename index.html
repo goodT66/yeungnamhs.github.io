@@ -2515,11 +2515,22 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             csatPrelimSortColumn = 1;
             csatPrelimSortDirection = 1;
             status.textContent = '가채점 결과와 3학년 학생 명단을 대조하는 중입니다...';
+            const comparisonStart = performance.now();
+            const timings = {};
+            const measureRequest = async (label, request) => {
+                const start = performance.now();
+                try {
+                    return await request();
+                } finally {
+                    timings[label] = Math.round(performance.now() - start);
+                }
+            };
             try {
                 const [rows, studentRows] = await Promise.all([
-                    window.fetchCsatPrelimRows(),
-                    window.getStudentInfoRowsFromServer()
+                    measureRequest('가채점 조회', () => window.fetchCsatPrelimRows()),
+                    measureRequest('학생 명단 조회', () => window.getStudentInfoRowsFromServer())
                 ]);
+                const dataReadyAt = performance.now();
                 if (document.getElementById('csatPrelimView').classList.contains('hidden')) return;
                 const clean = value => String(value ?? '').trim();
                 const numeric = value => {
@@ -2577,7 +2588,17 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 classes.forEach(cls => classSelect.add(new Option(`${cls}반`, cls)));
                 csatPrelimTableData = { header, entries, roster, maxCols };
                 renderCsatPrelimTable();
+                console.info('[수능 가채점 성능 측정, ms]', {
+                    ...timings,
+                    '서버 조회 대기': Math.round(dataReadyAt - comparisonStart),
+                    '대조 및 표 렌더링': Math.round(performance.now() - dataReadyAt),
+                    '전체 소요': Math.round(performance.now() - comparisonStart)
+                });
             } catch (error) {
+                console.info('[수능 가채점 성능 측정, ms]', {
+                    ...timings,
+                    '실패까지 소요': Math.round(performance.now() - comparisonStart)
+                });
                 console.error('수능 가채점 조회 실패:', error);
                 status.textContent = '조회 오류: ' + (error?.message || '가채점 결과 또는 학생 명단을 확인하지 못했습니다.');
             }
