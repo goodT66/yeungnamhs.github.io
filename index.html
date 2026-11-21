@@ -6215,6 +6215,9 @@ const displayedDate = pendingInterviewDates.has(cloudKey)
                 } else if (firstStagePassed) {
                     tr.style.backgroundColor = '#dbeafe';
                     Array.from(tr.children).forEach(cell => { cell.style.backgroundColor = '#dbeafe'; });
+                } else {
+                    tr.style.backgroundColor = '#ffffff';
+                    Array.from(tr.children).forEach(cell => { cell.style.backgroundColor = '#ffffff'; });
                 }
                 interviewFragment.appendChild(tr);
             });
