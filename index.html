@@ -5807,13 +5807,15 @@ function applyGradFilter() {
                 return;
             }
             
-            filtered.forEach(row => {
+            filtered.forEach(sourceRow => {
+                // 조회 중 자동 표시값은 원본 및 저장 변경 목록에 반영하지 않습니다.
+                const row = sourceRow.slice();
                 const tr = document.createElement('tr');
                 const firstStageResult = String(row[17] || '').trim();
                 const finalResult = String(row[18] || '').trim();
                 const isAccepted = value => /합격/.test(value) && !/불합격/.test(value);
                 const hasAcceptedResult = isAccepted(firstStageResult) || isAccepted(finalResult);
-                const rowIndex = classSusiData.indexOf(row);
+                const rowIndex = classSusiData.indexOf(sourceRow);
                 
                 if (finalResult.includes('후보')) tr.classList.add('bg-green-100');
                 else if (hasAcceptedResult) tr.classList.add('bg-blue-100');
@@ -5834,9 +5836,9 @@ function applyGradFilter() {
                             }
                             const admissionType = String(row[6] || '').trim();
                             if (admissionType.includes('논술')) {
-                                if (row[17] !== '-') setClassSusiEdit(row, 17, '-');
-                                if (row[18] === '1단계 불합격') setClassSusiEdit(row, 18, '');
-                                if (row[19] === '1단계 불합격') setClassSusiEdit(row, 19, '');
+                                if (row[17] !== '-') row[17] = '-';
+                                if (row[18] === '1단계 불합격') row[18] = '';
+                                if (row[19] === '1단계 불합격') row[19] = '';
                                 html += '<td>-</td>';
                             } else {
                                 const selectedValue = /불합격/.test(safeValue) ? '불합격' : /합격/.test(safeValue) ? '합격' : safeValue;
@@ -5845,7 +5847,7 @@ function applyGradFilter() {
                         } else if (idx === 18) {
                             const firstStage = String(row[17] || '').trim();
                             if (firstStage === '불합격' || /불합격/.test(firstStage)) {
-                                if (row[18] !== '1단계 불합격') setClassSusiEdit(row, 18, '1단계 불합격');
+                                if (row[18] !== '1단계 불합격') row[18] = '1단계 불합격';
                                 html += '<td><span class="font-semibold text-red-700">1단계 불합격</span></td>';
                             } else {
                                 const selectedValue = /불합격/.test(safeValue) ? '불합격' : /충원|추가/.test(safeValue) ? '추가합격' : /합격/.test(safeValue) ? '최초합격' : safeValue;
@@ -5855,10 +5857,10 @@ function applyGradFilter() {
                             const firstStage = String(row[17] || '').trim();
                             const finalStage = String(row[18] || '').trim();
                             if (firstStage === '불합격' || /불합격/.test(firstStage)) {
-                                if (row[19] !== '1단계 불합격') setClassSusiEdit(row, 19, '1단계 불합격');
+                                if (row[19] !== '1단계 불합격') row[19] = '1단계 불합격';
                                 html += '<td><span class="font-semibold text-gray-600">1단계 불합격</span></td>';
                             } else if (finalStage === '최초합격' || finalStage === '추가합격' || (/합격/.test(finalStage) && !/불합격/.test(finalStage))) {
-                                if (row[19] !== '-') setClassSusiEdit(row, 19, '-');
+                                if (row[19] !== '-') row[19] = '-';
                                 html += '<td>-</td>';
                             } else {
                                 const selectedValue = /최저/.test(safeValue) ? '최저 미충족' : /2단계/.test(safeValue) ? '2단계 불합격' : /미응시/.test(safeValue) ? '미응시' : safeValue;
@@ -5870,7 +5872,7 @@ function applyGradFilter() {
                                 return;
                             }
                             if (String(row[18] || '').trim() === '최초합격') {
-                                if (row[20] !== '-') setClassSusiEdit(row, 20, '-');
+                                if (row[20] !== '-') row[20] = '-';
                                 html += '<td><span class="text-lg font-extrabold text-black">-</span></td>';
                                 return;
                             }
@@ -5919,9 +5921,18 @@ function applyGradFilter() {
             return `<select aria-label="${label} 선택" onchange="handleClassSusiSelectChange(${rowIndex}, ${columnIndex}, this.value)" class="w-full min-w-20 rounded border border-gray-300 bg-white px-1 py-1 text-center focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-300 ${acceptedClass} ${finalStageClass}">${optionsHtml}</select>`;
         }
 
+        // 교사가 직접 수정한 논술 지원 행에만 기존 연계 처리 적용
+        function normalizeEditedClassSusiEssayRow(row) {
+            if (!String(row[6] || '').trim().includes('논술') || String(row[18] || '').trim() === '최초합격') return;
+            setClassSusiEdit(row, 17, '-');
+            if (row[18] === '1단계 불합격') setClassSusiEdit(row, 18, '');
+            if (row[19] === '1단계 불합격') setClassSusiEdit(row, 19, '');
+        }
+
         function handleClassSusiSelectChange(rowIndex, columnIndex, value) {
             const row = classSusiData[rowIndex];
             if (!row) return;
+            normalizeEditedClassSusiEssayRow(row);
             setClassSusiEdit(row, columnIndex, value);
             if (columnIndex === 17) {
                 if (value === '불합격') {
@@ -5945,6 +5956,7 @@ function applyGradFilter() {
         function updateClassSusiCell(rowIndex, columnIndex, value) {
             const row = classSusiData[rowIndex];
             if (!row) return;
+            normalizeEditedClassSusiEssayRow(row);
             setClassSusiEdit(row, columnIndex, value);
         }
         window.updateClassSusiCell = updateClassSusiCell;
