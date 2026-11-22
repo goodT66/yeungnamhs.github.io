@@ -2533,74 +2533,56 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             host.classList.toggle('hidden', !entry);
             if (!entry) return;
             const v = entry.values, p = entry.percentile || [];
-            const number = value => {
-                const t = String(value ?? '').trim();
-                return t !== '' && Number.isFinite(Number(t)) && Number(t) >= 0 ? Number(t) : null;
-            };
-            const subjects = [
-                ['국어', v[19], p[8], p[7]],
-                ['수학', v[20], p[13], p[12]],
-                ['영어', v[11], null, null],
-                ['한국사', v[12], null, null],
-                [v[13] || '탐구1', v[14], p[22], p[21]],
-                [v[15] || '탐구2', v[16], p[27], p[26]]
-            ].map(([name,...scores]) => ({name:String(name), scores:scores.map(number)}));
-            const heading = document.createElement('h3');
-            heading.className = 'font-bold text-lg text-slate-800 mb-2';
-            heading.textContent = String(v[4] ?? '') + ' 학생 과목별 성적 비교';
-            host.appendChild(heading);
-            if (!subjects.some(subject => subject.scores.some(n => n !== null))) {
-                const notice = document.createElement('p');
-                notice.textContent = '표시할 성적이 없습니다.';
-                host.appendChild(notice);
-                return;
-            }
-            const ns = 'http://www.w3.org/2000/svg';
-            const svg = document.createElementNS(ns,'svg');
-            svg.setAttribute('viewBox','0 0 900 350');
-            svg.setAttribute('role','img');
-            svg.setAttribute('aria-label','과목별 원점수, 백분위, 표준점수 막대그래프');
-            svg.style.width = '100%';
-            svg.style.minWidth = '640px';
-            svg.style.display = 'block';
-            const add = (tag, attrs, label, parent=svg) => {
-                const el = document.createElementNS(ns,tag);
-                Object.entries(attrs).forEach(([key,value]) => el.setAttribute(key,String(value)));
-                if(label !== undefined) el.textContent = label;
+            const display = value => String(value ?? '').trim() || '—';
+            const make = (parent, cls, value) => {
+                const el = document.createElement('div');
+                el.className = cls;
+                if (value !== undefined) el.textContent = display(value);
                 parent.appendChild(el);
                 return el;
             };
-            const colors = ['#2563eb','#0d9488','#9333ea'];
-            const labels = ['원점수','백분위','표준점수'];
-            const max = Math.max(140, Math.ceil(Math.max(...subjects.flatMap(s=>s.scores.filter(n=>n!==null)))/20)*20);
-            const y = n => 280 - n/max*230;
-            labels.forEach((label,i) => {
-                add('rect',{x:260+i*140,y:12,width:14,height:14,rx:3,fill:colors[i]});
-                add('text',{x:280+i*140,y:24,'font-size':13,fill:'#334155'},label);
+            const gradeClass = g => Number(g) === 1 ? 'bg-pink-200 text-pink-800' : Number(g) >= 6 && Number(g) <= 9 ? 'bg-yellow-200 text-red-600' : 'bg-slate-100 text-slate-800';
+            const grade = g => display(g) === '—' ? '—' : display(g).replace(/등급$/, '') + '등급';
+            make(host, 'font-bold text-lg text-slate-800 mb-3', String(v[4] ?? '') + ' 학생 수능 성적 분석');
+            const summary = make(host, 'grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4');
+            [['국수탐 원점수 합',v[17]],['표준점수 합',p[30]],['평균 백분위',p[32]],['평균 등급',p[31]]].forEach(([label,value]) => {
+                const card = make(summary,'rounded-lg bg-slate-100 p-3 text-center');
+                make(card,'text-xs text-slate-600',label);
+                make(card,'text-2xl font-bold tabular-nums text-slate-900',value);
             });
-            for(let tick=0;tick<=max;tick+=20) {
-                add('line',{x1:50,x2:885,y1:y(tick),y2:y(tick),stroke:'#e2e8f0'});
-                add('text',{x:42,y:y(tick)+4,'text-anchor':'end','font-size':11,fill:'#64748b'},tick);
-            }
-            subjects.forEach((subject,i) => {
-                const center=50+(i+0.5)*835/6;
-                subject.scores.forEach((score,j) => {
-                    if(score===null) return;
-                    const x=center-43+j*29;
-                    const bar=add('rect',{x,y:y(score),width:25,height:Math.max(0,280-y(score)),fill:colors[j],rx:2});
-                    add('title',{},subject.name+' '+labels[j]+': '+score,bar);
-                    add('text',{x:x+12.5,y:y(score)-5,'text-anchor':'middle','font-size':10,fill:'#334155'},String(score));
-                });
-                add('text',{x:center,y:302,'text-anchor':'middle','font-size':12,fill:'#334155'},subject.name);
+            const cards = make(host,'grid grid-cols-2 sm:grid-cols-4 gap-2');
+            [['국어',v[5],v[19],100,p[8],p[7],p[9]],['수학',v[8],v[20],100,p[13],p[12],p[14]],['탐구 1',v[13],v[14],50,p[22],p[21],p[23]],['탐구 2',v[15],v[16],50,p[27],p[26],p[28]]].forEach(([name,subject,raw,max,percentile,std,g]) => {
+                const card = make(cards,'border border-slate-200 rounded-lg overflow-hidden text-center');
+                const head = make(card,'bg-slate-800 text-white p-2');
+                make(head,'font-bold',name);
+                make(head,'text-xs text-slate-200',subject);
+                const rawBlock = make(card,'p-2');
+                make(rawBlock,'text-xs text-slate-500','원점수');
+                make(rawBlock,'text-xl font-bold text-blue-600 tabular-nums',display(raw)==='—'?'—':display(raw)+' / '+max);
+                const n = Number(percentile);
+                const valid = display(percentile)!=='—' && Number.isFinite(n) && n>=0 && n<=100;
+                const tone = !valid?'bg-slate-100 text-slate-600':n>=90?'bg-green-200 text-green-900':n>=80?'bg-green-100 text-green-800':n>=60?'bg-amber-100 text-amber-900':'bg-red-100 text-red-800';
+                const pb = make(card,'p-2 '+tone);
+                make(pb,'text-xs','백분위');
+                make(pb,'text-2xl font-bold tabular-nums',percentile);
+                if(valid) {
+                    const track = make(pb,'h-1.5 rounded-full bg-white mt-1');
+                    const bar = make(track,'h-1.5 rounded-full');
+                    bar.style.width = n+'%';
+                    bar.style.backgroundColor = n>=80?'#16a34a':n>=60?'#d97706':'#dc2626';
+                }
+                const sb = make(card,'p-2');
+                make(sb,'text-xs text-slate-500','표준점수');
+                make(sb,'text-xl font-bold text-purple-700 tabular-nums',std);
+                make(card,'p-2 font-bold '+gradeClass(g),grade(g));
             });
-            const wrap=document.createElement('div');
-            wrap.style.overflowX='auto';
-            wrap.appendChild(svg);
-            host.appendChild(wrap);
-            const note=document.createElement('p');
-            note.className='text-xs text-slate-500';
-            note.textContent='원점수는 국어·수학·영어 100점, 한국사·탐구 50점 만점이며, 백분위와 표준점수는 서로 다른 지표입니다. 미조회 값은 표시하지 않습니다.';
-            host.appendChild(note);
+            const extra = make(host,'grid grid-cols-2 gap-2 mt-3');
+            [['영어',p[16]],['한국사',p[18]]].forEach(([name,g]) => {
+                const card = make(extra,'rounded-lg px-3 py-2 flex items-center justify-between '+gradeClass(g));
+                make(card,'font-semibold',name);
+                make(card,'text-xl font-bold',grade(g));
+            });
+            make(host,'text-xs text-slate-500 mt-2 text-center','백분위 색상 기준: 90 이상 진한 초록 · 80 이상 연한 초록 · 60 이상 노랑 · 60 미만 빨강 · 미조회 회색');
         }
         window.renderCsatPrelimTable = renderCsatPrelimTable;
         async function openCsatPrelimView() {
