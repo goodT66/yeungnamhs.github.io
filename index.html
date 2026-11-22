@@ -1385,6 +1385,7 @@ const teacherSheetPending = new Map();
 let sheetRequestEpoch = 0;
 function resetSheetRequests() {
     window.clearCsatPrelimCache?.();
+    window.clearInterviewViewCache?.();
     sheetRequestEpoch++;
     teacherSheetPending.clear();
     studentInfoInFlight = null;
@@ -2871,8 +2872,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 // 면접표의 1단계 불합격 판정은 2026수시 자료에 의존하므로
                 // 면접 자료와 별개로 반드시 수시 자료를 준비하고 갱신 후 다시 그립니다.
                 if (!classSusiData.length) fetchClassSusiData();
-                if (!interviewData.length) fetchInterviewData();
-                else renderInterviewTable();
+                if (interviewData.length) renderInterviewTable();
+                fetchInterviewData();
             }
         }
 
@@ -6261,6 +6262,20 @@ function applyGradFilter() {
         // 학번(1), 이름(5), 지도교사(18), 지도1~2회(19~20), 대학명(6) ... 환산등급(16)
 const ivColOrder = [1, 5, 18, 19, 20, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16];
         let interviewFetchPromise = null;
+        let interviewRenderKey = null;
+        window.clearInterviewViewCache = () => {
+            interviewFetchSequence++;
+            interviewFetchPromise = null;
+            interviewData = [];
+            window.interviewData = interviewData;
+            pendingInterviewDates.clear();
+            interviewRenderKey = null;
+            document.getElementById("interviewTableBody")?.replaceChildren();
+            const teacher = document.getElementById("ivTeacherSelect");
+            if (teacher) teacher.replaceChildren(new Option("지도교사 전체", ""));
+            const count = document.getElementById("ivCount");
+            if (count) count.textContent = "0";
+        };
         function fetchInterviewData() {
             if (interviewFetchPromise) return interviewFetchPromise;
             const request = fetchInterviewDataOnce();
@@ -6272,17 +6287,23 @@ const ivColOrder = [1, 5, 18, 19, 20, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16
             return request;
         }
         async function fetchInterviewDataOnce() {
+            const requestUser = window.getCurrentUser?.();
+            if (!requestUser) return;
+            const hadCache = interviewData.length > 0;
             const requestSequence = ++interviewFetchSequence;
             const tbody = document.getElementById('interviewTableBody');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-gray-500">면접 자료를 새로 불러오는 중입니다...</td></tr>';
+            if (tbody && !hadCache) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-gray-500">면접 자료를 새로 불러오는 중입니다...</td></tr>';
             try {
                 const data = await window.fetch2026InterviewRows();
-                if (requestSequence !== interviewFetchSequence) return;
+                if (requestSequence !== interviewFetchSequence || window.getCurrentUser?.() !== requestUser) return;
                 if (data.length <= 1) {
-                    if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-red-500">면접 자료가 비어 있습니다. 2026면접 시트를 확인해 주세요.</td></tr>';
+                    if (tbody && !hadCache) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-red-500">면접 자료가 비어 있습니다. 2026면접 시트를 확인해 주세요.</td></tr>';
                     return;
                 }
-                        interviewData = data.slice(1);
+                        const nextRows = data.slice(1);
+                        if (hadCache && JSON.stringify(interviewData) === JSON.stringify(nextRows)) return;
+                        interviewData = nextRows;
+                        interviewRenderKey = null;
                         window.interviewData = interviewData;
                         // 먼저 면접 CSV가 도착한 경우에도 수시 판정 자료를 별도로 확보합니다.
                         if (!classSusiData.length) fetchClassSusiData();
@@ -6303,9 +6324,9 @@ const ivColOrder = [1, 5, 18, 19, 20, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16
                         if (lookupStudent && String(lookupStudent.grade).replace(/\\D/g,'') === '3' && typeof loadLookupSusiPlan === 'function') loadLookupSusiPlan();
 
             } catch (error) {
-                if (requestSequence !== interviewFetchSequence) return;
+                if (requestSequence !== interviewFetchSequence || window.getCurrentUser?.() !== requestUser) return;
                 console.error('2026면접 데이터 로드 실패', error);
-                if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-red-500">면접 자료를 불러오지 못했습니다. 교사 로그인 및 서버 권한을 확인해 주세요.</td></tr>';
+                if (tbody && !hadCache) tbody.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-red-500">면접 자료를 불러오지 못했습니다. 교사 로그인 및 서버 권한을 확인해 주세요.</td></tr>';
             }
         }
 function setIvSort(colIndex) {
@@ -6340,7 +6361,10 @@ function setIvSort(colIndex) {
             const n = nEl.value.trim();
             const u = uEl.value.trim();
             
-            if (interviewData.length === 0) return;
+            if (interviewData.length === 0 || !window.getCurrentUser?.()) return;
+            const renderKey = JSON.stringify([t, n, u, currentIvSortCol, isIvAscending, window.getInterviewDateCache?.() || {}, [...pendingInterviewDates], [...buildClassSusiFailureMatchSet()], [...buildClassSusiFailureMatchSet(true)]]);
+            if (interviewRenderKey === renderKey && tbody.childElementCount) return;
+            interviewRenderKey = renderKey;
 
             let filtered = interviewData.filter(row => {
                 const rowT = String(row[18] || '').trim(); // 지도교사
