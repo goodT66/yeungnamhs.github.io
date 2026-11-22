@@ -773,6 +773,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                     <select id="gradeSelect" onchange="onGradeChange()" class="border border-gray-300 rounded-lg p-2 w-32 bg-white"><option value="">로딩 중...</option></select>
                     <select id="classSelect" onchange="onClassChange()" class="border border-gray-300 rounded-lg p-2 w-32 bg-white"><option value="">반 선택</option></select>
                     <select id="studentSelect" onchange="renderMockData()" class="border border-gray-300 rounded-lg p-2 w-64 bg-white"><option value="">학생 선택</option></select>
+                    <button id="mockPrintButton" type="button" disabled onclick="printMockStudentResults()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">성적 인쇄</button>
                 </div>
                 <div class="flex flex-col lg:flex-row lg:items-center gap-4 mb-4 p-4 rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-sm">
                     <img id="mockSelectedStudentPhoto" src="" alt="학생 사진" class="hidden w-28 h-28 rounded-xl object-cover border-2 border-white shadow-md flex-shrink-0" referrerpolicy="no-referrer">
@@ -4630,6 +4631,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         window.populateGradeDropdown = populateGradeDropdown;
 
         function onGradeChange() {
+            document.getElementById('mockPrintButton').disabled = true;
             const g = document.getElementById('gradeSelect').value;
             const cSel = document.getElementById('classSelect');
             cSel.innerHTML = '<option value="">▼ 반 선택</option>';
@@ -4642,6 +4644,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         window.onGradeChange = onGradeChange;
 
         function onClassChange() {
+            document.getElementById('mockPrintButton').disabled = true;
             const g = document.getElementById('gradeSelect').value, c = document.getElementById('classSelect').value;
             const sSel = document.getElementById('studentSelect');
             sSel.innerHTML = '<option value="">▼ 번호-이름 선택</option>';
@@ -4654,6 +4657,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         window.onClassChange = onClassChange;
         
         function renderMockData() {
+            const printButton = document.getElementById('mockPrintButton');
+            printButton.disabled = true;
             const sid = document.getElementById('studentSelect').value;
             if (!sid || !studentMap.has(sid)) return;
             const info = studentMap.get(sid), recs = info.records;
@@ -4747,8 +4752,71 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             // 과목별 버튼은 HTML의 onclick에서 window.renderSubjectTrend를 직접 호출합니다.
 
             renderMockScoreTable(recs);
+            printButton.disabled = !recs.length;
         }
         window.renderMockData = renderMockData;
+        window.printMockStudentResults = function () {
+            const sid = document.getElementById('studentSelect').value;
+            const btn = document.getElementById('mockPrintButton');
+            if (!window.getCurrentUser?.() || !sid || !studentMap.has(sid) || btn.disabled || currentMockRecords !== studentMap.get(sid).records || !chartInstance) return;
+            const canvas = document.getElementById('scoreChart');
+            const table = document.querySelector('#mockView #tableContainer table');
+            if (!table || !canvas.width || !canvas.height) return;
+            const frame = document.createElement('iframe');
+            frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+            frame.setAttribute('aria-hidden','true');
+            document.body.appendChild(frame);
+            try {
+                const doc = frame.contentDocument;
+                doc.open();
+                doc.write('<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>개별 모의고사 성적 추이</title><style>@page{size:A4 landscape;margin:9mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#111;margin:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}h2{font-size:17pt;margin:0 0 3mm}p{font-size:10pt;margin:2mm 0}img{display:block;width:100%;height:auto;max-height:88mm;object-fit:contain}table{border-collapse:collapse;width:100%;font-size:8pt;table-layout:auto}th,td{border:1px solid #a0a0a0;padding:3px 2px;text-align:center;overflow-wrap:anywhere}thead{display:table-header-group}tr{break-inside:avoid}th{background:#f1f5f9} .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:9pt;margin-bottom:3mm}</style></head><body></body></html>');
+                doc.close();
+                const title = doc.createElement('h2');
+                title.textContent = document.getElementById('mockSelectedStudentTitle').textContent;
+                doc.body.appendChild(title);
+                const grades = doc.createElement('p');
+                grades.textContent = '내신 등급 | 5등급제: '+document.getElementById('mockGrade5Value').textContent+' | 9등급제: '+document.getElementById('mockGrade9Value').textContent;
+                doc.body.appendChild(grades);
+                const image = doc.createElement('img');
+                image.alt = '모의고사 성적 추이 그래프';
+                const legend = doc.createElement('div');
+                legend.className = 'legend';
+                for (const dataset of chartInstance.data.datasets) {
+                    if (dataset.hidden) continue;
+                    const label = doc.createElement('strong');
+                    label.textContent = dataset.label;
+                    label.style.color = typeof dataset.borderColor === 'string' ? dataset.borderColor : '#111';
+                    legend.appendChild(label);
+                }
+                const copy = doc.importNode(table,true);
+                const originals = table.querySelectorAll('th,td');
+                copy.querySelectorAll('th,td').forEach((cell,i)=>{
+                    const style = getComputedStyle(originals[i]);
+                    cell.style.color = style.color;
+                    cell.style.backgroundColor = style.backgroundColor;
+                    cell.style.fontWeight = style.fontWeight;
+                });
+                copy.querySelectorAll('select').forEach((select,i)=>{
+                    const original = table.querySelectorAll('select')[i];
+                    select.replaceWith(doc.createTextNode(original.options[original.selectedIndex]?.text || ''));
+                });
+                copy.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+                doc.body.append(image,legend,copy);
+                const cleanup = ()=>frame.remove();
+                image.onload = ()=>{
+                    if (!window.getCurrentUser?.() || document.getElementById('studentSelect').value !== sid) { cleanup(); return; }
+                    frame.contentWindow.addEventListener('afterprint',cleanup,{once:true});
+                    frame.contentWindow.focus();
+                    frame.contentWindow.print();
+                };
+                image.onerror = cleanup;
+                image.src = canvas.toDataURL('image/png');
+            } catch(error) {
+                frame.remove();
+                console.error('모의고사 성적 인쇄 오류:',error);
+                alert('인쇄 자료를 만들지 못했습니다.');
+            }
+        };
 
         let mockCutoffCount = 2;
         let mockInquiryMode = 'top1';
