@@ -1324,6 +1324,7 @@ import {
     deleteDoc,
     onSnapshot,
     getDocs,
+    getDocsFromServer,
     getDoc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -1478,6 +1479,9 @@ let unsubscribeSupervisorDuties = null;
 let unsubscribeNotices = null;
 let unsubscribeCalendarEvents = null;
 let noticesReady = false;
+let noticeSyncGeneration = 0;
+let noticeRetryTimer = null;
+let noticeLoadError = false;
 let calendarEventsReady = false;
 window.getCurrentUser = () => currentUser;
 window.getInterviewDateCache = () => interviewDateCache;
@@ -1554,6 +1558,7 @@ window.classSusiEditStore = {
 // 전달 사항과 일정도 브라우저 로컬 저장소가 아닌 Firestore에 저장합니다.
 window.cloudDataStore = {
     getNotices: () => noticeCache.map(item => ({ ...item })),
+    noticeStatus: () => noticesReady ? 'ready' : noticeLoadError ? 'error' : 'loading',
     getCalendarEvents: () => calendarEventCache.map(item => ({ ...item })),
     getSupervisorDuties: () => supervisorDutyCache.map(item => ({ ...item })),
     isReady: () => noticesReady && calendarEventsReady,
@@ -1598,6 +1603,10 @@ function notifyCloudDataChanged(area) {
 }
 
 function stopCloudDataSync(notify = true) {
+    noticeSyncGeneration++;
+    clearTimeout(noticeRetryTimer);
+    noticeRetryTimer = null;
+    noticeLoadError = false;
     if (unsubscribeNotices) unsubscribeNotices();
     if (unsubscribeCalendarEvents) unsubscribeCalendarEvents();
     if (unsubscribeSupervisorDuties) unsubscribeSupervisorDuties();
@@ -1632,17 +1641,74 @@ async function migrateLegacyLocalDataIfCloudEmpty(collectionName, snapshot) {
     }
 }
 
+function startNoticeSync() {
+    const generation = ++noticeSyncGeneration;
+    const user = currentUser;
+    const active = () => generation === noticeSyncGeneration && currentUser === user && !!user;
+    const ref = collection(db, "notices");
+    let revision = 0;
+    let attempts = 0;
+    let listenerFailed = false;
+    let migrationStarted = false;
+    const apply = (snapshot) => {
+        if (!active()) return;
+        if (snapshot.metadata.fromCache && !noticesReady) return;
+        if (!snapshot.metadata.fromCache) {
+            noticesReady = true;
+            noticeLoadError = false;
+            if (!listenerFailed) attempts = 0;
+        }
+        revision++;
+        noticeCache = snapshot.docs.filter(d => d.id !== "__legacy_migration_state__").map(d => ({ ...d.data(), id: d.id }));
+        notifyCloudDataChanged("notices");
+        if (!snapshot.metadata.fromCache && !snapshot.metadata.hasPendingWrites && !migrationStarted) {
+            migrationStarted = true;
+            void migrateLegacyLocalDataIfCloudEmpty("notices", snapshot);
+        }
+    };
+    const retry = () => {
+        if (!active() || noticeRetryTimer !== null || attempts >= 2) return;
+        noticeRetryTimer = setTimeout(() => {
+            noticeRetryTimer = null;
+            if (!active()) return;
+            attempts++;
+            if (listenerFailed) subscribe();
+            void fetchServer();
+        }, 1500 * (attempts + 1));
+    };
+    const fetchServer = async () => {
+        const before = revision;
+        try {
+            const snapshot = await getDocsFromServer(ref);
+            if (active() && revision === before) apply(snapshot);
+        } catch (error) {
+            if (!active()) return;
+            console.error("전달 사항 서버 조회 오류:", error);
+            if (!noticesReady) {
+                noticeLoadError = true;
+                notifyCloudDataChanged("notices");
+                retry();
+            }
+        }
+    };
+    const subscribe = () => {
+        listenerFailed = false;
+        unsubscribeNotices = onSnapshot(ref, { includeMetadataChanges: true }, apply, error => {
+            if (!active()) return;
+            listenerFailed = true;
+            noticeLoadError = true;
+            console.error("전달 사항 Firestore 동기화 오류:", error);
+            notifyCloudDataChanged("notices");
+            retry();
+        });
+    };
+    subscribe();
+    void fetchServer();
+}
+
 function startCloudDataSync() {
     stopCloudDataSync(false);
-    unsubscribeNotices = onSnapshot(collection(db, "notices"), async (snapshot) => {
-        noticeCache = snapshot.docs.filter(d => d.id !== "__legacy_migration_state__").map(d => ({ ...d.data(), id: d.id }));
-        noticesReady = true;
-        notifyCloudDataChanged("notices");
-        await migrateLegacyLocalDataIfCloudEmpty("notices", snapshot);
-    }, (error) => {
-        console.error("전달 사항 Firestore 동기화 오류:", error);
-        alert("전달 사항을 Firebase에서 불러오지 못했습니다. Firestore 보안 규칙과 인터넷 연결을 확인해 주세요.");
-    });
+    startNoticeSync();
     unsubscribeCalendarEvents = onSnapshot(collection(db, "calendarEvents"), async (snapshot) => {
         calendarEventCache = snapshot.docs.filter(d => d.id !== "__legacy_migration_state__").map(d => ({ ...d.data(), id: d.id }));
         calendarEventsReady = true;
@@ -3422,6 +3488,12 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const tabsEl = document.getElementById(`notice-${category}-tabs`);
             const listEl = document.getElementById(`notice-${category}`);
             if (!tabsEl || !listEl) return;
+            const noticeStatus = window.getCurrentUser?.() ? window.cloudDataStore?.noticeStatus?.() : 'ready';
+            if (noticeStatus && noticeStatus !== 'ready' && !notices.length) {
+                tabsEl.innerHTML = '<span class="text-sm text-gray-400 py-1">' + (noticeStatus === 'error' ? '전달 사항을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.' : '전달 사항을 불러오는 중입니다.') + '</span>';
+                listEl.innerHTML = '';
+                return;
+            }
             const byDate = new Map();
             for (const notice of notices) {
                 if (!notice.date) continue;
