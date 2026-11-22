@@ -1384,6 +1384,7 @@ let currentUser = null;
 const teacherSheetPending = new Map();
 let sheetRequestEpoch = 0;
 function resetSheetRequests() {
+    window.clearCsatPrelimCache?.();
     sheetRequestEpoch++;
     teacherSheetPending.clear();
     studentInfoInFlight = null;
@@ -2330,6 +2331,14 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         }
         
         let csatPrelimTableData = null;
+        let csatPrelimCacheUser = null;
+        let csatPrelimPending = null;
+        window.clearCsatPrelimCache = () => {
+            csatPrelimTableData = null;
+            csatPrelimCacheUser = null;
+            csatPrelimPending = null;
+            for (const id of ["csatPrelimTable", "csatPrelimClassSummary", "csatPrelimSubjectCounts", "csatPrelimStudentSelect", "csatPrelimClassSelect", "csatPrelimStudentChart", "csatPrelimStatus"]) document.getElementById(id)?.replaceChildren();
+        };
         let csatPrelimSortColumn = 0;
         let csatPrelimSubjectFilter = null;
         let csatPrelimSortDirection = 1;
@@ -2698,6 +2707,10 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const status = document.getElementById('csatPrelimStatus');
             const table = document.getElementById('csatPrelimTable');
             const classSelect = document.getElementById('csatPrelimClassSelect');
+            const requestUser = window.getCurrentUser();
+            const hasCache = csatPrelimCacheUser === requestUser && !!csatPrelimTableData;
+            if (csatPrelimPending?.user === requestUser) return;
+            if (!hasCache) {
             csatPrelimTableData = null;
             renderCsatStudentChart(null);
             document.getElementById('csatPrelimClassSummary').replaceChildren();
@@ -2708,6 +2721,9 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             csatPrelimSortColumn = 1;
             csatPrelimSortDirection = 1;
             status.textContent = '가채점 결과와 3학년 학생 명단을 대조하는 중입니다...';
+            }
+            const pending = { user: requestUser };
+            csatPrelimPending = pending;
             const comparisonStart = performance.now();
             const timings = {};
             const measureRequest = async (label, request) => {
@@ -2725,9 +2741,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     measureRequest('학생 명단 조회', () => window.getStudentInfoRowsFromServer()),
                     measureRequest('백분위 조회', () => window.fetchCsatPercentileRows()).catch(() => null)
                 ]);
-                if (!requestUid || window.getCurrentUser()?.uid !== requestUid) return;
+                if (!requestUid || window.getCurrentUser() !== requestUser || csatPrelimPending !== pending) return;
                 const dataReadyAt = performance.now();
-                if (document.getElementById('csatPrelimView').classList.contains('hidden')) return;
                 const clean = value => String(value ?? '').trim();
                 const numeric = value => {
                     const v = clean(value).replace(/(?:학년|반|번)$/g, '').trim();
@@ -2780,8 +2795,10 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 });
                 const classes = [...new Set([...roster.values()].map(student => student.cls))]
                     .sort((a, b) => Number(a) - Number(b));
+                const previousClass = classSelect.value;
                 classSelect.replaceChildren(new Option('전체 반', ''));
                 classes.forEach(cls => classSelect.add(new Option(`${cls}반`, cls)));
+                if (classes.includes(previousClass)) classSelect.value = previousClass;
                 const identity = (cls, no, name) => {
                     const normalizeIdentity = value => clean(value).normalize('NFKC').replace(/[\p{White_Space}\p{P}\p{Cf}]/gu, '');
                     const parts = [numeric(normalizeIdentity(cls)), numeric(normalizeIdentity(no)), normalizeIdentity(name)];
@@ -2801,8 +2818,13 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     if (!p) return;
                     entry.percentile = p;
                 });
-                csatPrelimTableData = { header, entries, roster, maxCols, percentileUnavailable: percentileRows === null };
-                renderCsatPrelimTable();
+                if (hasCache && percentileRows === null && !csatPrelimTableData.percentileUnavailable) return;
+                const nextData = { header, entries, roster, maxCols, percentileUnavailable: percentileRows === null };
+                const signature = data => JSON.stringify([data.header, data.entries, [...data.roster], data.percentileUnavailable]);
+                const unchanged = hasCache && signature(csatPrelimTableData) === signature(nextData);
+                csatPrelimTableData = nextData;
+                csatPrelimCacheUser = requestUser;
+                if (!unchanged) renderCsatPrelimTable();
                 console.info('[수능 가채점 성능 측정, ms]', {
                     ...timings,
                     '서버 조회 대기': Math.round(dataReadyAt - comparisonStart),
@@ -2815,7 +2837,9 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     '실패까지 소요': Math.round(performance.now() - comparisonStart)
                 });
                 console.error('수능 가채점 조회 실패:', error);
-                status.textContent = '조회 오류: ' + (error?.message || '가채점 결과 또는 학생 명단을 확인하지 못했습니다.');
+                if (csatPrelimPending === pending && window.getCurrentUser() === requestUser && !hasCache) status.textContent = '조회 오류: ' + (error?.message || '가채점 결과 또는 학생 명단을 확인하지 못했습니다.');
+            } finally {
+                if (csatPrelimPending === pending) csatPrelimPending = null;
             }
         }
         function closeCsatPrelimView() {
