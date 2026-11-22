@@ -1644,9 +1644,12 @@ function startNoticeSync() {
     let attempts = 0;
     let listenerFailed = false;
     let migrationStarted = false;
+    let fallbackApplied = false;
+    let fallbackPending = false;
     const apply = (snapshot) => {
         if (!active()) return;
-        if (snapshot.metadata.fromCache && !noticesReady) return;
+        if (snapshot.metadata.fromCache && (!noticesReady || (fallbackApplied && !snapshot.metadata.hasPendingWrites))) return;
+        if (!snapshot.metadata.fromCache) fallbackApplied = false;
         if (!snapshot.metadata.fromCache) {
             noticesReady = true;
             noticeLoadError = false;
@@ -1668,6 +1671,7 @@ function startNoticeSync() {
             attempts++;
             if (listenerFailed) subscribe();
             void fetchServer();
+            void fetchNoticeFallback();
         }, 1500 * (attempts + 1));
     };
     const fetchServer = async () => {
@@ -1685,6 +1689,29 @@ function startNoticeSync() {
             }
         }
     };
+    const fetchNoticeFallback = async () => {
+        if (!active() || fallbackPending || noticesReady) return;
+        fallbackPending = true;
+        const before = revision;
+        try {
+            const idToken = await user.getIdToken();
+            if (!active() || noticesReady) return;
+            const callable = httpsCallable(getFunctions(app, "asia-northeast3"), "getTeacherNotices", { timeout: 35000 });
+            const response = await callable({ idToken });
+            if (!active() || auth.currentUser?.uid !== user.uid || revision !== before || noticesReady) return;
+            if (response.data?.success !== true || !Array.isArray(response.data.notices)) throw new Error("Invalid notice response");
+            fallbackApplied = true;
+            noticeCache = response.data.notices;
+            noticesReady = true;
+            noticeLoadError = false;
+            revision++;
+            notifyCloudDataChanged("notices");
+        } catch (error) {
+            if (active()) console.error("전달 사항 대체 조회 오류:", error);
+        } finally {
+            fallbackPending = false;
+        }
+    };
     const subscribe = () => {
         listenerFailed = false;
         unsubscribeNotices = onSnapshot(ref, { includeMetadataChanges: true }, apply, error => {
@@ -1698,6 +1725,7 @@ function startNoticeSync() {
     };
     subscribe();
     void fetchServer();
+    void fetchNoticeFallback();
 }
 
 function startCloudDataSync() {
