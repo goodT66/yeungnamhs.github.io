@@ -1891,10 +1891,7 @@ interviewDateCache = {};
 
     window.loginWithGoogle = async () => {
         try {
-            const result = await signInWithPopup(auth, provider);
-            if (ALLOWED_EMAILS.includes(result.user.email)) {
-                alert("교사 인증 성공!");
-            }
+            await signInWithPopup(auth, provider);
         } catch (error) {
             if (error.code !== 'auth/popup-closed-by-user') {
                 alert("로그인 실패: " + error.message);
