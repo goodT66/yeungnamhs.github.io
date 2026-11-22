@@ -2607,26 +2607,22 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     .sort((a, b) => Number(a) - Number(b));
                 classSelect.replaceChildren(new Option('전체 반', ''));
                 classes.forEach(cls => classSelect.add(new Option(`${cls}반`, cls)));
-                const identity = (grade, cls, no, name) => {
-                    const parts = [numeric(grade), numeric(cls), numeric(no), clean(name)];
+                const identity = (cls, no, name) => {
+                    const parts = [numeric(cls), numeric(no), clean(name)];
                     return parts.every(Boolean) ? JSON.stringify(parts) : null;
                 };
                 const percentileByStudent = new Map();
                 (percentileRows || []).forEach(row => {
                     if (!Array.isArray(row)) return;
-                    const key = identity(row[0], row[1], row[2], row[4]);
+                    const key = identity(row[1], row[2], row[4]);
                     if (!key) return;
                     percentileByStudent.set(key, percentileByStudent.has(key) ? null : row);
                 });
                 entries.forEach(entry => {
                     if (!entry.inRoster || entry.status !== '제출') return;
                     const row = entry.values;
-                    const p = percentileByStudent.get(identity(row[1], row[2], row[3], row[4]));
+                    const p = percentileByStudent.get(identity(row[2], row[3], row[4]));
                     if (!p) return;
-                    // 잘못된 과목 또는 이전 점수의 성적을 연결하지 않습니다.
-                    const norm = v => clean(v).replace(/\s+/g, '');
-                    if ([[5,5],[8,10],[13,19],[15,24]].some(([a,b]) => norm(row[a]) !== norm(p[b]))) return;
-                    if ([[19,6],[20,11],[11,15],[12,17],[14,20],[16,25]].some(([a,b]) => clean(row[a]) === '' || clean(p[b]) === '' || Number(row[a]) !== Number(p[b]))) return;
                     entry.percentile = p;
                 });
                 csatPrelimTableData = { header, entries, roster, maxCols, percentileUnavailable: percentileRows === null };
