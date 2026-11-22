@@ -1375,12 +1375,34 @@ import {
 
     
 let currentUser = null;
+const teacherSheetPending = new Map();
+let sheetRequestEpoch = 0;
+function resetSheetRequests() {
+    sheetRequestEpoch++;
+    teacherSheetPending.clear();
+    studentInfoInFlight = null;
+}
+async function requestTeacherSheet(user, sheetKey, idToken) {
+    if (currentUser !== user || auth.currentUser?.uid !== user.uid || !ALLOWED_EMAILS.includes(user.email)) throw new Error('로그인 상태가 변경되었습니다.');
+    const epoch = sheetRequestEpoch;
+    const key = user.uid + ':' + sheetKey;
+    let pending = teacherSheetPending.get(key);
+    if (!pending) {
+        pending = getTeacherSheetCallable({idToken, sheetKey});
+        teacherSheetPending.set(key,pending);
+        const clear = () => { if (teacherSheetPending.get(key) === pending) teacherSheetPending.delete(key); };
+        pending.then(clear,clear);
+    }
+    const response = await pending;
+    if (epoch !== sheetRequestEpoch || currentUser !== user || auth.currentUser?.uid !== user.uid) throw new Error('로그인 상태가 변경되었습니다.');
+    return {...response, data: {...response.data, values: Array.isArray(response.data?.values) ? response.data.values.map(row => Array.isArray(row) ? row.slice() : row) : response.data?.values}};
+}
 // 비공개 수능 가채점 시트는 인증된 서버 함수에서만 가져옵니다.
 window.fetchCsatPrelimRows = async () => {
     const user = currentUser;
     if (!user || !ALLOWED_EMAILS.includes(user.email)) throw new Error('교사 인증이 필요합니다.');
     const idToken = await user.getIdToken();
-    const response = await getTeacherSheetCallable({ idToken, sheetKey: 'csatPrelim2026' });
+    const response = await requestTeacherSheet(user, 'csatPrelim2026', idToken);
     if (currentUser?.uid !== user.uid || auth.currentUser?.uid !== user.uid) throw new Error('로그인 상태가 변경되었습니다.');
     if (response.data?.success !== true || !Array.isArray(response.data.values)) throw new Error('서버에서 수능 가채점 시트 조회가 허용되지 않았습니다.');
     return response.data.values;
@@ -1389,7 +1411,7 @@ window.fetchCsatPercentileRows = async () => {
     const user = currentUser;
     if (!user || !ALLOWED_EMAILS.includes(user.email)) throw new Error('교사 인증이 필요합니다.');
     const idToken = await user.getIdToken();
-    const response = await getTeacherSheetCallable({ idToken, sheetKey: 'csatPercentile2026' });
+    const response = await requestTeacherSheet(user, 'csatPercentile2026', idToken);
     if (currentUser?.uid !== user.uid || auth.currentUser?.uid !== user.uid) throw new Error('로그인 상태가 변경되었습니다.');
     if (response.data?.success !== true || !Array.isArray(response.data.values)) throw new Error('서버에서 수능 백분위 시트 조회가 허용되지 않았습니다.');
     return response.data.values;
@@ -1411,7 +1433,7 @@ window.fetchIndividualMockRows = async () => {
     if (!user || !ALLOWED_EMAILS.includes(user.email)) throw new Error("교사 로그인이 필요합니다.");
     const idToken = await user.getIdToken();
     if (currentUser?.uid !== user.uid) throw new Error("로그인 계정이 변경되었습니다.");
-    const response = await getTeacherSheetCallable({ idToken, sheetKey: 'mock' });
+    const response = await requestTeacherSheet(user, 'mock', idToken);
     if (currentUser?.uid !== user.uid || auth.currentUser?.uid !== user.uid) throw new Error("로그인 상태가 변경되었습니다.");
     if (response.data?.success !== true || !Array.isArray(response.data.values)) throw new Error("모의고사 시트 응답 오류");
     return response.data.values;
@@ -1423,7 +1445,7 @@ window.fetchGraduatesSheetRows = async (sheetKey) => {
     if (!user || !ALLOWED_EMAILS.includes(user.email)) throw new Error('교사 로그인이 필요합니다.');
     const idToken = await user.getIdToken();
     if (currentUser?.uid !== user.uid) throw new Error('로그인 계정이 변경되었습니다.');
-    const response = await getTeacherSheetCallable({ idToken, sheetKey });
+    const response = await requestTeacherSheet(user, sheetKey, idToken);
     if (currentUser?.uid !== user.uid || auth.currentUser?.uid !== user.uid) throw new Error('로그인 상태가 변경되었습니다.');
     if (response.data?.success !== true || !Array.isArray(response.data.values)) throw new Error('졸업생 시트 응답 오류');
     return response.data.values;
@@ -1433,7 +1455,7 @@ window.fetch2026InterviewRows = async () => {
     if (!user || !ALLOWED_EMAILS.includes(user.email)) throw new Error("교사 로그인이 필요합니다.");
     const idToken = await user.getIdToken();
     if (currentUser?.uid !== user.uid) throw new Error("로그인 계정이 변경되었습니다.");
-    const response = await getTeacherSheetCallable({ idToken, sheetKey: 'interview2026' });
+    const response = await requestTeacherSheet(user, 'interview2026', idToken);
     if (currentUser?.uid !== user.uid || auth.currentUser?.uid !== user.uid) throw new Error("로그인 상태가 변경되었습니다.");
     if (response.data?.success !== true || !Array.isArray(response.data.values)) throw new Error("2026 면접 시트 응답 오류");
     return response.data.values;
@@ -1451,6 +1473,12 @@ let noticesReady = false;
 let calendarEventsReady = false;
 window.getCurrentUser = () => currentUser;
 window.getInterviewDateCache = () => interviewDateCache;
+document.getElementById('csatPrelimBtn')?.addEventListener('pointerenter', () => {
+    if (!currentUser || !ALLOWED_EMAILS.includes(currentUser.email)) return;
+    window.fetchCsatPrelimRows().catch(() => {});
+    window.fetchCsatPercentileRows().catch(() => {});
+    window.getStudentInfoRowsFromServer().catch(() => {});
+}, {passive:true});
 // 학생별 수시 지원 희망 자료의 Firestore 접근은 Firebase 모듈 범위에서 처리합니다.
 window.studentSusiPlanStore = {
     load: async (studentId) => { const snap = await getDoc(doc(db, "studentSusiPlans", studentId)); return snap.exists() ? snap.data() : null; },
@@ -1476,12 +1504,13 @@ window.getStudentInfoRowsFromServer = () => {
     if (!user || !ALLOWED_EMAILS.includes(user.email)) {
         return Promise.reject(new Error("학생 명단을 조회하려면 허용된 교사 계정으로 로그인해야 합니다."));
     }
-    if (studentInfoInFlight?.uid === user.uid) return studentInfoInFlight.promise;
+    if (studentInfoInFlight?.uid === user.uid) return studentInfoInFlight.promise.then(rows => rows.map(row => Array.isArray(row) ? row.slice() : row));
+    const epoch = sheetRequestEpoch;
     const request = (async () => {
         const idToken = await user.getIdToken();
         if (currentUser?.uid !== user.uid || auth.currentUser?.uid !== user.uid) throw new Error("로그인 상태가 변경되었습니다.");
         const response = await getStudentInfoCallable({ idToken });
-        if (currentUser?.uid !== user.uid || auth.currentUser?.uid !== user.uid) throw new Error("로그인 상태가 변경되었습니다.");
+        if (epoch !== sheetRequestEpoch || currentUser?.uid !== user.uid || auth.currentUser?.uid !== user.uid) throw new Error("로그인 상태가 변경되었습니다.");
         if (response.data?.success !== true || !Array.isArray(response.data.values)) {
             throw new Error("학생정보 서버 응답 형식이 올바르지 않습니다.");
         }
@@ -1492,7 +1521,7 @@ window.getStudentInfoRowsFromServer = () => {
         () => { if (studentInfoInFlight?.promise === request) studentInfoInFlight = null; },
         () => { if (studentInfoInFlight?.promise === request) studentInfoInFlight = null; }
     );
-    return request;
+    return request.then(rows => rows.map(row => Array.isArray(row) ? row.slice() : row));
 };
 
 window.classSusiEditStore = {
@@ -1675,6 +1704,7 @@ function startInterviewDateSync() {
             }
 
             
+if (currentUser !== user) resetSheetRequests();
 currentUser = user;
 window.dispatchEvent(new Event('teacher-auth-ready'));
 document.body.classList.add('teacher-authenticated');
@@ -1727,6 +1757,7 @@ document.getElementById('userEmail').innerText = user.email;
                 window.renderSusiResultTable();
             }
         } else {
+            resetSheetRequests();
             currentUser = null;
             document.body.classList.remove('teacher-authenticated');
 document.getElementById('csatPrelimBtn')?.classList.add('hidden');
