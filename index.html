@@ -2532,6 +2532,12 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             host.replaceChildren();
             host.classList.toggle('hidden', !entry);
             if (!entry) return;
+            host.style.maxWidth = '1100px';
+            host.style.width = '100%';
+            host.style.boxSizing = 'border-box';
+            host.style.marginLeft = 'auto';
+            host.style.marginRight = 'auto';
+            host.style.padding = '20px';
             const v = entry.values, p = entry.percentile || [];
             const display = value => String(value ?? '').trim() || '—';
             const make = (parent, cls, value) => {
@@ -2568,7 +2574,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 make(card,'text-2xl font-bold tabular-nums text-slate-900',value);
             });
             const cards = make(host,'grid grid-cols-2 sm:grid-cols-4 gap-2');
-            cards.style.gap = '16px';
+            cards.style.gap = '20px';
+            cards.style.gridTemplateColumns = 'repeat(auto-fit, minmax(min(100%, 210px), 1fr))';
             [['국어',v[5],v[19],100,p[8],p[7],p[9]],['수학',v[8],v[20],100,p[13],p[12],p[14]],['탐구 1',v[13],v[14],50,p[22],p[21],p[23]],['탐구 2',v[15],v[16],50,p[27],p[26],p[28]]].forEach(([name,subject,raw,max,percentile,std,g]) => {
                 const card = make(cards,'border border-slate-200 rounded-lg overflow-hidden text-center');
                 const subjectColor = {'국어':'#1d4ed8','수학':'#0f766e','탐구 1':'#7c3aed','탐구 2':'#6d28d9'}[name];
@@ -2584,12 +2591,14 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 subjectLabel.style.color = '#ffffff';
                 subjectLabel.style.fontSize = '15px';
                 const rawBlock = make(card,'p-2');
+                rawBlock.style.padding = '12px 8px';
                 make(rawBlock,'text-xs text-slate-500','원점수');
                 make(rawBlock,'text-xl font-bold text-blue-600 tabular-nums',display(raw)==='—'?'—':display(raw)+' / '+max);
                 const n = Number(percentile);
                 const valid = display(percentile)!=='—' && Number.isFinite(n) && n>=0 && n<=100;
                 const tone = !valid?'bg-slate-100 text-slate-600':n>=90?'bg-green-200 text-green-900':n>=80?'bg-green-100 text-green-800':n>=60?'bg-amber-100 text-amber-900':'bg-red-100 text-red-800';
                 const pb = make(card,'p-2 '+tone);
+                pb.style.padding = '12px 14px';
                 make(pb,'text-xs','백분위');
                 make(pb,'text-2xl font-bold tabular-nums',percentile);
                 if(valid) {
@@ -2599,9 +2608,12 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     bar.style.backgroundColor = n>=80?'#16a34a':n>=60?'#d97706':'#dc2626';
                 }
                 const sb = make(card,'p-2');
+                sb.style.padding = '12px 8px';
                 make(sb,'text-xs text-slate-500','표준점수');
                 make(sb,'text-xl font-bold text-purple-700 tabular-nums',std);
-                make(card,'p-2 font-bold '+gradeClass(g),grade(g));
+                const gradeBlock = make(card,'p-2 font-bold '+gradeClass(g),grade(g));
+                gradeBlock.style.fontSize = '20px';
+                gradeBlock.style.padding = '10px';
             });
             const extra = make(host,'grid grid-cols-2 gap-2 mt-3');
             [['영어',p[16]],['한국사',p[18]]].forEach(([name,g]) => {
