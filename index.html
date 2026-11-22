@@ -6,6 +6,10 @@
     <title>영남고등학교 진로진학 상담 시스템</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js" crossorigin>
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js" crossorigin>
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js" crossorigin>
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js" crossorigin>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -3320,16 +3324,15 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             }
         }
 
-        document.addEventListener("DOMContentLoaded", () => {
+        // Firebase 모듈 완료를 기다리지 않고 HTML 파싱 직후 공개 일정을 요청합니다.
+        window.setTimeout(() => {
             // 첫 화면에서는 전달 사항과 달력만 준비하고,
             // 무거운 성적·입결 자료는 해당 메뉴에 처음 진입할 때 불러옵니다.
             // 초기 화면 렌더링은 브라우저가 먼저 화면을 그린 뒤 실행합니다.
             // 대용량 일정·감독표 연산이 로그인 화면 전체를 멈추지 않도록 분리합니다.
             try { renderAllNotices(); } catch (error) { console.error('전달 사항 초기화 실패:', error); }
-            window.setTimeout(() => {
-                try { renderCalendar(); } catch (error) { console.error('달력 초기화 실패:', error); }
-            }, 0);
-        });
+            try { renderCalendar(); } catch (error) { console.error('달력 초기화 실패:', error); }
+        }, 0);
 
         // =====================================================================
         // [메인 화면] 전달 사항 및 일정 달력
@@ -3789,6 +3792,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
 
         function changeCalendarMonth(delta) {
             calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
+            neisScheduleErrors.delete(calendarMonthKey(calendarCursor.getFullYear(), calendarCursor.getMonth()));
             renderCalendar();
         }
         function selectCalendarDate(date) { selectedCalendarDate = date; renderCalendar(); }
@@ -3802,7 +3806,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const monthKey = calendarMonthKey(year, month);
             label.textContent = `${year}년 ${month + 1}월`;
             const events = getCalendarEventsForMonth(year, month);
-            if (!neisScheduleCache.has(monthKey) && !neisScheduleLoading.has(monthKey)) {
+            if (!neisScheduleCache.has(monthKey) && !neisScheduleLoading.has(monthKey) && !neisScheduleErrors.has(monthKey)) {
                 loadNeisCalendarMonth(year, month);
             }
             if (!susiScheduleLoaded && !susiScheduleLoading) loadSusiSchedule();
@@ -3810,11 +3814,17 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const cells = [];
             for (let i=0; i<firstDay; i++) cells.push('<div class="min-h-20 sm:min-h-24"></div>');
+            const eventsByDate = new Map();
+            for (const event of events) {
+                if (!eventsByDate.has(event.date)) eventsByDate.set(event.date, []);
+                eventsByDate.get(event.date).push(event);
+            }
+            const currentDate = todayISO();
             for (let day=1; day<=daysInMonth; day++) {
                 const date = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                const dayEvents = events.filter(e => e.date === date);
+                const dayEvents = eventsByDate.get(date) || [];
                 const isSelected = date === selectedCalendarDate;
-                const isToday = date === todayISO();
+                const isToday = date === currentDate;
                 const eventLabels = dayEvents.slice(0, 3).map(e => {
                     const eventLabel = `${e.time ? e.time + ' ' : ''}${e.title || '일정'}`;
                     const schoolClass = e.source === 'neis'
@@ -3827,7 +3837,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             }
             grid.innerHTML = cells.join('');
             selectedLabel.textContent = `학사 일정 · ${selectedCalendarDate}`;
-            const selectedEvents = events.filter(e => e.date === selectedCalendarDate);
+            const selectedEvents = eventsByDate.get(selectedCalendarDate) || [];
             let statusNote = '';
             if (neisScheduleLoading.has(monthKey)) statusNote = '<li class="text-xs text-gray-400 py-1 text-center">나이스 학사일정을 불러오는 중입니다…</li>';
             else if (neisScheduleErrors.has(monthKey)) statusNote = `<li class="text-xs text-amber-700 py-1 text-center" title="${escapeHTML(neisScheduleErrors.get(monthKey))}">나이스 학사일정을 불러오지 못했습니다. ${escapeHTML(neisScheduleErrors.get(monthKey))}</li>`;
