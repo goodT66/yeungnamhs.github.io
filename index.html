@@ -3753,46 +3753,21 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 ? `${text.slice(0, 4)}-${text.slice(4, 6)}-${text.slice(6, 8)}`
                 : text;
         }
-        function requestNeisScheduleJsonp(monthKey) {
-            return new Promise((resolve, reject) => {
-                const callbackName = `__neisCalendarCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-                const script = document.createElement('script');
-                let finished = false;
-                const cleanup = () => {
-                    if (finished) return;
-                    finished = true;
-                    clearTimeout(timeoutId);
-                    script.onerror = null;
-                    script.remove();
-                    try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
-                };
-                const timeoutId = setTimeout(() => {
-                    cleanup();
-                    reject(new Error('나이스 웹 앱 응답 시간 초과'));
-                }, 30000);
-
-                window[callbackName] = (data) => {
-                    cleanup();
-                    resolve(data);
-                };
-                script.onerror = () => {
-                    cleanup();
-                    reject(new Error('나이스 웹 앱 스크립트를 불러오지 못했습니다. 배포 URL과 접근 권한을 확인해 주세요.'));
-                };
-                // 스크립트는 로드됐지만 JSONP 콜백이 실행되지 않는 경우(오래된 배포본이 JSON만 반환하는 경우 등)를 감지합니다.
-                // 정상 JSONP라면 콜백이 먼저 실행되어 finished가 true가 됩니다.
-                script.onload = () => {
-                    setTimeout(() => {
-                        if (!finished) {
-                            cleanup();
-                            reject(new Error('웹 앱이 JSONP 콜백을 반환하지 않았습니다. Apps Script를 새 버전으로 배포하고 HTML의 배포 URL을 확인해 주세요.'));
-                        }
-                    }, 0);
-                };
-                const requestMonth = `${monthKey.slice(0, 4)}-${monthKey.slice(4, 6)}`;
-                script.src = `${NEIS_SCHEDULE_API_URL}?month=${encodeURIComponent(requestMonth)}&callback=${encodeURIComponent(callbackName)}&t=${Date.now()}`;
-                document.head.appendChild(script);
+        async function requestNeisPublicData(payload) {
+            const response = await fetch('https://asia-northeast3-goodt66-15409.cloudfunctions.net/getNeisPublicData', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: payload }),
+                signal: AbortSignal.timeout(65000)
             });
+            if (!response.ok) throw new Error('나이스 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+            const body = await response.json();
+            if (body.error || !body.result) throw new Error('나이스 서버 응답이 올바르지 않습니다.');
+            return body.result;
+        }
+
+        function requestNeisSchedule(monthKey) {
+            return requestNeisPublicData({ type: 'schedule', month: `${monthKey.slice(0, 4)}-${monthKey.slice(4, 6)}` });
         }
 
         async function loadNeisCalendarMonth(year, monthIndex) {
@@ -3801,8 +3776,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             neisScheduleLoading.add(monthKey);
             neisScheduleErrors.delete(monthKey);
             try {
-                // Apps Script의 브라우저 CORS 제한을 피하기 위해 JSONP 방식으로 조회합니다.
-                const data = await retryNeisRequest(() => requestNeisScheduleJsonp(monthKey));
+                // Firebase 서버를 통해 공개 나이스 자료를 조회합니다.
+                const data = await retryNeisRequest(() => requestNeisSchedule(monthKey));
                 if (!data || (data.ok !== true && data.success !== true) || !Array.isArray(data.events)) {
                     throw new Error(data && (data.error || data.message) ? (data.error || data.message) : '학사일정 응답 형식이 올바르지 않습니다.');
                 }
@@ -7718,31 +7693,20 @@ function loadMealForSelectedDate(force) {
   const serial = ++mealRequestSerial;
   const cached = readNeisPublicCache("meal_" + date);
   if (cached?.ok === true && Array.isArray(cached.meals)) { renderMeal(cached); status.classList.remove("hidden"); status.style.display = ""; status.textContent = "기존 급식 · 최신 정보 확인 중…"; }
-  function request(attempt) {
-  if (serial !== mealRequestSerial) return;
-  const callbackName = `__neisMealCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-  const script = document.createElement('script');
-  let done = false;
-  const cleanup = () => { if (done) return; done = true; clearTimeout(timer); script.remove(); try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; } };
-  const fail = message => {
-    if (done) return;
-    cleanup();
+  async function request(attempt) {
     if (serial !== mealRequestSerial) return;
-    if (attempt < 2) { setTimeout(() => request(attempt + 1), 700 * (attempt + 1)); return; }
-    status.classList.remove('hidden'); status.style.display = '';
-    status.textContent = cached?.ok === true ? '최신 급식 조회 실패 · 기존 자료 표시 중' : message;
-  };
-  const timer = setTimeout(() => fail('급식 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'), 30000);
-  window[callbackName] = data => {
-    if (!data || data.ok !== true || !Array.isArray(data.meals)) { fail((data && (data.error || data.message)) || '급식 응답 형식이 올바르지 않습니다.'); return; }
-    cleanup(); if(serial!==mealRequestSerial) return;
-    writeNeisPublicCache("meal_" + date, data);
-    renderMeal(data);
-  };
-  script.onerror = () => fail('급식 프록시를 불러오지 못했습니다. 웹 앱 배포 URL과 권한을 확인해 주세요.');
-  script.onload = () => { if (!done) fail('급식 응답을 받지 못했습니다.'); };
-  script.src = `${NEIS_MEAL_PROXY_URL}?action=meal&date=${encodeURIComponent(date.replaceAll('-',''))}&callback=${encodeURIComponent(callbackName)}${force?'&refresh=1':''}&t=${Date.now()}`;
-  document.head.appendChild(script);
+    try {
+      const data = await requestNeisPublicData({ type: 'meal', date: date.replaceAll('-', ''), refresh: !!force });
+      if (!data || data.ok !== true || !Array.isArray(data.meals)) throw new Error('급식 응답 형식이 올바르지 않습니다.');
+      if (serial !== mealRequestSerial) return;
+      writeNeisPublicCache("meal_" + date, data);
+      renderMeal(data);
+    } catch (error) {
+      if (serial !== mealRequestSerial) return;
+      if (attempt < 2) { setTimeout(() => request(attempt + 1), 700 * (attempt + 1)); return; }
+      status.classList.remove('hidden'); status.style.display = '';
+      status.textContent = cached?.ok === true ? '최신 급식 조회 실패 · 기존 자료 표시 중' : '급식 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+    }
   }
   function renderMeal(data) {
     const wanted = [{code:'2',name:'점심(중식)'},{code:'3',name:'저녁(석식)'}];
