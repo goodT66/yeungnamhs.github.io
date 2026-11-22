@@ -2853,7 +2853,12 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             document.getElementById('classView').classList.remove('hidden');
             if (window.getCurrentUser && window.getCurrentUser()) {
                 if (classSusiData.length > 0) {
-                    if (document.getElementById('classNumSelect').options.length <= 1) populateClassGradeDropdown();
+                    const classSelect = document.getElementById('classNumSelect');
+                    if (classSelect.options.length <= 1) populateClassGradeDropdown();
+                    else if (Array.from(classSelect.options).some(option => option.value === '1')) {
+                        classSelect.value = '1';
+                        onClassNumChange();
+                    }
                 }
                 fetchClassSusiData();
             }
@@ -5868,7 +5873,7 @@ function applyGradFilter() {
             const select = document.getElementById('classGradeSelect');
             if(!select) return;
             select.value = '3';
-            onClassGradeChange();
+            onClassGradeChange('1');
         }
         window.populateClassGradeDropdown = populateClassGradeDropdown;
 
@@ -5890,7 +5895,7 @@ function applyGradFilter() {
             document.getElementById('classResultSelect').value = '';
         }
 
-        function onClassGradeChange() {
+        function onClassGradeChange(defaultClass = '') {
             resetClassSusiSearch();
             const select = document.getElementById('classNumSelect');
             if(!select) return;
@@ -5922,7 +5927,10 @@ function applyGradFilter() {
                     return Number(a) - Number(b);
                 })
                 .forEach(c => select.appendChild(new Option(c === '졸업생' ? '졸업생' : `${c}반`, c)));
-            renderClassTable();
+            if (defaultClass && classes.has(defaultClass)) {
+                select.value = defaultClass;
+                onClassNumChange();
+            } else renderClassTable();
         }
         window.onClassGradeChange = onClassGradeChange;
 
