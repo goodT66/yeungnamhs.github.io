@@ -2439,7 +2439,10 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             if (!csatPrelimTableData) return;
             const { header, entries, roster, percentileUnavailable } = csatPrelimTableData;
             const extraColumns = {6:[[8,'백분위'],[7,'표준점수'],[9,'등급']],10:[[13,'백분위'],[12,'표준점수'],[14,'등급']],11:[[16,'등급']],12:[[18,'등급']],14:[[22,'백분위'],[21,'표준점수'],[23,'등급']],16:[[27,'백분위'],[26,'표준점수'],[28,'등급']],17:[[30,'표점합'],[31,'등급평균'],[32,'국수탐 평균 백분위']]};
-            const columns = Array.from({length:20}, (_, i) => [{base:i}, ...(extraColumns[i] || []).map(([source,label]) => ({base:i,source,label}))]).flat().filter(c => ![4,5,8,9].includes(c.base));
+            const originalColumns = Array.from({length:20}, (_, i) => [{base:i}, ...(extraColumns[i] || []).map(([source,label]) => ({base:i,source,label}))]).flat().filter(c => ![4,5,8,9].includes(c.base));
+            const isFeaturedScore = c => c.base === 17 && (c.source === undefined || c.source === 32);
+            const columns = originalColumns.filter(c => !isFeaturedScore(c));
+            columns.splice(3, 0, ...originalColumns.filter(isFeaturedScore));
             // 화면에서는 A열 순번을 숨기고, S열 제출일시를 제출 상태 오른쪽에 배치합니다.
             const displayValues = entry => {
                 const values = [...entry.values.slice(1, 18), entry.status, entry.values[18] ?? ''];
@@ -2524,9 +2527,16 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     if (!isHeader && source === undefined && [2, 3, 7, 13, 15, 17].includes(base)) {
                         cell.style.fontWeight = '700';
                     }
-                    if (!isHeader && label === '등급') {
+                    if (!isHeader && isFeaturedScore(columns[i])) {
+                        cell.style.fontWeight = '700';
+                        cell.style.fontSize = '14px';
+                        if (source === 32) cell.style.color = '#b91c1c';
+                    }
+                    if (!isHeader && (label === '등급' || label === '등급평균')) {
+                        cell.style.fontWeight = '700';
+                        cell.style.fontSize = '13px';
                         const grade = clean(values[i]);
-                        if (grade === '1') { cell.style.backgroundColor = '#fbcfe8'; cell.style.fontWeight = '700'; }
+                        if (label === '등급' && grade === '1') { cell.style.backgroundColor = '#fbcfe8'; cell.style.fontWeight = '700'; }
                     }
                     if (!isHeader && base === 18) {
                         cell.style.fontWeight = '700';
