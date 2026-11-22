@@ -2608,7 +2608,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 classSelect.replaceChildren(new Option('전체 반', ''));
                 classes.forEach(cls => classSelect.add(new Option(`${cls}반`, cls)));
                 const identity = (cls, no, name) => {
-                    const parts = [numeric(cls), numeric(no), clean(name)];
+                    const normalizeIdentity = value => clean(value).normalize('NFKC').replace(/[\p{White_Space}\p{P}\p{Cf}]/gu, '');
+                    const parts = [numeric(normalizeIdentity(cls)), numeric(normalizeIdentity(no)), normalizeIdentity(name)];
                     return parts.every(Boolean) ? JSON.stringify(parts) : null;
                 };
                 const percentileByStudent = new Map();
