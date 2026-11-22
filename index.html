@@ -1387,6 +1387,7 @@ let sheetRequestEpoch = 0;
 function resetSheetRequests() {
     window.clearCsatPrelimCache?.();
     window.clearInterviewViewCache?.();
+    window.clearSusiResultPrefetch?.();
     sheetRequestEpoch++;
     teacherSheetPending.clear();
     studentInfoInFlight = null;
@@ -6732,6 +6733,51 @@ window.saveGradInterviewDate = saveGradInterviewDate;
 // =====================================================================
 let susiResultData = [];
 let susiResultFetchStarted = false;
+let susiResultPrefetch = null;
+let susiResultPrefetchTimer = null;
+let susiResultEpoch = 0;
+function prefetchSusiResultRows() {
+    const user = window.getCurrentUser?.();
+    if (!user) return Promise.reject(new Error('교사 로그인이 필요합니다.'));
+    if (susiResultPrefetch?.user === user) return susiResultPrefetch.promise;
+    const entry = { user, promise: null };
+    entry.promise = window.fetchGraduatesSheetRows('susiResult').catch(error => {
+        if (susiResultPrefetch === entry) susiResultPrefetch = null;
+        throw error;
+    });
+    susiResultPrefetch = entry;
+    return entry.promise;
+}
+function scheduleSusiResultPrefetch() {
+    clearTimeout(susiResultPrefetchTimer);
+    susiResultPrefetchTimer = setTimeout(() => {
+        if (window.getCurrentUser?.() && !susiResultData.length) prefetchSusiResultRows().catch(() => {});
+    }, 2500);
+}
+window.addEventListener('teacher-auth-ready', scheduleSusiResultPrefetch);
+window.clearSusiResultPrefetch = () => {
+    clearTimeout(susiResultPrefetchTimer);
+    susiResultEpoch++;
+    susiResultPrefetch = null;
+    susiResultFetchStarted = false;
+    susiResultData = [];
+    window.susiResultData = susiResultData;
+    susiFilteredRows = [];
+    buildSusiResultIndexes([]);
+    const year = document.getElementById('susiYearSelect');
+    if (year) year.replaceChildren(new Option('연도 전체', ''));
+    document.getElementById('susiUnivList')?.replaceChildren();
+    document.getElementById('susiMajorList')?.replaceChildren();
+    const body = document.getElementById('susiResultTableBody');
+    if (body) body.innerHTML = '<tr><td colspan="17" class="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</td></tr>';
+    document.getElementById('susiPagination')?.classList.add('hidden');
+    const count = document.getElementById('susiResultCount');
+    if (count) count.textContent = '0';
+};
+const susiResultMenu = document.querySelector('[onclick="openSusiResultView()"]');
+for (const event of ['pointerenter', 'focus']) susiResultMenu?.addEventListener(event, () => {
+    if (window.getCurrentUser?.() && !susiResultData.length) prefetchSusiResultRows().catch(() => {});
+});
 let selectedSusiMockAverage = null;
 let susiRowsByUniversity = new Map();
 let susiRowsByYear = new Map();
@@ -6787,11 +6833,14 @@ function renderSusiMockAverage() {
 async function fetchSusiResultData() {
     if (susiResultData.length > 0 || susiResultFetchStarted) return susiResultData;
     susiResultFetchStarted = true;
+    const epoch = susiResultEpoch;
     const spinner = document.getElementById('susiResultLoadingSpinner');
     if(spinner) spinner.classList.remove('hidden');
     
     try {
-        const data = await window.fetchGraduatesSheetRows('susiResult');
+        const data = await prefetchSusiResultRows();
+        if (epoch !== susiResultEpoch) return;
+        susiResultPrefetch = null;
                 if(data.length > 1) {
                     susiResultData = data.slice(1).filter(row => !['2021', '2022'].includes(String(row[1] || '').replace(/\D/g, '')));
                     buildSusiResultIndexes(susiResultData);
@@ -6821,6 +6870,7 @@ async function fetchSusiResultData() {
                 if (!susiResultData.length) susiResultFetchStarted = false;
                 if(spinner) spinner.classList.add('hidden');
     } catch (error) { 
+        if (epoch !== susiResultEpoch) return;
         susiResultFetchStarted = false;
         console.error("수시입결 데이터 로드 실패", error); 
         const tbody = document.getElementById('susiResultTableBody');
