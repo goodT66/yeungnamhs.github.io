@@ -2604,6 +2604,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 subjectCounts.appendChild(groupRow);
             });
             const filtered = entries.filter(entry =>
+                clean(entry.values[4]) !== '' &&
                 (!studentFilter || studentKey(entry.values[2], entry.values[3], entry.values[4]) === studentFilter) &&
                 (!classFilter || numeric(entry.values[2]) === classFilter) &&
                 (!submissionFilter || entry.status === submissionFilter) &&
