@@ -2302,7 +2302,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         function renderCsatPrelimTable() {
             if (!csatPrelimTableData) return;
             const { header, entries, roster, percentileUnavailable } = csatPrelimTableData;
-            const extraColumns = {6:[[8,'백분위'],[7,'표준점수'],[9,'등급']],10:[[13,'백분위'],[12,'표준점수'],[14,'등급']],11:[[16,'등급']],12:[[18,'등급']],14:[[22,'백분위'],[21,'표준점수'],[23,'등급']],16:[[27,'백분위'],[26,'표준점수'],[28,'등급']],17:[[30,'표점합'],[31,'등급평균']]};
+            const extraColumns = {6:[[8,'백분위'],[7,'표준점수'],[9,'등급']],10:[[13,'백분위'],[12,'표준점수'],[14,'등급']],11:[[16,'등급']],12:[[18,'등급']],14:[[22,'백분위'],[21,'표준점수'],[23,'등급']],16:[[27,'백분위'],[26,'표준점수'],[28,'등급']],17:[[30,'표점합'],[31,'등급평균'],[32,'국수탐 평균 백분위']]};
             const columns = Array.from({length:20}, (_, i) => [{base:i}, ...(extraColumns[i] || []).map(([source,label]) => ({base:i,source,label}))]).flat();
             // 화면에서는 A열 순번을 숨기고, S열 제출일시를 제출 상태 오른쪽에 배치합니다.
             const displayValues = entry => {
