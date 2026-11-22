@@ -2537,6 +2537,22 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const make = (parent, cls, value) => {
                 const el = document.createElement('div');
                 el.className = cls;
+                const styles = {
+                    'bg-slate-100':['backgroundColor','#f1f5f9'], 'bg-slate-800':['backgroundColor','#24364b'],
+                    'bg-green-200':['backgroundColor','#bbf7d0'], 'bg-green-100':['backgroundColor','#dcfce7'],
+                    'bg-amber-100':['backgroundColor','#fef3c7'], 'bg-red-100':['backgroundColor','#fee2e2'],
+                    'bg-pink-200':['backgroundColor','#fbcfe8'], 'bg-yellow-200':['backgroundColor','#fef08a'],
+                    'text-white':['color','#ffffff'], 'text-slate-200':['color','#e2e8f0'], 'text-slate-500':['color','#64748b'],
+                    'text-slate-600':['color','#475569'], 'text-slate-800':['color','#1e293b'], 'text-slate-900':['color','#0f172a'],
+                    'text-green-900':['color','#14532d'], 'text-green-800':['color','#166534'], 'text-amber-900':['color','#92400e'],
+                    'text-red-800':['color','#991b1b'], 'text-red-600':['color','#dc2626'], 'text-pink-800':['color','#9d174d'],
+                    'text-blue-600':['color','#2563eb'], 'text-purple-700':['color','#9333ea'],
+                    'text-xs':['fontSize','13px'], 'text-lg':['fontSize','19px'], 'text-xl':['fontSize','23px'], 'text-2xl':['fontSize','28px']
+                };
+                cls.split(/\s+/).forEach(token => {
+                    if(styles[token]) el.style[styles[token][0]] = styles[token][1];
+                });
+                el.style.lineHeight = '1.4';
                 if (value !== undefined) el.textContent = display(value);
                 parent.appendChild(el);
                 return el;
@@ -2547,6 +2563,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const summary = make(host, 'grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4');
             [['국수탐 원점수 합',v[17]],['표준점수 합',p[30]],['평균 백분위',p[32]],['평균 등급',p[31]]].forEach(([label,value]) => {
                 const card = make(summary,'rounded-lg bg-slate-100 p-3 text-center');
+                card.style.padding = '12px';
                 make(card,'text-xs text-slate-600',label);
                 make(card,'text-2xl font-bold tabular-nums text-slate-900',value);
             });
@@ -2554,6 +2571,8 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             [['국어',v[5],v[19],100,p[8],p[7],p[9]],['수학',v[8],v[20],100,p[13],p[12],p[14]],['탐구 1',v[13],v[14],50,p[22],p[21],p[23]],['탐구 2',v[15],v[16],50,p[27],p[26],p[28]]].forEach(([name,subject,raw,max,percentile,std,g]) => {
                 const card = make(cards,'border border-slate-200 rounded-lg overflow-hidden text-center');
                 const head = make(card,'bg-slate-800 text-white p-2');
+                head.style.padding = '10px 8px';
+                head.style.fontSize = '17px';
                 make(head,'font-bold',name);
                 make(head,'text-xs text-slate-200',subject);
                 const rawBlock = make(card,'p-2');
