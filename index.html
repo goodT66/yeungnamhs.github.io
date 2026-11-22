@@ -14,7 +14,9 @@
     <!-- 외부 데이터 서비스 연결을 미리 준비해 첫 조회 지연을 줄입니다. -->
     <link rel="preconnect" href="https://docs.google.com" crossorigin>
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
-    <link rel="dns-prefetch" href="//script.google.com">
+    <link rel="preconnect" href="https://script.google.com">
+    <link rel="dns-prefetch" href="//script.googleusercontent.com">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="//www.googleapis.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1585,8 +1587,8 @@ window.cloudDataStore = {
     }
 };
 
-function notifyCloudDataChanged() {
-    if (typeof window.handleCloudDataUpdate === "function") window.handleCloudDataUpdate();
+function notifyCloudDataChanged(area) {
+    if (typeof window.handleCloudDataUpdate === "function") window.handleCloudDataUpdate(area);
 }
 
 function stopCloudDataSync() {
@@ -1629,7 +1631,7 @@ function startCloudDataSync() {
     unsubscribeNotices = onSnapshot(collection(db, "notices"), async (snapshot) => {
         noticeCache = snapshot.docs.filter(d => d.id !== "__legacy_migration_state__").map(d => ({ ...d.data(), id: d.id }));
         noticesReady = true;
-        notifyCloudDataChanged();
+        notifyCloudDataChanged("notices");
         await migrateLegacyLocalDataIfCloudEmpty("notices", snapshot);
     }, (error) => {
         console.error("전달 사항 Firestore 동기화 오류:", error);
@@ -1638,7 +1640,7 @@ function startCloudDataSync() {
     unsubscribeCalendarEvents = onSnapshot(collection(db, "calendarEvents"), async (snapshot) => {
         calendarEventCache = snapshot.docs.filter(d => d.id !== "__legacy_migration_state__").map(d => ({ ...d.data(), id: d.id }));
         calendarEventsReady = true;
-        notifyCloudDataChanged();
+        notifyCloudDataChanged("calendar");
         await migrateLegacyLocalDataIfCloudEmpty("calendarEvents", snapshot);
     }, (error) => {
         console.error("일정 달력 Firestore 동기화 오류:", error);
@@ -1646,7 +1648,7 @@ function startCloudDataSync() {
     });
     unsubscribeSupervisorDuties = onSnapshot(collection(db, "supervisorDuties"), (snapshot) => {
         supervisorDutyCache = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
-        notifyCloudDataChanged();
+        notifyCloudDataChanged("supervisor");
     }, (error) => {
         console.error("감독 근무표 Firestore 동기화 오류:", error);
         alert("감독 근무표를 Firebase에서 불러오지 못했습니다. Firestore 보안 규칙과 인터넷 연결을 확인해 주세요.");
@@ -3326,7 +3328,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             try { renderAllNotices(); } catch (error) { console.error('전달 사항 초기화 실패:', error); }
             window.setTimeout(() => {
                 try { renderCalendar(); } catch (error) { console.error('달력 초기화 실패:', error); }
-            }, 250);
+            }, 0);
         });
 
         // =====================================================================
@@ -3371,10 +3373,11 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             }
             return true;
         }
-        window.handleCloudDataUpdate = function() {
+        window.handleCloudDataUpdate = function(area) {
             if (window.getCurrentUser && window.getCurrentUser()) {
-                renderAllNotices();
-                renderCalendar();
+                if (!area || area === "notices") renderAllNotices();
+                if (!area || area === "calendar") renderCalendar();
+                else if (area === "supervisor") renderSupervisorDutyRoster();
             }
         };
 
