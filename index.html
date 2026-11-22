@@ -2394,7 +2394,6 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     if (!isHeader && label === '등급') {
                         const grade = clean(values[i]);
                         if (grade === '1') { cell.style.backgroundColor = '#fbcfe8'; cell.style.fontWeight = '700'; }
-                        else if (/^[6-9]$/.test(grade)) { cell.style.backgroundColor = '#fef08a'; cell.style.color = '#dc2626'; cell.style.fontWeight = '700'; }
                     }
                     if (!isHeader && base === 18) {
                         cell.style.fontWeight = '700';
@@ -2563,7 +2562,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 parent.appendChild(el);
                 return el;
             };
-            const gradeClass = g => Number(g) === 1 ? 'bg-pink-200 text-pink-800' : Number(g) >= 6 && Number(g) <= 9 ? 'bg-yellow-200 text-red-600' : 'bg-slate-100 text-slate-800';
+            const gradeClass = g => Number(String(g ?? '').trim().replace(/등급$/, '')) === 1 ? 'bg-pink-200 text-pink-800' : 'text-slate-800';
             const grade = g => display(g) === '—' ? '—' : display(g).replace(/등급$/, '') + '등급';
             make(host, 'font-bold text-lg text-slate-800 mb-3', String(v[4] ?? '') + ' 학생 수능 성적 분석');
             const summary = make(host, 'grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4');
