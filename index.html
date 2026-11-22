@@ -1597,7 +1597,7 @@ function notifyCloudDataChanged(area) {
     if (typeof window.handleCloudDataUpdate === "function") window.handleCloudDataUpdate(area);
 }
 
-function stopCloudDataSync() {
+function stopCloudDataSync(notify = true) {
     if (unsubscribeNotices) unsubscribeNotices();
     if (unsubscribeCalendarEvents) unsubscribeCalendarEvents();
     if (unsubscribeSupervisorDuties) unsubscribeSupervisorDuties();
@@ -1609,7 +1609,7 @@ function stopCloudDataSync() {
     noticeCache = [];
     calendarEventCache = [];
     supervisorDutyCache = [];
-    notifyCloudDataChanged();
+    if (notify) notifyCloudDataChanged();
 }
 
 async function migrateLegacyLocalDataIfCloudEmpty(collectionName, snapshot) {
@@ -1633,7 +1633,7 @@ async function migrateLegacyLocalDataIfCloudEmpty(collectionName, snapshot) {
 }
 
 function startCloudDataSync() {
-    stopCloudDataSync();
+    stopCloudDataSync(false);
     unsubscribeNotices = onSnapshot(collection(db, "notices"), async (snapshot) => {
         noticeCache = snapshot.docs.filter(d => d.id !== "__legacy_migration_state__").map(d => ({ ...d.data(), id: d.id }));
         noticesReady = true;
@@ -1721,8 +1721,8 @@ document.getElementById('csatPrelimBtn')?.classList.remove('hidden');
 // 메뉴 버튼은 항상 표시하고, 실제 기능 진입 시 로그인 여부를 확인합니다.
 
 // Firebase에 저장된 전달 사항·일정·면접 지도 날짜 실시간 동기화 시작
-startInterviewDateSync();
 startCloudDataSync();
+startInterviewDateSync();
 
 loginBtn.classList.add('hidden');
 userInfo.classList.remove('hidden');
@@ -3422,10 +3422,16 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const tabsEl = document.getElementById(`notice-${category}-tabs`);
             const listEl = document.getElementById(`notice-${category}`);
             if (!tabsEl || !listEl) return;
-            const dates = [...new Set(notices.map(n => n.date).filter(Boolean))];
+            const byDate = new Map();
+            for (const notice of notices) {
+                if (!notice.date) continue;
+                if (!byDate.has(notice.date)) byDate.set(notice.date, []);
+                byDate.get(notice.date).push(notice);
+            }
+            const dates = [...byDate.keys()];
             if (!activeNoticeDate[category] || !dates.includes(activeNoticeDate[category])) activeNoticeDate[category] = dates[0] || null;
-            tabsEl.innerHTML = dates.length ? dates.map(date => `<button onclick="selectNoticeDate('${category}','${date}')" class="px-3 py-1.5 rounded-full text-xs font-semibold border ${date === activeNoticeDate[category] ? 'bg-blue-700 text-white border-blue-700' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}">${escapeHTML(date)} <span class="opacity-80">(${notices.filter(n => n.date === date).length})</span></button>`).join('') : '<span class="text-sm text-gray-400 py-1">아직 등록된 전달 사항이 없습니다.</span>';
-            const selected = notices.filter(n => n.date === activeNoticeDate[category]);
+            tabsEl.innerHTML = dates.length ? dates.map(date => `<button onclick="selectNoticeDate('${category}','${date}')" class="px-3 py-1.5 rounded-full text-xs font-semibold border ${date === activeNoticeDate[category] ? 'bg-blue-700 text-white border-blue-700' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}">${escapeHTML(date)} <span class="opacity-80">(${byDate.get(date).length})</span></button>`).join('') : '<span class="text-sm text-gray-400 py-1">아직 등록된 전달 사항이 없습니다.</span>';
+            const selected = byDate.get(activeNoticeDate[category]) || notices.filter(n => n.date === activeNoticeDate[category]);
             if (!selected.length) {
                 listEl.innerHTML = '<li class="text-sm text-gray-400 py-4 text-center">날짜 탭을 선택하거나 새 전달 사항을 추가하세요.</li>';
                 return;
