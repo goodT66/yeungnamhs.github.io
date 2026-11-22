@@ -971,6 +971,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
             <p class="text-sm text-slate-600 font-medium mb-2" id="csatPrelimSortHelp">↕ 표의 제목을 클릭하면 오름차순·내림차순으로 정렬됩니다. ▲ 오름차순 · ▼ 내림차순 · ↕ 정렬 가능</p>
             <style>#csatPrelimTable { border-collapse: separate; border-spacing: 0; min-width: 2200px; } #csatPrelimTable thead { position: sticky; top: 0; z-index: 20; } #csatPrelimTable thead th { position: sticky; top: 0; z-index: 21; background-clip: padding-box; }</style>
             <div class="overflow-auto max-h-[75vh]"><table id="csatPrelimTable" class="w-full border-collapse text-[11px]" style="table-layout:fixed; width:100%;"></table></div>
+            <div id="csatPrelimStudentChart" class="hidden mt-5 rounded-xl border border-slate-200 bg-white p-4" aria-label="선택 학생 과목별 성적 그래프"></div>
         </section>
         <div id="classView" class="hidden bg-white rounded-2xl shadow-lg p-8 w-full border-t-8 border-green-500">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
@@ -2484,6 +2485,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 appendRow(displayValues(entry), false, entry.status === '미제출', dataRowsFragment);
             });
             table.appendChild(dataRowsFragment);
+            renderCsatStudentChart(studentFilter && filtered.length === 1 ? filtered[0] : null);
             const selectedRoster = [...roster.values()].filter(student => !classFilter || student.cls === classFilter);
             const missingCount = entries.filter(entry => entry.status === '미제출' && entry.inRoster && (!classFilter || numeric(entry.values[2]) === classFilter) && (!submissionFilter || entry.status === submissionFilter) && !csatPrelimSubjectFilter).length;
             const summary = document.getElementById('csatPrelimClassSummary');
@@ -2525,6 +2527,81 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             document.getElementById('csatPrelimStatus').textContent =
                 `${label} ${selectedRoster.length}명 · 제출 ${selectedRoster.length - missingCount}명 · 미제출 ${missingCount}명` + (percentileUnavailable ? ' · 백분위 시트 조회 실패 (원점수만 표시)' : ' · 백분위 미연결 ' + filtered.filter(e => e.status === '제출' && !e.percentile).length + '명');
         }
+        function renderCsatStudentChart(entry) {
+            const host = document.getElementById('csatPrelimStudentChart');
+            host.replaceChildren();
+            host.classList.toggle('hidden', !entry);
+            if (!entry) return;
+            const v = entry.values, p = entry.percentile || [];
+            const number = value => {
+                const t = String(value ?? '').trim();
+                return t !== '' && Number.isFinite(Number(t)) && Number(t) >= 0 ? Number(t) : null;
+            };
+            const subjects = [
+                ['국어', v[19], p[8], p[7]],
+                ['수학', v[20], p[13], p[12]],
+                ['영어', v[11], null, null],
+                ['한국사', v[12], null, null],
+                [v[13] || '탐구1', v[14], p[22], p[21]],
+                [v[15] || '탐구2', v[16], p[27], p[26]]
+            ].map(([name,...scores]) => ({name:String(name), scores:scores.map(number)}));
+            const heading = document.createElement('h3');
+            heading.className = 'font-bold text-lg text-slate-800 mb-2';
+            heading.textContent = String(v[4] ?? '') + ' 학생 과목별 성적 비교';
+            host.appendChild(heading);
+            if (!subjects.some(subject => subject.scores.some(n => n !== null))) {
+                const notice = document.createElement('p');
+                notice.textContent = '표시할 성적이 없습니다.';
+                host.appendChild(notice);
+                return;
+            }
+            const ns = 'http://www.w3.org/2000/svg';
+            const svg = document.createElementNS(ns,'svg');
+            svg.setAttribute('viewBox','0 0 900 350');
+            svg.setAttribute('role','img');
+            svg.setAttribute('aria-label','과목별 원점수, 백분위, 표준점수 막대그래프');
+            svg.style.width = '100%';
+            svg.style.minWidth = '640px';
+            svg.style.display = 'block';
+            const add = (tag, attrs, label, parent=svg) => {
+                const el = document.createElementNS(ns,tag);
+                Object.entries(attrs).forEach(([key,value]) => el.setAttribute(key,String(value)));
+                if(label !== undefined) el.textContent = label;
+                parent.appendChild(el);
+                return el;
+            };
+            const colors = ['#2563eb','#0d9488','#9333ea'];
+            const labels = ['원점수','백분위','표준점수'];
+            const max = Math.max(140, Math.ceil(Math.max(...subjects.flatMap(s=>s.scores.filter(n=>n!==null)))/20)*20);
+            const y = n => 280 - n/max*230;
+            labels.forEach((label,i) => {
+                add('rect',{x:260+i*140,y:12,width:14,height:14,rx:3,fill:colors[i]});
+                add('text',{x:280+i*140,y:24,'font-size':13,fill:'#334155'},label);
+            });
+            for(let tick=0;tick<=max;tick+=20) {
+                add('line',{x1:50,x2:885,y1:y(tick),y2:y(tick),stroke:'#e2e8f0'});
+                add('text',{x:42,y:y(tick)+4,'text-anchor':'end','font-size':11,fill:'#64748b'},tick);
+            }
+            subjects.forEach((subject,i) => {
+                const center=50+(i+0.5)*835/6;
+                subject.scores.forEach((score,j) => {
+                    if(score===null) return;
+                    const x=center-43+j*29;
+                    const bar=add('rect',{x,y:y(score),width:25,height:Math.max(0,280-y(score)),fill:colors[j],rx:2});
+                    add('title',{},subject.name+' '+labels[j]+': '+score,bar);
+                    add('text',{x:x+12.5,y:y(score)-5,'text-anchor':'middle','font-size':10,fill:'#334155'},String(score));
+                });
+                add('text',{x:center,y:302,'text-anchor':'middle','font-size':12,fill:'#334155'},subject.name);
+            });
+            const wrap=document.createElement('div');
+            wrap.style.overflowX='auto';
+            wrap.appendChild(svg);
+            host.appendChild(wrap);
+            const note=document.createElement('p');
+            note.className='text-xs text-slate-500';
+            note.textContent='원점수는 국어·수학·영어 100점, 한국사·탐구 50점 만점이며, 백분위와 표준점수는 서로 다른 지표입니다. 미조회 값은 표시하지 않습니다.';
+            host.appendChild(note);
+        }
         window.renderCsatPrelimTable = renderCsatPrelimTable;
         async function openCsatPrelimView() {
             if (!(window.getCurrentUser && window.getCurrentUser())) {
@@ -2537,6 +2614,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const table = document.getElementById('csatPrelimTable');
             const classSelect = document.getElementById('csatPrelimClassSelect');
             csatPrelimTableData = null;
+            renderCsatStudentChart(null);
             document.getElementById('csatPrelimClassSummary').replaceChildren();
             table.replaceChildren();
             classSelect.value = '';
