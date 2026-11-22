@@ -608,7 +608,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
             <button type="button" onclick="openInterviewView()" class="yn-pill-button">
                 <span class="yn-pill-span" aria-hidden="true">🎙️</span><span class="yn-pill-span">수시 면접 조편성</span>
             </button>
-            <button type="button" onclick="openMockView()" class="yn-pill-button">
+            <button type="button" onclick="openMockView()" onpointerenter="if(window.getCurrentUser?.()) { prepareMockStudentDetails(); fetchMockData(); }" class="yn-pill-button">
                 <span class="yn-pill-span" aria-hidden="true">📈</span><span class="yn-pill-span">개별 모의고사 성적</span>
             </button>
             <button type="button" onclick="openGradView()" class="yn-pill-button">
@@ -2320,6 +2320,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             hideAllContentViews();
             document.getElementById('mockView').classList.remove('hidden');
             if (window.getCurrentUser && window.getCurrentUser()) {
+                prepareMockStudentDetails();
                 if (!mockDataLoaded) fetchMockData();
                 else if (document.getElementById('gradeSelect').options.length <= 1) populateGradeDropdown();
             }
@@ -4378,15 +4379,22 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         let mockDataLoaded = false;
         let mockDataLoadingPromise = null;
         let studentMap = new Map();
+        let mockClassIndex = new Map();
         let chartInstance = null;
         const selectedSubjectTrends = new Set();
         let currentMockRecords = [];
         let mockStudentInfoRows = null;
         let mockStudentInfoIndex = new Map();
 
+        function prepareMockStudentDetails() {
+            if (!window.getCurrentUser?.()) return;
+            if (typeof loadStudentInfoRows === 'function') loadStudentInfoRows().catch(() => {});
+            if (typeof loadStudentPhotoMap === 'function') loadStudentPhotoMap().catch(() => {});
+        }
         async function fetchMockData() {
             if (mockDataLoaded) { if (document.getElementById('gradeSelect')?.options.length <= 1) populateGradeDropdown(); return; }
             if (mockDataLoadingPromise) return mockDataLoadingPromise;
+            prepareMockStudentDetails();
             mockDataLoadingPromise = (async () => {
             try {
                 const data = await window.fetchIndividualMockRows();
@@ -4439,11 +4447,20 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                                 });
                             }
                         }
+                        mockClassIndex = new Map();
+                        for (const id of studentMap.keys()) {
+                            const key = id.substring(0, 3);
+                            if (!mockClassIndex.has(key)) mockClassIndex.set(key, []);
+                            mockClassIndex.get(key).push(id);
+                        }
+                        for (const ids of mockClassIndex.values()) ids.sort();
                         mockDataLoaded = true;
                         window.mockDataLoaded = true;
                         populateGradeDropdown();
-                        document.getElementById('mockLoadingSpinner').style.display = 'none';
-            } catch (error) { console.error('모의고사 성적 조회 실패:', error); const spinner = document.getElementById('mockLoadingSpinner'); if (spinner) { spinner.style.display = 'block'; spinner.textContent = '모의고사 성적을 불러오지 못했습니다. 교사 로그인 및 서버 권한을 확인해 주세요.'; } }
+                        const spinner = document.getElementById('mockLoadingSpinner');
+                        if (spinner) spinner.style.display = 'none';
+                        document.getElementById('mockErrorMessage')?.classList.add('hidden');
+            } catch (error) { console.error('모의고사 성적 조회 실패:', error); const spinner = document.getElementById('mockLoadingSpinner') || document.getElementById('mockErrorMessage'); if (spinner) { spinner.classList.remove('hidden'); spinner.style.display = 'block'; spinner.textContent = '모의고사 성적을 불러오지 못했습니다. 교사 로그인 및 서버 권한을 확인해 주세요.'; } }
             finally { mockDataLoadingPromise = null; }
             })();
             return mockDataLoadingPromise;
@@ -4466,7 +4483,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             document.getElementById('studentSelect').innerHTML = '<option value="">▼ 번호-이름 선택</option>';
             if (!g) return;
             const cls = new Set();
-            for (let id of studentMap.keys()) if (id.charAt(0) === g) cls.add(id.substring(1,3));
+            for (const key of mockClassIndex.keys()) if (key.charAt(0) === g) cls.add(key.substring(1,3));
             Array.from(cls).sort().forEach(c => cSel.appendChild(new Option(`${parseInt(c,10)}반`, c)));
         }
         window.onGradeChange = onGradeChange;
@@ -4477,8 +4494,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             sSel.innerHTML = '<option value="">▼ 번호-이름 선택</option>';
             if (!g || !c) return;
             const optionsFragment = document.createDocumentFragment();
-            Array.from(studentMap.keys())
-                .filter(id => id.startsWith(g + c)).sort()
+            (mockClassIndex.get(g + c) || [])
                 .forEach(id => optionsFragment.appendChild(new Option(`${parseInt(id.substring(3,5),10)}번 - ${studentMap.get(id).name}`, id)));
             sSel.appendChild(optionsFragment);
         }
