@@ -2614,6 +2614,10 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             filtered.sort((a, b) => {
                 const x = clean(displayValues(a)[csatPrelimSortColumn]);
                 const y = clean(displayValues(b)[csatPrelimSortColumn]);
+                const xMissing = x === '';
+                const yMissing = y === '';
+                // Empty cells remain last regardless of sort direction.
+                if (xMissing !== yMissing) return xMissing ? 1 : -1;
                 const xn = Number(x.replace(/,/g, ''));
                 const yn = Number(y.replace(/,/g, ''));
                 const cmp = x !== '' && y !== '' && Number.isFinite(xn) && Number.isFinite(yn)
