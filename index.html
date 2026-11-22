@@ -1815,7 +1815,7 @@ document.getElementById('userEmail').innerText = user.email;
             if (window.mockDataLoaded && document.getElementById('gradeSelect').options.length <= 1) {
                 window.populateGradeDropdown();
             }
-            if (window.rawGradData.length > 0) {
+            if (Array.isArray(window.rawGradData) && window.rawGradData.length > 0 && typeof window.applyGradFilter === "function") {
                 window.applyGradFilter();
             }
             if (window.classSusiData && window.classSusiData.length > 0 && document.getElementById('classNumSelect').options.length <= 1) {
