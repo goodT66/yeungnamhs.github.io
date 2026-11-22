@@ -6882,6 +6882,7 @@ async function fetchSusiResultData() {
                     
                     if (ySelect) {
                         Array.from(yearSet).sort((a,b) => b - a).forEach(y => ySelect.appendChild(new Option(`${y}학년도`, y)));
+                        if (yearSet.has("2026")) ySelect.value = "2026";
                     }
                     if (uList) {
                         Array.from(univSet).sort().forEach(u => {
