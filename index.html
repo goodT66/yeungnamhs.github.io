@@ -957,6 +957,8 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                         <option value="미제출">미제출</option>
                     </select>
                 </div>
+                <div class="flex items-center gap-2"><label for="csatPrelimStudentSelect" class="font-semibold text-sm text-gray-700">학생 이름 조회</label>
+                    <select id="csatPrelimStudentSelect" onchange="renderCsatPrelimTable()" class="border border-gray-300 rounded-lg bg-white px-3 py-2 text-sm font-medium" aria-label="수능 가채점 학생 이름 선택"><option value="">전체 학생</option></select></div>
                 <button type="button" onclick="closeCsatPrelimView()" class="ml-auto bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg font-bold">닫기</button>
             </div>
             <p id="csatPrelimStatus" class="text-gray-600 mb-3" role="status">교사 인증 후 자료를 조회할 수 있습니다.</p>
@@ -2332,6 +2334,14 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             const classFilter = document.getElementById('csatPrelimClassSelect').value;
             const direction = csatPrelimSortDirection;
             const submissionFilter = document.getElementById('csatPrelimSubmissionSelect').value;
+            const studentSelect = document.getElementById('csatPrelimStudentSelect');
+            const studentKey = (cls, no, name) => JSON.stringify([numeric(cls), numeric(no), clean(name)]);
+            const previousStudent = studentSelect.value;
+            const students = [...roster.values()].filter(student => !classFilter || student.cls === classFilter).sort((a,b) => a.name.localeCompare(b.name, 'ko') || Number(a.cls)-Number(b.cls) || Number(a.no)-Number(b.no));
+            studentSelect.replaceChildren(new Option('전체 학생', ''));
+            students.forEach(student => studentSelect.add(new Option(`${student.name} (${student.cls}반 ${student.no}번)`, studentKey(student.cls, student.no, student.name))));
+            studentSelect.value = students.some(student => studentKey(student.cls, student.no, student.name) === previousStudent) ? previousStudent : '';
+            const studentFilter = studentSelect.value;
             const table = document.getElementById('csatPrelimTable');
             table.replaceChildren();
             const colgroup = document.createElement('colgroup');
@@ -2450,6 +2460,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 subjectCounts.appendChild(groupRow);
             });
             const filtered = entries.filter(entry =>
+                (!studentFilter || studentKey(entry.values[2], entry.values[3], entry.values[4]) === studentFilter) &&
                 (!classFilter || numeric(entry.values[2]) === classFilter) &&
                 (!submissionFilter || entry.status === submissionFilter) &&
                 (!csatPrelimSubjectFilter || (entry.inRoster && entry.status === '제출' &&
@@ -2474,7 +2485,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             });
             table.appendChild(dataRowsFragment);
             const selectedRoster = [...roster.values()].filter(student => !classFilter || student.cls === classFilter);
-            const missingCount = filtered.filter(entry => entry.status === '미제출' && entry.inRoster).length;
+            const missingCount = entries.filter(entry => entry.status === '미제출' && entry.inRoster && (!classFilter || numeric(entry.values[2]) === classFilter) && (!submissionFilter || entry.status === submissionFilter) && !csatPrelimSubjectFilter).length;
             const summary = document.getElementById('csatPrelimClassSummary');
             summary.replaceChildren();
             const submittedKeys = new Set(entries.filter(entry => entry.inRoster && entry.status === '제출')
@@ -2530,6 +2541,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             table.replaceChildren();
             classSelect.value = '';
             document.getElementById('csatPrelimSubmissionSelect').value = '';
+            document.getElementById('csatPrelimStudentSelect').replaceChildren(new Option('전체 학생', ''));
             csatPrelimSortColumn = 1;
             csatPrelimSortDirection = 1;
             status.textContent = '가채점 결과와 3학년 학생 명단을 대조하는 중입니다...';
