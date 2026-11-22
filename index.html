@@ -611,7 +611,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
             <button type="button" onclick="openMockView()" onpointerenter="if(window.getCurrentUser?.()) { prepareMockStudentDetails(); fetchMockData(); }" class="yn-pill-button">
                 <span class="yn-pill-span" aria-hidden="true">📈</span><span class="yn-pill-span">개별 모의고사 성적</span>
             </button>
-            <button type="button" onclick="openGradView()" class="yn-pill-button">
+            <button type="button" onclick="openGradView()" onpointerenter="if(window.getCurrentUser?.()) fetchGradData()" class="yn-pill-button">
                 <span class="yn-pill-span" aria-hidden="true">🎓</span><span class="yn-pill-span">졸업생 수시/정시 결과</span>
             </button>
             <button type="button" onclick="openAdigaSusiView()" class="yn-pill-button">
@@ -4842,7 +4842,16 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         ];
         gradSuneungColLabels.forEach((label, index) => { gradJeongsiColLabels[100 + index] = label; });
 
-        async function fetchGradJeongsiData() {
+        let gradJeongsiPending = null;
+        function fetchGradJeongsiData() {
+            if (gradJeongsiPending) return gradJeongsiPending;
+            if (gradJeongsiDataLoaded || !window.getCurrentUser?.()) return Promise.resolve();
+            const pending = fetchGradJeongsiDataOnce();
+            gradJeongsiPending = pending;
+            pending.finally(() => { if (gradJeongsiPending === pending) gradJeongsiPending = null; });
+            return pending;
+        }
+        async function fetchGradJeongsiDataOnce() {
             const tbody = document.getElementById('gradJeongsiTableBody');
             if (tbody) tbody.innerHTML = '<tr><td colspan="30" class="text-center py-10 text-gray-500">정시 결과 및 졸업생 수능 성적 데이터를 불러오는 중입니다...</td></tr>';
             try {
@@ -4872,7 +4881,6 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 });
                 populateGradJeongsiFilters();
                 renderGradJeongsiHeaders();
-                renderGradJeongsiUniversitySummary();
                 applyGradJeongsiFilter();
                 // 70% 백분위 자료는 별도로 불러와 표가 먼저 나타난 뒤 반영합니다.
                 gradJeongsiDataLoaded = true;
@@ -5221,21 +5229,32 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         let currentSortCol = null;
         let gradFetchSequence = 0;
         let gradDataLoaded = false;
+        let gradPending = null;
+        let gradSummaryKey = null;
+        let gradFilterKey = null;
         let isAscending = true;
 
        const gradColOrder = [0, 1, 5, 8, 12, 14, 15, 16, 17, 20, 22, 23, 24, 25, 26, 18];
 
-        async function fetchGradData(force = false) {
-            if (gradDataLoaded && !force) {
-                if (window.getCurrentUser && window.getCurrentUser()) applyGradFilter();
-                return;
-            }
+        function fetchGradData(force = false) {
+            if (gradPending) return gradPending;
+            if (gradDataLoaded && !force) return Promise.resolve();
+            const pending = fetchGradDataOnce();
+            gradPending = pending;
+            pending.finally(() => { if (gradPending === pending) gradPending = null; });
+            return pending;
+        }
+        async function fetchGradDataOnce() {
+            const requestUser = window.getCurrentUser?.();
+            if (!requestUser) return;
             const requestSequence = ++gradFetchSequence;
-            document.getElementById('gradLoadingSpinner')?.classList.remove('hidden');
+            if (!gradDataLoaded) document.getElementById('gradLoadingSpinner')?.classList.remove('hidden');
             try {
                 const data = await window.fetchGraduatesSheetRows('graduates');
-                if (requestSequence !== gradFetchSequence) return;
+                if (requestSequence !== gradFetchSequence || window.getCurrentUser?.() !== requestUser) return;
                         if(data.length > 1) {
+                            gradSummaryKey = null;
+                            gradFilterKey = null;
                             gradHeaders = (data[0] || []).map(v => String(v || '').trim());
                             rawGradData = data.slice(1);
                             window.rawGradData = rawGradData;
@@ -5251,7 +5270,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                         }
                         document.getElementById('gradLoadingSpinner')?.classList.add('hidden');
             } catch (error) {
-                if (requestSequence !== gradFetchSequence) return;
+                if (requestSequence !== gradFetchSequence || window.getCurrentUser?.() !== requestUser) return;
                 console.error('졸업생 수시 결과 데이터 로드 실패:', error);
                 document.getElementById('gradLoadingSpinner')?.classList.add('hidden');
                 const tbody = document.getElementById('gradTableBody');
@@ -5365,6 +5384,9 @@ function renderGradUniversitySummary() {
             const box = document.getElementById('gradUniversitySummary');
             const year = document.getElementById('filterYear')?.value || '';
             if (!box) return;
+            const key = JSON.stringify([year, gradSummarySelection]);
+            if (gradSummaryKey === key && box.childElementCount) return;
+            gradSummaryKey = key;
             const rows = rawGradData.filter(row => !year || String(row[0] || '').trim() === year);
             const counts = GRAD_SUMMARY_UNIVERSITIES.map(university => {
                 const aliases = university.aliases.map(x => x.replace(/\s+/g, '').toLowerCase());
@@ -5525,6 +5547,9 @@ function applyGradFilter() {
             const fResult = rEl.value;
 
             if (rawGradData.length === 0) return;
+            const key = JSON.stringify([fYear, fUniv, fMajor, fResult, gradSummarySelection]);
+            if (gradFilterKey === key) return;
+            gradFilterKey = key;
 
             filteredGradData = rawGradData.filter(row => {
                 const y = String(row[0] || '').trim();
