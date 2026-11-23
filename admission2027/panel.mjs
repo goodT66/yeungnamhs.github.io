@@ -77,4 +77,7 @@ if(host){
  person.addEventListener("change",render);type.addEventListener("change",render);
  new MutationObserver(()=>{if(!view.classList.contains("hidden")&&window.getCurrentUser?.()){if(!ready&&!working)load();}else if(!window.getCurrentUser?.())reset();}).observe(view,{attributes:true,attributeFilter:["class"]});
  window.addEventListener("teacher-auth-ready",()=>{if(!view.classList.contains("hidden"))load();});
+ // Clear student scores when existing teacher-authenticated content is hidden on logout.
+ const gate=document.getElementById("susiResultContent");
+ new MutationObserver(()=>{if(gate.classList.contains("hidden"))reset();}).observe(gate,{attributes:true,attributeFilter:["class"]});
 }
