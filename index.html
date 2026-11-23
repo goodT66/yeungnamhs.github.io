@@ -1198,6 +1198,31 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
             </div>
 
             <div id="susiResultContent" class="hidden">
+                <!-- 2027 수능 가채점: 기존 화면과 인증은 그대로 유지 -->
+                <section id="admission2027Panel" class="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-4" aria-label="2027 수능 가채점 대학별 환산 분석">
+                    <div class="mb-2 flex flex-wrap items-center gap-2">
+                        <strong class="text-base font-extrabold text-blue-900">2027학년도 수능 가채점 · 대학별 환산 분석</strong>
+                        <span class="text-xs text-gray-600">환산 유형 563개</span>
+                    </div>
+                    <p class="mb-3 text-xs text-gray-600">교사 인증 성적을 조회합니다. 검증되지 않은 환산점수나 지원 판정은 표시하지 않습니다.</p>
+                    <div class="mb-3 flex flex-wrap items-end gap-2">
+                        <label class="text-xs font-semibold text-gray-700">반
+                            <select id="admission2027Class" class="mt-1 block h-10 rounded border border-gray-300 bg-white p-2"><option value="">반 선택</option></select>
+                        </label>
+                        <label class="text-xs font-semibold text-gray-700">학생
+                            <select id="admission2027Student" class="mt-1 block h-10 min-w-32 rounded border border-gray-300 bg-white p-2"><option value="">학생 선택</option></select>
+                        </label>
+                        <label class="text-xs font-semibold text-gray-700">대학
+                            <select id="admission2027University" class="mt-1 block h-10 min-w-32 rounded border border-gray-300 bg-white p-2"><option value="">대학 선택</option></select>
+                        </label>
+                        <label class="text-xs font-semibold text-gray-700">환산 유형
+                            <select id="admission2027Type" class="mt-1 block h-10 min-w-36 rounded border border-gray-300 bg-white p-2"><option value="">환산 유형 선택</option></select>
+                        </label>
+                    </div>
+                    <p id="admission2027Status" class="mb-2 text-xs text-gray-600" role="status">교사 인증 후 조회할 수 있습니다.</p>
+                    <div id="admission2027Result" class="space-y-1 rounded-lg border border-blue-100 bg-white p-3" aria-live="polite"></div>
+                </section>
+
 <div class="mb-4 flex flex-col gap-3 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
     <div class="grid items-start gap-3" style="grid-template-columns:minmax(0,2fr) 176px minmax(0,1fr);">
     <div class="relative min-w-0 flex flex-col gap-3">
@@ -8000,5 +8025,6 @@ loadMealForSelectedDate();
 </script>
 
 
+<script type="module" src="./admission2027/panel.mjs"></script>
 </body>
 </html>
