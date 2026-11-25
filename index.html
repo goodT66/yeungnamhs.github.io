@@ -6176,6 +6176,10 @@ function applyGradFilter() {
         window.populateClassGradeDropdown = populateClassGradeDropdown;
 
         let classUniversitySummarySelection = null;
+        const CLASS_SUMMARY_MEDICAL_MAJORS = ['의예과·의학과', '약학과', '수의예과', '치의예과', '한의예과'];
+        function matchesClassSummarySelection(row, selection) {
+            return CLASS_SUMMARY_MEDICAL_MAJORS.includes(selection) ? matchesGradSummaryMajor(row[9], selection) : matchesGradSummaryUniversity(row[5], selection);
+        }
         function isClassUniversitySummaryAccepted(row) {
             const first = String(row[17] ?? '').replace(/\s+/g, '');
             const final = String(row[18] ?? '').replace(/\s+/g, '');
@@ -6198,8 +6202,13 @@ function applyGradFilter() {
                 const active = classUniversitySummarySelection === university.name;
                 return `<button type="button" aria-pressed="${active}" onclick="selectClassUniversitySummary('${escapeHtmlGrad(university.name)}')" class="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm cursor-pointer transition" style="${active ? 'background-color:#3730a3;border-color:#312e81;color:#fff;' : 'background-color:#eef2ff;border-color:#c7d2fe;color:#374151;'}"><span class="font-semibold" style="color:${active ? '#fff' : '#374151'}">${escapeHtmlGrad(university.name)}</span><strong style="color:${active ? '#fff' : '#1d4ed8'}">${count}건</strong></button>`;
             });
+            const majorButtons = CLASS_SUMMARY_MEDICAL_MAJORS.map(name => {
+                const count = accepted.filter(row => matchesClassSummarySelection(row, name)).length;
+                const active = classUniversitySummarySelection === name;
+                return `<button type="button" aria-pressed="${active}" onclick="selectClassUniversitySummary('${escapeHtmlGrad(name)}')" class="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm cursor-pointer transition" style="${active ? 'background-color:#be123c;border-color:#9f1239;color:#fff;' : 'background-color:#fff1f2;border-color:#fecdd3;color:#374151;'}"><span class="font-semibold" style="color:${active ? '#fff' : '#374151'}">${escapeHtmlGrad(name)}</span><strong style="color:${active ? '#fff' : '#be123c'}">${count}건</strong></button>`;
+            });
             const label = c === '졸업생' ? '졸업생' : c ? escapeHtmlGrad(c) + '반' : '전체 반';
-            box.innerHTML = `<div class="flex flex-wrap items-center gap-2"><strong class="text-gray-800 mr-1">${label} 주요 대학 합격 현황</strong>${buttons.join('')}<span class="ml-2 text-sm font-semibold text-blue-700">* 1단계 합격 또는 최종 최초·추가합격 기준 (지원 건별 1회). 대학 버튼을 다시 누르면 선택이 해제됩니다.</span></div>`;
+            box.innerHTML = `<div class="flex flex-wrap items-center gap-2"><strong class="text-gray-800 mr-1">${label} 주요 대학 합격 현황</strong>${buttons.join('')}<span class="mx-1 h-6 border-l border-gray-300" aria-hidden="true"></span><strong class="text-gray-800 mr-1">의약학 계열</strong>${majorButtons.join('')}<span class="ml-2 text-sm font-semibold text-blue-700">* 1단계 합격 또는 최종 최초·추가합격 기준 (지원 건별 1회). 버튼을 다시 누르면 선택이 해제됩니다.</span></div>`;
         }
         let appliedClassSusiSearch = { u: '', admission: '', m: '', first: '', final: '' };
         function applyClassSusiSearch() {
@@ -6359,7 +6368,7 @@ function applyGradFilter() {
                 if (c === '졸업생') {
                     if (!isAlumniSusiRow(row)) return false;
                 } else if (rowG !== g || (c && rowC !== c)) return false;
-                if (classUniversitySummarySelection && (!matchesGradSummaryUniversity(rowU, classUniversitySummarySelection) || !isClassUniversitySummaryAccepted(row))) return false;
+                if (classUniversitySummarySelection && (!matchesClassSummarySelection(row, classUniversitySummarySelection) || !isClassUniversitySummaryAccepted(row))) return false;
                 if (nameSearch && !rowN.toLocaleLowerCase().includes(nameSearch.toLocaleLowerCase())) return false;
                 if (u && !rowU.includes(u)) return false;
                 if (admission && !rowAdmission.toLocaleLowerCase().includes(admission.toLocaleLowerCase())) return false;
