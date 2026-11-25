@@ -998,6 +998,7 @@ nav.yn-pill-nav>button.yn-pill-button:focus-visible{
                 <p class="text-gray-600">우측 상단의 [교사 인증 (Google 로그인)] 버튼을 클릭해 주세요.</p>
             </div>
             <div id="classContent" class="hidden">
+                <div id="classUniversitySummary" class="mb-3 p-3 bg-white border border-green-200 rounded-lg shadow-sm" aria-live="polite"></div>
                 <div class="mb-4 flex flex-wrap gap-4 items-center bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <input type="hidden" id="classGradeSelect" value="3">
                     <select id="classNumSelect" onchange="onClassNumChange()" class="border border-gray-300 rounded p-2 bg-white font-medium w-28">
@@ -1388,6 +1389,7 @@ const teacherSheetPending = new Map();
 let sheetRequestEpoch = 0;
 function resetSheetRequests() {
     window.clearCsatPrelimCache?.();
+    document.getElementById('classUniversitySummary')?.replaceChildren();
     window.clearGradJeongsiCache?.();
     window.clearInterviewViewCache?.();
     window.clearSusiResultPrefetch?.();
@@ -6173,6 +6175,32 @@ function applyGradFilter() {
         }
         window.populateClassGradeDropdown = populateClassGradeDropdown;
 
+        let classUniversitySummarySelection = null;
+        function isClassUniversitySummaryAccepted(row) {
+            const first = String(row[17] ?? '').replace(/\s+/g, '');
+            const final = String(row[18] ?? '').replace(/\s+/g, '');
+            return (first.includes('합격') && !first.includes('불합격')) || final === '최초합격' || final === '추가합격';
+        }
+        function selectClassUniversitySummary(name) {
+            classUniversitySummarySelection = classUniversitySummarySelection === name ? null : name;
+            renderClassTable();
+        }
+        window.selectClassUniversitySummary = selectClassUniversitySummary;
+        function renderClassUniversitySummary(g, c) {
+            const box = document.getElementById('classUniversitySummary');
+            if (!box) return;
+            if (!window.getCurrentUser?.()) { box.replaceChildren(); return; }
+            const rows = classSusiData.filter(row => c === '졸업생' ? isAlumniSusiRow(row) :
+                String(row[1] ?? '').trim() === g && (!c || String(row[2] ?? '').trim() === c));
+            const accepted = rows.filter(isClassUniversitySummaryAccepted);
+            const buttons = GRAD_SUMMARY_UNIVERSITIES.map(university => {
+                const count = accepted.filter(row => matchesGradSummaryUniversity(row[5], university.name)).length;
+                const active = classUniversitySummarySelection === university.name;
+                return `<button type="button" aria-pressed="${active}" onclick="selectClassUniversitySummary('${escapeHtmlGrad(university.name)}')" class="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm cursor-pointer transition" style="${active ? 'background-color:#3730a3;border-color:#312e81;color:#fff;' : 'background-color:#eef2ff;border-color:#c7d2fe;color:#374151;'}"><span class="font-semibold" style="color:${active ? '#fff' : '#374151'}">${escapeHtmlGrad(university.name)}</span><strong style="color:${active ? '#fff' : '#1d4ed8'}">${count}건</strong></button>`;
+            });
+            const label = c === '졸업생' ? '졸업생' : c ? escapeHtmlGrad(c) + '반' : '전체 반';
+            box.innerHTML = `<div class="flex flex-wrap items-center gap-2"><strong class="text-gray-800 mr-1">${label} 주요 대학 합격 현황</strong>${buttons.join('')}<span class="ml-2 text-sm font-semibold text-blue-700">* 1단계 합격 또는 최종 최초·추가합격 기준 (지원 건별 1회). 대학 버튼을 다시 누르면 선택이 해제됩니다.</span></div>`;
+        }
         let appliedClassSusiSearch = { u: '', admission: '', m: '', first: '', final: '' };
         function applyClassSusiSearch() {
             appliedClassSusiSearch = {
@@ -6186,6 +6214,7 @@ function applyGradFilter() {
         }
         window.applyClassSusiSearch = applyClassSusiSearch;
         function resetClassSusiSearch() {
+            classUniversitySummarySelection = null;
             appliedClassSusiSearch = { u: '', admission: '', m: '', first: '', final: '' };
             document.getElementById('classFirstStageSelect').value = '';
             document.getElementById('classResultSelect').value = '';
@@ -6312,6 +6341,7 @@ function applyGradFilter() {
             const c = cEl.value;
             const nameSearch = nameSearchEl.value.trim();
             const { u, admission, m, first, final: result } = appliedClassSusiSearch;
+            renderClassUniversitySummary(g, c);
             
             if(!g) {
                 tbody.innerHTML = '<tr><td colspan="18" class="text-center py-10 text-gray-500">학년을 선택해주세요.</td></tr>';
@@ -6329,6 +6359,7 @@ function applyGradFilter() {
                 if (c === '졸업생') {
                     if (!isAlumniSusiRow(row)) return false;
                 } else if (rowG !== g || (c && rowC !== c)) return false;
+                if (classUniversitySummarySelection && (!matchesGradSummaryUniversity(rowU, classUniversitySummarySelection) || !isClassUniversitySummaryAccepted(row))) return false;
                 if (nameSearch && !rowN.toLocaleLowerCase().includes(nameSearch.toLocaleLowerCase())) return false;
                 if (u && !rowU.includes(u)) return false;
                 if (admission && !rowAdmission.toLocaleLowerCase().includes(admission.toLocaleLowerCase())) return false;
