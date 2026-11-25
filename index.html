@@ -1388,6 +1388,7 @@ const teacherSheetPending = new Map();
 let sheetRequestEpoch = 0;
 function resetSheetRequests() {
     window.clearCsatPrelimCache?.();
+    window.clearGradJeongsiCache?.();
     window.clearInterviewViewCache?.();
     window.clearSusiResultPrefetch?.();
     sheetRequestEpoch++;
@@ -2416,7 +2417,10 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         function openGradView() {
             hideAllContentViews();
             document.getElementById('gradView').classList.remove('hidden');
-            if (window.getCurrentUser && window.getCurrentUser()) fetchGradData();
+            if (window.getCurrentUser && window.getCurrentUser()) {
+                fetchGradData();
+                fetchGradJeongsiData();
+            }
         }
         
         let csatPrelimTableData = null;
@@ -5026,6 +5030,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             if (!isSusi && !gradJeongsiDataLoaded) fetchGradJeongsiData();
             document.getElementById('gradSusiTabContent')?.classList.toggle('hidden', !isSusi);
             document.getElementById('gradJeongsiTabContent')?.classList.toggle('hidden', isSusi);
+            if (!isSusi) requestAnimationFrame(updateGradJeongsiStickyColumns);
             const susiButton = document.getElementById('gradSusiTab');
             const jeongsiButton = document.getElementById('gradJeongsiTab');
             if (susiButton) {
@@ -5064,6 +5069,17 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         gradSuneungColLabels.forEach((label, index) => { gradJeongsiColLabels[100 + index] = label; });
 
         let gradJeongsiPending = null;
+        let gradJeongsiEpoch = 0;
+        window.clearGradJeongsiCache = () => {
+            gradJeongsiEpoch++;
+            gradJeongsiPending = null;
+            gradJeongsiDataLoaded = false;
+            rawGradJeongsiData = [];
+            filteredGradJeongsiData = [];
+            gradJeongsiSummarySelection = null;
+            gradJeongsiCurrentPage = 0;
+            for (const id of ['gradJeongsiTableBody','gradJeongsiCount','gradJeongsiPageInfo']) document.getElementById(id)?.replaceChildren();
+        };
         function fetchGradJeongsiData() {
             if (gradJeongsiPending) return gradJeongsiPending;
             if (gradJeongsiDataLoaded || !window.getCurrentUser?.()) return Promise.resolve();
@@ -5073,14 +5089,18 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
             return pending;
         }
         async function fetchGradJeongsiDataOnce() {
+            const requestUser = window.getCurrentUser?.();
+            const epoch = gradJeongsiEpoch;
+            const active = () => epoch === gradJeongsiEpoch && window.getCurrentUser?.() === requestUser;
+            if (!requestUser) return;
             const tbody = document.getElementById('gradJeongsiTableBody');
             if (tbody) tbody.innerHTML = '<tr><td colspan="30" class="text-center py-10 text-gray-500">정시 결과 및 졸업생 수능 성적 데이터를 불러오는 중입니다...</td></tr>';
             try {
-                // 표를 먼저 표시할 수 있도록 핵심 정시 결과와 수능 성적만 우선 가져옵니다.
-                const [jeongsiRows, suneungRows] = await Promise.all([
-                    window.fetchGraduatesSheetRows('gradJeongsi'),
-                    window.fetchGraduatesSheetRows('gradSuneung')
-                ]);
+                // 세 자료의 요청을 함께 시작하되 정시 결과를 먼저 표시합니다.
+                const suneungTask = window.fetchGraduatesSheetRows('gradSuneung').then(rows => ({rows}), error => ({error}));
+                const percentileTask = window.fetchGraduatesSheetRows('susiResult').then(rows => ({rows}), error => ({error}));
+                const jeongsiRows = await window.fetchGraduatesSheetRows('gradJeongsi');
+                if (!active()) return;
                 if (jeongsiRows.length <= 1) {
                     if (tbody) tbody.innerHTML = '<tr><td colspan="30" class="text-center py-10 text-gray-500">졸업생 정시 결과 데이터가 없습니다.</td></tr>';
                     gradJeongsiDataLoaded = true;
@@ -5090,31 +5110,41 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 // 졸업생 수능 성적 시트: A열(성적 연도), B열(학번), F열(이름)로 매칭
                 const jeongsiStudentKey = row => [row[16], row[1], row[5]].map(value => String(value ?? '').trim()).join('|');
                 const suneungStudentKey = row => [row[0], row[1], row[5]].map(value => String(value ?? '').trim()).join('|');
+                rawGradJeongsiData = jeongsiRows.slice(1);
+                rawGradJeongsiData.forEach(row => { row._suneung = Array(20).fill(''); row._70Percentile = ''; });
+                populateGradJeongsiFilters();
+                renderGradJeongsiHeaders();
+                applyGradJeongsiFilter();
+                const percentileUpdate = loadGradJeongsiPercentiles(percentileTask, active);
+                const suneungResult = await suneungTask;
+                if (!active()) return;
+                if (suneungResult.error) throw suneungResult.error;
+                const suneungRows = suneungResult.rows;
                 const suneungMap = new Map();
                 suneungRows.slice(1).forEach(row => {
                     const key = suneungStudentKey(row);
                     if (key !== '||') suneungMap.set(key, row.slice(6, 26));
                 });
-                rawGradJeongsiData = jeongsiRows.slice(1);
                 rawGradJeongsiData.forEach(row => {
                     row._suneung = suneungMap.get(jeongsiStudentKey(row)) || Array(20).fill('');
-                    row._70Percentile = '';
                 });
-                populateGradJeongsiFilters();
-                renderGradJeongsiHeaders();
-                applyGradJeongsiFilter();
-                // 70% 백분위 자료는 별도로 불러와 표가 먼저 나타난 뒤 반영합니다.
-                gradJeongsiDataLoaded = true;
-                loadGradJeongsiPercentiles();
+                renderGradJeongsiUniversitySummary();
+                renderGradJeongsiTable();
+                await percentileUpdate;
+                if (active()) gradJeongsiDataLoaded = true;
             } catch (error) {
+                if (!active()) return;
                 console.error('졸업생 정시 결과 및 수능 성적 데이터 로드 실패:', error);
                 if (tbody) tbody.innerHTML = '<tr><td colspan="30" class="text-center py-10 text-red-500">데이터를 불러오지 못했습니다. 교사 로그인 및 서버 권한을 확인해 주세요.</td></tr>';
             }
         }
 
-        async function loadGradJeongsiPercentiles() {
+        async function loadGradJeongsiPercentiles(task, active) {
             try {
-                const percentileRows = (await window.fetchGraduatesSheetRows('susiResult')).slice(1);
+                const result = await task;
+                if (!active()) return;
+                if (result.error) throw result.error;
+                const percentileRows = result.rows.slice(1);
                 const normalizePercentileKey = value => String(value ?? '').normalize('NFKC').replace(/\s+/g, '').trim();
                 const normalizePercentileUniversity = value => normalizePercentileKey(value).replace(/대학교$/, '대');
                 const percentileMap = new Map();
@@ -5161,8 +5191,9 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     const percentileKey = [percentileYear, normalizePercentileUniversity(row[6]), normalizePercentileKey(major)].join('|');
                     row._70Percentile = major ? (percentileMap.get(percentileKey) || '') : '';
                 });
-                // 백분위 자료가 도착하면 현재 선택된 검색 조건을 유지한 채 값만 갱신합니다.
-                applyGradJeongsiFilter();
+                // 백분위 자료가 도착하면 현재 검색 및 페이지를 유지합니다.
+                renderGradJeongsiUniversitySummary();
+                renderGradJeongsiTable();
             } catch (error) {
                 console.warn('정시 입결 조회 백분위 자료를 불러오지 못했습니다.', error);
             }
@@ -5220,7 +5251,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
         function updateGradJeongsiStickyColumns() {
             const table = document.querySelector('#gradJeongsiTableScroll .grad-table');
             const headerCells = table?.querySelectorAll('thead th');
-            if (!table || !headerCells?.length) return;
+            if (!table || !headerCells?.length || !table.getClientRects().length) return;
             let left = 0;
             const offsets = [];
             for (let i = 0; i < 7; i++) {
@@ -5404,6 +5435,7 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                 tbody.innerHTML = '<tr><td colspan="30" class="text-center py-10 text-gray-500">검색 조건에 맞는 데이터가 없습니다.</td></tr>';
                 return;
             }
+            const fragment = document.createDocumentFragment();
             shown.forEach(row => {
                 const tr = document.createElement('tr');
                 const result = String(row[12] || '').trim();
@@ -5439,8 +5471,9 @@ window.filterUniversityAdmissionsInfo=filterUniversityAdmissionsInfo;
                     else if (index === 5 || index === 6) cls = 'font-bold text-gray-800';
                     return `<td class="${cls}">${escapeHtmlGrad(value)}${percentileDifference}</td>`;
                 }).join('');
-                tbody.appendChild(tr);
+                fragment.appendChild(tr);
             });
+            tbody.appendChild(fragment);
             updateGradJeongsiStickyColumns();
         }
 
